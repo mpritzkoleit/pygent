@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from PyGent import StateSpaceModel, FeedBack
+from Environment import StateSpaceMod
+from Agent import FeedBack
 
 def ode(t, x, u):
     dx1dt =  x[1]
