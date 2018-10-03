@@ -1,7 +1,7 @@
 from Environment import StateSpaceModel
 from NFQ import NFQ
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 
 def ode(t, x, u):
@@ -23,16 +23,18 @@ def cost(x, u):
     elif abs(x1)<0.1 and abs(x2)<0.1:
         c = 0
     else:
-        c = 0.1
+        c = 0.01
     return c
 
 x0 = [np.pi, 0]
 
 pendulum = StateSpaceModel(ode,cost,x0)
-t = 6
+t = 3
 dt = 0.05
-controls = np.array([-1, 0, 1]).T
+controls = np.array([-1, 1]).T
 
 learner = NFQ(pendulum, controls, t, dt)
 
-learner.run_episode()
+#learner.run_episode()
+#learner.plot()
+learner.run_learning(50)

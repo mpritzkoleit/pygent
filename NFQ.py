@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from abc import abstractmethod
+import matplotlib.pyplot as plt
 from NeuralNetworkModels import MLP
 import random
 
@@ -35,6 +36,7 @@ class QNetwork(Agent):
         criterion = nn.MSELoss()
         optimizer = torch.optim.Rprop(self.qNetwork.parameters())
 
+
         for epoch in range(200):  # loop over the dataset multiple times
             running_loss = 0.0
             # get training data
@@ -56,9 +58,9 @@ class QNetwork(Agent):
         """ eps-greedy policy """
         if random.uniform(0, 1) > self.eps:
             # greedy control/action
-            self.u = self.controls(self.argmin_qNetwork(x))
+            self.u = [self.controls[self.argmin_qNetwork(x)]]
         else:
-            self.u = random.choice(self.controls)
+            self.u = [random.choice(self.controls)]
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
 
@@ -98,7 +100,25 @@ class QNetwork(Agent):
         qValues = []
         for u in self.controls:
             qValues.append(self.qNetwork(torch.Tensor(x + [u])))
-        return np.argmin(qValues.numpy())
+        return np.argmin(qValues)
+
+    def plot(self):
+        """ Plots the agents history
+
+        Returns:
+            fig (matplotlib.pyplot.figure)
+
+        """
+
+        fig, (ax) = plt.subplots(1, 1)
+        for i in range(len(self.u)):
+            ax.step(self.tt, self.history[:, i], label=r'$u_'+str(i+1)+'$')
+        ax.grid(True)
+        plt.xlabel('t in s')
+        plt.title('Controls')
+        ax.legend()
+
+        return fig
 
 class LearningProcess(object):
     """ Learning Process
@@ -162,13 +182,14 @@ class NFQ(LearningProcess):
         self.episode = 0
 
     def run_episode(self):
-        self.episode += 1
+        print('started episode ', self.episode)
         tt = np.arange(0, self.t, self.dt)
         # reset environment to initial state
-        x0 = self.environment.history[0]
+        x0 = list(self.environment.history[0])
         # list of incremental costs
         cost = []
         self.environment.reset(x0)
+        self.agent.reset()
         for _ in tt:
             # agent computes control/action
             if self.episode > 1:
@@ -186,8 +207,33 @@ class NFQ(LearningProcess):
 
         # store the mean of the incremental cost
         self.meanCost.append(np.mean(cost))
-
+        print('Mean cost: ',np.mean(cost))
         # learning
         self.agent.train(self.D)
 
+        self.episode += 1
+
         pass
+
+    def run_learning(self, n):
+        self.episode = 0
+        for k in range(n):
+            self.run_episode()
+            # plot environment after episode finished
+            if k % 10 == 0:
+                self.plot()
+
+            if k % 25 == 0 and k != 0:
+                self.learning_curve()
+
+    def plot(self):
+        plt.close()
+        self.environment.plot()
+        self.agent.plot()
+
+    def learning_curve(self):
+        fig, (ax) = plt.subplots(1, 1)
+        ax.plot(np.arange(self.episode), self.meanCost)
+        plt.title('Learning curve')
+        plt.ylabel('Mean cost')
+        plt.show()

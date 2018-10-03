@@ -11,11 +11,15 @@ class Agent(object):
     def __init__(self, m):
         self.tt = [0]
         self.history = np.zeros([1, m])
+        self.m = m
 
     @abstractmethod
     def take_action(self, *args):
         return
 
+    def reset(self):
+        self.tt = [0]
+        self.history = np.zeros([1, self.m])
 
 class FeedBack(Agent):
     """Agent subclass that represents a standard state feedback u = mu(x)

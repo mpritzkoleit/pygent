@@ -25,8 +25,9 @@ class Environment(object):
     terminated = False
 
     def __init__(self, x0):
-        self.x = np.array(x0)  # current state
-        self.x_ = np.array(x0)  # previous state x[k-1]
+        x0 = list(x0)
+        self.x = x0  # current state
+        self.x_ = x0 # previous state x[k-1]
         self.history = np.array([x0])
 
     def get_state(self):
@@ -42,10 +43,10 @@ class Environment(object):
             None
 
         """
-
+        x0 = list(x0)
         self.history = np.array([x0])
-        self.x = np.array(x0)
-        self.x = np.array(x0)
+        self.x_ = x0
+        self.x = x0
         self.tt = [0]
         self.terminated = False
 
