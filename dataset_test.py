@@ -23,3 +23,11 @@ print(dataset.data[0])
 print(dataset.data[0]['x_'])
 dataset.rm_sample(sample1)
 print(dataset.data)
+
+dataset2 = DataSet(100)
+for i in range(150):
+    dataset2.add_sample(([i],[2*i]))
+
+print(len(dataset2.data))
+print(len(dataset2.minibatch(20)), dataset2.minibatch(20))
+print(len(dataset2.minibatch(1000)), dataset2.minibatch(1000))

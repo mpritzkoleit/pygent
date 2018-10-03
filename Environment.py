@@ -44,7 +44,7 @@ class Environment(object):
         """
 
         self.history = np.array([x0])
-        self.x_ = np.array(x0)
+        self.x = np.array(x0)
         self.x = np.array(x0)
         self.tt = [0]
         self.terminated = False
@@ -85,7 +85,6 @@ class StateSpaceModel(Environment):
             u (array): control/action
 
         Returns:
-            x (array): new current state
             c (float): cost of state transition
 
         """
@@ -94,12 +93,12 @@ class StateSpaceModel(Environment):
         sol = solve_ivp(lambda t, x: self.ode(t, x, u), (0, dt), self.x)
 
         self.x_ = self.x  # shift state (x[k-1] = x[k])
-        self.x = sol.y[:, -1]  # extract simulation result
+        self.x = list(sol.y[:, -1])  # extract simulation result
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         c = self.cost(self.x, u)
 
-        return self.x, c
+        return c
 
     def plot(self):
         """ Plots the environments history
@@ -114,6 +113,7 @@ class StateSpaceModel(Environment):
         for i in range(len(self.x)):
             ax.plot(self.tt, self.history[:, i], label=r'$x_'+str(i+1)+'$')
         ax.grid(True)
+        plt.title('States')
         plt.xlabel('t in s')
         ax.legend()
 

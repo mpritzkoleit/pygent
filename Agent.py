@@ -1,5 +1,4 @@
 import numpy as np
-# import tensorflow as tf
 from abc import abstractmethod, abstractproperty
 # import scipy.integrate as sci
 from scipy.integrate import solve_ivp
@@ -8,6 +7,10 @@ import random
 
 class Agent(object):
     """ Base class for an agent. """
+
+    def __init__(self, m):
+        self.tt = [0]
+        self.history = np.zeros([1, m])
 
     @abstractmethod
     def take_action(self, *args):
@@ -26,10 +29,8 @@ class FeedBack(Agent):
         """
 
     def __init__(self, mu, m):
-        super(FeedBack, self).__init__()
+        super(FeedBack, self).__init__(m)
         self.mu = mu
-        self.tt = [0]
-        self.history = np.zeros([1, m])
 
     def take_action(self, dt, x):
         """ Computes control/action of the agent
@@ -62,6 +63,7 @@ class FeedBack(Agent):
             ax.plot(self.tt, self.history[:, i], label=r'$u_'+str(i+1)+'$')
         ax.grid(True)
         plt.xlabel('t in s')
+        plt.title('Controls')
         ax.legend()
 
         return fig

@@ -22,7 +22,7 @@ class DataSet(object):
         """ Adds sample to data
 
         Args:
-            sample (tuple)
+            sample (dict/tuple/array)
 
         Returns:
             exists (bool): True if sample is already in data
@@ -31,38 +31,36 @@ class DataSet(object):
 
         # if sample not in data, add to data
         if sample not in self.data:
+        #if not any([sample in self.data[_] for _ in range(len(self.data))]):
             self.data.append(sample)
             exists = False
         else:
             exists = True
 
-        # if data set exceeds lenght, pop first value (FIFO)
+        # if data set exceeds length, pop first value (FIFO)
         if self.length < len(self.data):
-            self.data.pop(0)
+            del self.data[0]
 
         return exists
 
-    def add_sample(self, sample):
-        """ Adds sample to data
+    def rm_sample(self, sample):
+        """ Removes sample to data
 
         Args:
             sample (tuple)
 
         Returns:
-            exists (bool): True if sample is already in data
+            exists (bool): True if sample is in data
 
         """
 
         # if sample not in data, add to data
-        if sample not in self.data:
-            self.data.append(sample)
-            exists = False
-        else:
+        if sample in self.data:
+            # find idx of sample in self.data
+            self.data.remove(sample)
             exists = True
-
-        # if data set exceeds lenght, pop first value (FIFO)
-        if self.length < len(self.data):
-            self.data.pop(0)
+        else:
+            exists = False
 
         return exists
 
@@ -71,5 +69,5 @@ class DataSet(object):
         return sample
 
     def minibatch(self, n):
-        batch = random.sample(self.data, n)
+        batch = random.sample(self.data, min(n, len(self.data)))
         return batch

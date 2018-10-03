@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from Environment import StateSpaceMod
+from Environment import StateSpaceModel
 from Agent import FeedBack
 
 def ode(t, x, u):
@@ -8,6 +8,12 @@ def ode(t, x, u):
     dx2dt =  x[2]
     dx3dt =  - 8*(u[0] + u[1])
     return [dx1dt, dx2dt, dx3dt]
+
+def cost(x, u):
+    x = np.array(x)
+    u = np.array(u)
+    c = x.dot(x) + u.dot(u)
+    return c
 
 def mu(x):
     u1 = x[0]
@@ -20,7 +26,7 @@ dt = 0.05
 tt = np.arange(t0, tf, dt)
 
 x0 = [2, 1, -2.5]
-env = StateSpaceModel(ode, x0)
+env = StateSpaceModel(ode, cost, x0)
 m = 2
 agent = FeedBack(mu, m)
 
