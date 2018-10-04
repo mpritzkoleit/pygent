@@ -77,6 +77,7 @@ class StateSpaceModel(Environment):
         super(StateSpaceModel, self).__init__(x0)
         self.ode = ode
         self.cost = cost
+        self.xIsAngle = np.zeros([len(x0)], dtype=bool)
 
     def step(self, dt, u):
         """ Simulates the environment for 1 step of time t.
@@ -94,12 +95,26 @@ class StateSpaceModel(Environment):
         sol = solve_ivp(lambda t, x: self.ode(t, x, u), (0, dt), self.x)
 
         self.x_ = self.x  # shift state (x[k-1] = x[k])
-        self.x = list(sol.y[:, -1])  # extract simulation result
+        y = list(sol.y[:, -1])  # extract simulation result
+        self.x = self.mapAngles(y)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
-        c = self.cost(self.x, u)
-
+        c = self.cost(self.x_, u, self.x)
+        if c == 1:
+            self.terminated = True
         return c
+
+    def mapAngles(self, y):
+        x = y
+        for i in range(len(y)):
+            if self.xIsAngle[i]:
+                # map theta to [-pi,pi]
+                if x[i] > np.pi:
+                    x[i] -= 2 * np.pi
+                elif x[i] < -np.pi:
+                    x[i] += 2 * np.pi
+
+        return x
 
     def plot(self):
         """ Plots the environments history

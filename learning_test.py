@@ -14,14 +14,14 @@ def ode(t, x, u):
 
     return [dx1dt, dx2dt]
 
-def cost(x, u):
+def cost(x_, u, x):
     x1, x2 = x
     # map x1 to [-pi,pi]
 
     if abs(x2) > 10:
-        c = 1
-    elif abs(x1)<0.1 and abs(x2)<0.1:
-        c = 0
+        c = 1.
+    elif abs(x1) < 0.1  and abs(x2) < 0.5:
+        c = 0.
     else:
         c = 0.01
     return c
@@ -29,12 +29,13 @@ def cost(x, u):
 x0 = [np.pi, 0]
 
 pendulum = StateSpaceModel(ode,cost,x0)
-t = 3
+pendulum.xIsAngle = [True, False]
+t = 6
 dt = 0.05
-controls = np.array([-1, 1]).T
+controls = np.array([-10, 0, 10]).T
 
 learner = NFQ(pendulum, controls, t, dt)
 
 #learner.run_episode()
 #learner.plot()
-learner.run_learning(50)
+learner.run_learning(200)

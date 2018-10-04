@@ -23,35 +23,44 @@ class QNetwork(Agent):
         eps (float [0, 1]): with probability eps a random action/control is returned
     """
 
-    def __init__(self, controls, netStructure, eps=0.1, gamma=0.99):
+    def __init__(self, controls, netStructure, eps=0.1, gamma=0.99, xGoal=[0, 0]):
         super(QNetwork, self).__init__(1)
         self.controls = controls
         self.qNetwork = MLP(netStructure)
         self.eps = eps
         self.gamma = gamma
+        self.optimizer = torch.optim.Rprop(self.qNetwork.parameters())
+        self.xGoal = xGoal # goal state
         # implement neural network in pytorch
 
 
     def train(self, dataSet):
+        # loss function (mean squared error)
         criterion = nn.MSELoss()
-        optimizer = torch.optim.Rprop(self.qNetwork.parameters())
 
+        # training data
+        inputs, targets = self.training_data(dataSet)
 
-        for epoch in range(200):  # loop over the dataset multiple times
+        # artificial hint-to-goal training data (fixes the Q-Netork ouptut to 0 in the goal region)
+        inputs_htg, targets_htg = self.artificial_data(int(len(dataSet.data)/10))
+
+        # add hint-to-goal data to training data
+        inputs = torch.cat((inputs, inputs_htg), 0)
+        targets = torch.cat((targets, targets_htg), 0)
+
+        for epoch in range(300):  # loop over the dataset multiple times
             running_loss = 0.0
-            # get training data
-            outputs, targets = self.training_data(dataSet)
 
-            # zero the parameter gradients
-            optimizer.zero_grad()
+            outputs = self.qNetwork(inputs)
 
             # backward + optimize
-            #loss = criterion(outputs, targets)
-            loss = torch.sum((outputs-targets)**2)
-            # print(loss)
-            loss.backward()
-            optimizer.step()
+            #loss = torch.sum((outputs-targets)**2)
+            loss = criterion(outputs, targets)
+            # zero the parameter gradients
+            self.optimizer.zero_grad()
 
+            loss.backward(retain_graph=True)
+            self.optimizer.step()
         pass
 
     def take_action(self, dt, x):
@@ -76,19 +85,35 @@ class QNetwork(Agent):
 
     def training_data(self, dataSet):
         batch = dataSet.data
-        inputs = torch.Tensor(len(batch), self.qNetwork.netStructure[0])
-        targets = torch.Tensor(len(batch), self.qNetwork.netStructure[-1])
+        inputs = torch.randn(len(batch), self.qNetwork.netStructure[0])
+        targets = torch.randn(len(batch), self.qNetwork.netStructure[-1])
+        #inputs[0:100, :] = torch.Tensor(np.zeros([100, self.qNetwork.netStructure[0]]))
+        #targets[0:100, :] = torch.Tensor(np.zeros([100, self.qNetwork.netStructure[-1]]))
         for i in range(len(batch)):
             x_ = batch[i]['x_']
             u = batch[i]['u']
             x = batch[i]['x']
             c = batch[i]['c']
             inputs[i, :] = torch.Tensor([x_ + u])
-            targ = c + self.gamma * self.min_qNetwork(x)
-            targets[i, :] = torch.Tensor(targ)
+            if c == 0.0 or c == 1.0:
+                target = torch.Tensor([[c]])
+            else:
+                target = torch.Tensor(torch.Tensor([[c + self.min_qNetwork(x)*self.gamma]]))
+            if target.numpy()[0,0]>1.:
+                print(target.numpy()[0,0])
+            targets[i, :] = target
 
-        outputs = self.qNetwork(inputs)
-        return outputs, targets
+        return inputs, targets
+
+    def artificial_data(self, n):
+        targets_htg = torch.zeros(len(self.controls)*n, self.qNetwork.netStructure[-1])
+        inputs = torch.Tensor(len(self.controls), self.qNetwork.netStructure[0])
+        for i, u in enumerate(self.controls):
+            inputs[i, :] = torch.Tensor([self.xGoal + [u]])
+        inputs_htg = inputs
+        for _ in range(n-1):
+            inputs_htg = torch.cat((inputs_htg, inputs), 0)
+        return inputs_htg, targets_htg
 
     def min_qNetwork(self, x):
         qValues = []
@@ -175,17 +200,18 @@ class NFQ(LearningProcess):
 
     """
 
-    def __init__(self, environment, controls, t, dt, n=200, netStructure=[3, 20, 20, 1], eps=0.1, nData=50000):
+    def __init__(self, environment, controls, t, dt, n=200, netStructure=[3, 20, 20, 1], eps=0.0, nData=50000):
         agent = QNetwork(controls, netStructure, eps)
         super(NFQ, self).__init__(environment, agent, n, t, dt)
         self.D = DataSet(nData)
         self.episode = 0
+        self.x0 = [np.pi, 0]
 
     def run_episode(self):
         print('started episode ', self.episode)
         tt = np.arange(0, self.t, self.dt)
         # reset environment to initial state
-        x0 = list(self.environment.history[0])
+        x0 = self.x0
         # list of incremental costs
         cost = []
         self.environment.reset(x0)
@@ -199,11 +225,17 @@ class NFQ(LearningProcess):
             # simulation of environment
             c = self.environment.step(self.dt, u)
 
+            if c == 0:
+                print('Goal reached at t = ',_)
             cost.append(c)
 
             # store transition in dataset (x_, u, x, c)
-            transition = ({'x_': self.environment.x, 'u': self.agent.u, 'x': self.environment.x, 'c': c})
+            transition = ({'x_': self.environment.x_, 'u': self.agent.u, 'x': self.environment.x, 'c': c})
             self.D.add_sample(transition)
+
+            if self.environment.terminated:
+                print('Environment terminated!')
+                break
 
         # store the mean of the incremental cost
         self.meanCost.append(np.mean(cost))
@@ -220,20 +252,23 @@ class NFQ(LearningProcess):
         for k in range(n):
             self.run_episode()
             # plot environment after episode finished
-            if k % 10 == 0:
+            print('Samples: ',self.D.data.__len__())
+            if k % 5 == 0:
                 self.plot()
-
-            if k % 25 == 0 and k != 0:
                 self.learning_curve()
+                plt.close('all')
+
 
     def plot(self):
-        plt.close()
         self.environment.plot()
+        plt.savefig('Env')
         self.agent.plot()
+        plt.savefig('Agent')
+
 
     def learning_curve(self):
         fig, (ax) = plt.subplots(1, 1)
-        ax.plot(np.arange(self.episode), self.meanCost)
+        ax.step(np.arange(self.episode), self.meanCost)
         plt.title('Learning curve')
         plt.ylabel('Mean cost')
-        plt.show()
+        plt.savefig('Learning Curve')
