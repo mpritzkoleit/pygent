@@ -22,7 +22,7 @@ class Agent(object):
         self.history = np.zeros([1, self.m])
 
 class FeedBack(Agent):
-    """Agent subclass that represents a standard state feedback u = mu(x)
+    """Agent subclass: a standard state feedback of the form u = mu(x)
 
         Attributes:
             mu (function): feedback law
@@ -55,7 +55,7 @@ class FeedBack(Agent):
         return self.u
 
     def plot(self):
-        """ Plots the agents history
+        """ Plots the agents history (the control trajectory)
 
         Returns:
             fig (matplotlib.pyplot.figure)

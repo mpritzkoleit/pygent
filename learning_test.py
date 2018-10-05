@@ -1,23 +1,9 @@
-from Environment import StateSpaceModel
+from Environments import Pendulum
 from NFQ import NFQ
 import numpy as np
 import matplotlib.pyplot as plt
-
-
-def ode(t, x, u):
-    g = 9.81  # gravity
-    b = 0.0  # dissipation
-    u1 = u[0] # torque
-    x1, x2 = x
-    dx1dt = x2
-    dx2dt = u1 + g * np.sin(x1) - b * x2
-
-    return [dx1dt, dx2dt]
-
 def cost(x_, u, x):
     x1, x2 = x
-    # map x1 to [-pi,pi]
-
     if abs(x2) > 10:
         c = 1.
     elif abs(x1) < 0.1  and abs(x2) < 0.5:
@@ -28,14 +14,17 @@ def cost(x_, u, x):
 
 x0 = [np.pi, 0]
 
-pendulum = StateSpaceModel(ode,cost,x0)
-pendulum.xIsAngle = [True, False]
+pendulum = Pendulum(cost, x0)
 t = 6
 dt = 0.05
-controls = np.array([-10, 0, 10]).T
+controls = np.array([-5, 0, 5]).T
+xGoal = [0, 0]
+gamma = 0.99
+eps = 0.1
+netStructure = [3, 20, 20, 1]
 
-learner = NFQ(pendulum, controls, t, dt)
 
-#learner.run_episode()
-#learner.plot()
-learner.run_learning(200)
+algorithm = NFQ(pendulum, controls, xGoal, t, dt, netStructure, eps, gamma)
+
+algorithm.run_episode()
+algorithm.run_learning(200)

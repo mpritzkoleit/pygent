@@ -1,5 +1,5 @@
 import numpy as np
-import Agent
+from Agents import Agent
 from Data import DataSet
 import torch
 import torch.nn as nn
@@ -9,10 +9,10 @@ from abc import abstractmethod
 
 
 class MLP(nn.Module):
-    """ Multilayer perceptron (MLP) implementation in PyTorch
+    """ Multilayer perceptron (MLP) with sigmoid activation functions implemented in PyTorch
 
     Attributes:
-        layers (int): layer structure of MLP
+        netStructure (array): layer structure of MLP: [1, 5, 5, 1] (2 hidden layer with 5 neurons, 1 input, 1 output)
 
     """
 
@@ -26,7 +26,7 @@ class MLP(nn.Module):
             setattr(self, 'layer'+str(i), nn.Linear(netStructure[i], netStructure[i+1]))
 
     def forward(self, x):
-        # unfold neural network
+        # connect layers
         for i in range(self.nLayers - 1):
             layer = getattr(self, 'layer'+str(i))
             x = F.sigmoid(layer(x))

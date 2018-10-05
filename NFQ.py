@@ -1,5 +1,5 @@
 import numpy as np
-from Agent import Agent
+from Agents import Agent
 from Data import DataSet
 import torch
 import torch.nn as nn
@@ -23,7 +23,7 @@ class QNetwork(Agent):
         eps (float [0, 1]): with probability eps a random action/control is returned
     """
 
-    def __init__(self, controls, netStructure, eps=0.1, gamma=0.99, xGoal=[0, 0]):
+    def __init__(self, controls, netStructure, eps, gamma, xGoal):
         super(QNetwork, self).__init__(1)
         self.controls = controls
         self.qNetwork = MLP(netStructure)
@@ -42,7 +42,7 @@ class QNetwork(Agent):
         inputs, targets = self.training_data(dataSet)
 
         # artificial hint-to-goal training data (fixes the Q-Netork ouptut to 0 in the goal region)
-        inputs_htg, targets_htg = self.artificial_data(int(len(dataSet.data)/10))
+        inputs_htg, targets_htg = self.artificial_data(max(int(len(dataSet.data)/10), 1))
 
         # add hint-to-goal data to training data
         inputs = torch.cat((inputs, inputs_htg), 0)
@@ -55,6 +55,8 @@ class QNetwork(Agent):
 
             # backward + optimize
             #loss = torch.sum((outputs-targets)**2)
+            if outputs.size()!=targets.size():
+                print('warning')
             loss = criterion(outputs, targets)
             # zero the parameter gradients
             self.optimizer.zero_grad()
@@ -87,8 +89,6 @@ class QNetwork(Agent):
         batch = dataSet.data
         inputs = torch.randn(len(batch), self.qNetwork.netStructure[0])
         targets = torch.randn(len(batch), self.qNetwork.netStructure[-1])
-        #inputs[0:100, :] = torch.Tensor(np.zeros([100, self.qNetwork.netStructure[0]]))
-        #targets[0:100, :] = torch.Tensor(np.zeros([100, self.qNetwork.netStructure[-1]]))
         for i in range(len(batch)):
             x_ = batch[i]['x_']
             u = batch[i]['u']
@@ -145,11 +145,10 @@ class QNetwork(Agent):
 
         return fig
 
-class LearningProcess(object):
+class Algorithm(object):
     """ Learning Process
 
     Attributes:
-        n (int): number of episodes
         t (int, float): episode length
         dt (int, float): step size
         meanCost (int, float): mean cost of an episode
@@ -158,14 +157,12 @@ class LearningProcess(object):
 
     """
 
-    meanCost = []
-
-    def __init__(self, environment, agent, n, t, dt):
-        self.n = n
+    def __init__(self, environment, agent, t, dt):
         self.t = t
         self.dt = dt
         self.agent = agent
         self.environment = environment
+        self.meanCost = []
 
     @abstractmethod
     def run_episode(self):
@@ -176,7 +173,7 @@ class LearningProcess(object):
         return
 
 
-class NFQ(LearningProcess):
+class NFQ(Algorithm):
     """ Neural Fitted Q Iteration (NFQ) - Implementation based on PyTorch (https://pytorch.org)
 
         Riedmiller M. (2005) Neural Fitted Q Iteration – First Experiences with a
@@ -200,21 +197,21 @@ class NFQ(LearningProcess):
 
     """
 
-    def __init__(self, environment, controls, t, dt, n=200, netStructure=[3, 20, 20, 1], eps=0.0, nData=50000):
-        agent = QNetwork(controls, netStructure, eps)
-        super(NFQ, self).__init__(environment, agent, n, t, dt)
+    def __init__(self, environment, controls, xGoal, t, dt, netStructure, eps, gamma, nData=18000):
+        agent = QNetwork(controls, netStructure, eps, gamma, xGoal)
+        super(NFQ, self).__init__(environment, agent, t, dt)
         self.D = DataSet(nData)
         self.episode = 0
-        self.x0 = [np.pi, 0]
+        self.x0 = self.environment.x0
 
     def run_episode(self):
         print('started episode ', self.episode)
         tt = np.arange(0, self.t, self.dt)
-        # reset environment to initial state
-        x0 = self.x0
+
         # list of incremental costs
         cost = []
-        self.environment.reset(x0)
+        # reset environment/agnet to initial state, delete history
+        self.environment.reset()
         self.agent.reset()
         for _ in tt:
             # agent computes control/action
@@ -224,8 +221,9 @@ class NFQ(LearningProcess):
                 u = self.agent.take_random_action(self.dt, self.environment.x)
             # simulation of environment
             c = self.environment.step(self.dt, u)
-
-            if c == 0:
+            if c == 1:
+                self.environment.terminated = True
+            elif c == 0:
                 print('Goal reached at t = ',_)
             cost.append(c)
 
@@ -249,21 +247,29 @@ class NFQ(LearningProcess):
 
     def run_learning(self, n):
         self.episode = 0
+        self.meanCost = []
         for k in range(n):
             self.run_episode()
             # plot environment after episode finished
             print('Samples: ',self.D.data.__len__())
-            if k % 5 == 0:
+            if k % 10 == 0:
                 self.plot()
                 self.learning_curve()
-                plt.close('all')
+                # if self.meanCost[-1] < 0.01: # goal reached
+                self.animation()
 
 
     def plot(self):
         self.environment.plot()
-        plt.savefig('Env')
+        plt.savefig('results/'+str(self.episode-1)+'_environment')
         self.agent.plot()
-        plt.savefig('Agent')
+        plt.savefig('results/'+str(self.episode-1)+'_agent')
+        plt.close('all')
+
+    def animation(self):
+        ani = self.environment.animation(self.episode-1, self.meanCost[self.episode-1])
+        ani.save('results/'+str(self.episode-1)+'_animation.mp4', fps=1/self.dt)
+        plt.close('all')
 
 
     def learning_curve(self):
@@ -271,4 +277,6 @@ class NFQ(LearningProcess):
         ax.step(np.arange(self.episode), self.meanCost)
         plt.title('Learning curve')
         plt.ylabel('Mean cost')
-        plt.savefig('Learning Curve')
+        plt.xlabel('Epsiode')
+        plt.savefig('results/learning_curve')
+        plt.close('all')
