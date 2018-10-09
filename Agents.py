@@ -62,13 +62,14 @@ class FeedBack(Agent):
 
         """
 
-        fig, (ax) = plt.subplots(1, 1)
+        fig, ax = plt.subplots(len(self.u), 1, sharex='col')
+        # Plot control trajectories
+        fig.suptitle('Controls')
         for i in range(len(self.u)):
-            ax.plot(self.tt, self.history[:, i], label=r'$u_'+str(i+1)+'$')
-        ax.grid(True)
+            ax[i].step(self.tt, self.history[:, i], label=r'$u_'+str(i+1)+'$')
+            ax[i].grid(True)
+            ax[i].legend(loc='upper right')
         plt.xlabel('t in s')
-        plt.title('Controls')
-        ax.legend()
 
-        return fig
+        return fig, ax
 

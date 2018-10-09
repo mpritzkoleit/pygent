@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from abc import abstractmethod
 import matplotlib.pyplot as plt
 from NeuralNetworkModels import MLP
+from Algorithms import Algorithm
 import random
 
 class QNetwork(Agent):
@@ -45,6 +46,7 @@ class QNetwork(Agent):
         inputs_htg, targets_htg = self.artificial_data(max(int(len(dataSet.data)/10), 1))
 
         # add hint-to-goal data to training data
+        # bn = nn.BatchNorm1d(self.qNetwork.netStructure[0])
         inputs = torch.cat((inputs, inputs_htg), 0)
         targets = torch.cat((targets, targets_htg), 0)
 
@@ -54,9 +56,6 @@ class QNetwork(Agent):
             outputs = self.qNetwork(inputs)
 
             # backward + optimize
-            #loss = torch.sum((outputs-targets)**2)
-            if outputs.size()!=targets.size():
-                print('warning')
             loss = criterion(outputs, targets)
             # zero the parameter gradients
             self.optimizer.zero_grad()
@@ -70,19 +69,19 @@ class QNetwork(Agent):
         if random.uniform(0, 1) > self.eps:
             # greedy control/action
             self.u = [self.controls[self.argmin_qNetwork(x)]]
+            self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
+            self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         else:
-            self.u = [random.choice(self.controls)]
-        self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
-        self.tt.extend([self.tt[-1] + dt])  # increment simulation time
+            self.u = self.take_random_action(dt)
+
 
         return self.u
 
-    def take_random_action(self, dt, x):
+    def take_random_action(self, dt):
         """ random policy """
         self.u = [random.choice(self.controls)]
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
-
         return self.u
 
     def training_data(self, dataSet):
@@ -98,9 +97,7 @@ class QNetwork(Agent):
             if c == 0.0 or c == 1.0:
                 target = torch.Tensor([[c]])
             else:
-                target = torch.Tensor(torch.Tensor([[c + self.min_qNetwork(x)*self.gamma]]))
-            if target.numpy()[0,0]>1.:
-                print(target.numpy()[0,0])
+                target = torch.Tensor(torch.Tensor([[torch.Tensor([c]) + self.min_qNetwork(x)*self.gamma]]))
             targets[i, :] = target
 
         return inputs, targets
@@ -145,34 +142,6 @@ class QNetwork(Agent):
 
         return fig
 
-class Algorithm(object):
-    """ Learning Process
-
-    Attributes:
-        t (int, float): episode length
-        dt (int, float): step size
-        meanCost (int, float): mean cost of an episode
-        agent (Agent(object)): agent of the algorithm
-        environment (Environment(object)): environment
-
-    """
-
-    def __init__(self, environment, agent, t, dt):
-        self.t = t
-        self.dt = dt
-        self.agent = agent
-        self.environment = environment
-        self.meanCost = []
-
-    @abstractmethod
-    def run_episode(self):
-        return
-
-    @abstractmethod
-    def learning_curve(self):
-        return
-
-
 class NFQ(Algorithm):
     """ Neural Fitted Q Iteration (NFQ) - Implementation based on PyTorch (https://pytorch.org)
 
@@ -197,33 +166,31 @@ class NFQ(Algorithm):
 
     """
 
-    def __init__(self, environment, controls, xGoal, t, dt, netStructure, eps, gamma, nData=18000):
+    def __init__(self, environment, controls, xGoal, t, dt, netStructure, eps, gamma, nData=180000):
         agent = QNetwork(controls, netStructure, eps, gamma, xGoal)
         super(NFQ, self).__init__(environment, agent, t, dt)
         self.D = DataSet(nData)
         self.episode = 0
-        self.x0 = self.environment.x0
 
     def run_episode(self):
         print('started episode ', self.episode)
         tt = np.arange(0, self.t, self.dt)
-
         # list of incremental costs
         cost = []
-        # reset environment/agnet to initial state, delete history
-        self.environment.reset()
+        # reset environment/agent to initial state, delete history
+        self.environment.reset(self.environment.x0)
         self.agent.reset()
         for _ in tt:
             # agent computes control/action
-            if self.episode > 1:
+            if self.episode > 0:
                 u = self.agent.take_action(self.dt, self.environment.x)
             else:
-                u = self.agent.take_random_action(self.dt, self.environment.x)
+                u = self.agent.take_random_action(self.dt)
             # simulation of environment
             c = self.environment.step(self.dt, u)
-            if c == 1:
+            if c == 1.0:
                 self.environment.terminated = True
-            elif c == 0:
+            elif c == 0.0:
                 print('Goal reached at t = ',_)
             cost.append(c)
 

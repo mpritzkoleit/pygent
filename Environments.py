@@ -23,8 +23,12 @@ class Environment(object):
     """
 
     def __init__(self, x0):
-        x0 = list(x0)
-        self.x0 = x0 # initial state
+        if callable(x0):
+            self.x0 = x0  # initial state
+            x0 = x0()
+        else:
+            x0 = list(x0)
+            self.x0 = x0
         self.x = x0  # current state
         self.x_ = x0 # previous state x[k-1]
         self.n = len(x0)
@@ -35,7 +39,7 @@ class Environment(object):
     def get_state(self):
         return self.x
 
-    def reset(self):
+    def reset(self, x0):
         """ Resets environment to state x0
 
         Args:
@@ -45,9 +49,11 @@ class Environment(object):
             None
 
         """
-        self.history = np.array([self.x0])
-        self.x_ = self.x0
-        self.x = self.x0
+        if callable(x0):
+            x0 = x0()
+        self.history = np.array([x0])
+        self.x_ = x0
+        self.x = x0
         self.tt = [0]
         self.terminated = False
 
@@ -77,10 +83,10 @@ class StateSpaceModel(Environment):
 
     def __init__(self, ode, cost, x0):
         super(StateSpaceModel, self).__init__(x0)
-        self.n = len(self.x0)
+        self.n = len(self.x_)
         self.ode = ode
         self.cost = cost
-        self.xIsAngle = np.zeros([len(self.x0)], dtype=bool)
+        self.xIsAngle = np.zeros([len(self.x_)], dtype=bool)
 
     def step(self, dt, u):
         """ Simulates the environment for 1 step of time t.
@@ -102,7 +108,8 @@ class StateSpaceModel(Environment):
         self.x = self.mapAngles(y)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
-        c = self.cost(self.x_, u, self.x)
+        c, terminate = self.cost(self.x_, u, self.x)
+        self.terminated = terminate
         return c
 
     def mapAngles(self, y):
@@ -126,14 +133,14 @@ class StateSpaceModel(Environment):
 
         """
 
-        fig, (ax) = plt.subplots(1, 1)
+        fig, ax = plt.subplots(len(self.x), 1, sharex='col')
         # Plot state trajectories
+        fig.suptitle('States')
         for i in range(len(self.x)):
-            ax.plot(self.tt, self.history[:, i], label=r'$x_'+str(i+1)+'$')
-        ax.grid(True)
-        plt.title('States')
+            ax[i].step(self.tt, self.history[:, i], label=r'$x_'+str(i+1)+'$')
+            ax[i].grid(True)
+            ax[i].legend(loc='upper right')
         plt.xlabel('t in s')
-        ax.legend()
 
         return fig, ax
 
@@ -240,7 +247,7 @@ class CartPole(StateSpaceModel):
             line.set_data(thisx, thisy)
             #torque.set_data([self.history[t] / max(abs(self.history)), 0], [-0.05, -0.05])
             wheel.center = (thisx[0], 0.08)
-            time_text.set_text(time_template % self.tt[1])
+            time_text.set_text(time_template % self.tt[t])
             return line, time_text, wheel#,torque
 
         # mapping from theta and s to the x,y-plane
@@ -266,8 +273,7 @@ class CartPole(StateSpaceModel):
         ani = animation.FuncAnimation(fig, animate, np.arange(len(self.tt)),
                                       interval=self.tt[1] * 1000, blit=False, init_func=init)
         return ani
-#class CartPole(StateSpaceModel):
+
 #class AcroBot(StateSpaceModel):
 #class Building(StateSpaceModel):
 #class Ball(StateSpaceModel):
-#class
