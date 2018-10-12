@@ -7,6 +7,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 from NeuralNetworkModels import Actor, Critic
 import random
+import timeit
 
 class DDPG(Algorithm):
     """ Deep Deterministic Policy Gradient - Implementation based on PyTorch (https://pytorch.org)
@@ -147,7 +148,6 @@ class ActorCritic(Agent):
         # eval mode on (batch normalization)
         for epoch in range(1):  # loop over the dataset multiple times
             running_loss = 0.0
-
             qOutputs = self.critic1(xInputs, uInputs)
             muOutputs = self.actor1(xInputs)
 
@@ -254,3 +254,28 @@ class ActorCritic(Agent):
         ax.legend()
 
         return fig
+
+class ActionNoise(object):
+    def reset(self):
+        pass
+
+# class OrnsteinUhlenbeckProcess(object):
+class OrnsteinUhlenbeckActionNoise(ActionNoise):
+    def __init__(self, mu, sigma, theta=.15, dt=1e-2, x0=None):
+        self.theta = theta
+        self.mu = mu
+        self.sigma = sigma
+        self.dt = dt
+        self.x0 = x0
+        self.reset()
+
+    def __call__(self):
+        x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + self.sigma * np.sqrt(self.dt) * np.random.normal(size=self.mu.shape)
+        self.x_prev = x
+        return x
+
+    def reset(self):
+        self.x_prev = self.x0 if self.x0 is not None else np.zeros_like(self.mu)
+
+    def __repr__(self):
+        return 'OrnsteinUhlenbeckActionNoise(mu={}, sigma={})'.format(self.mu, self.sigma)
