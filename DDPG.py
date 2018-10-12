@@ -23,11 +23,12 @@ class DDPG(Algorithm):
 
     """
 
-    def __init__(self, environment, xDim, uDim, uMax, t, dt, nData=10e6):
+    def __init__(self, environment, xDim, uDim, uMax, t, dt, plotEpisode=10, nData=1e6):
         agent = ActorCritic(xDim, uDim, uMax)
         super(DDPG, self).__init__(environment, agent, t, dt)
         self.R = DataSet(nData)
         self.episode = 0
+        self.plotEpisode = plotEpisode
 
     def run_episode(self):
         print('started episode ', self.episode)
@@ -51,8 +52,8 @@ class DDPG(Algorithm):
             # store transition in dataset (x_, u, x, c)
             transition = ({'x_': self.environment.x_, 'u': self.agent.u, 'x': self.environment.x, 'c': c})
             self.R.add_sample(transition)
-
-            self.agent.training(self.R)
+            if self.R.length > 64 and self.episode > 0:
+                self.agent.training(self.R)
 
             if self.environment.terminated:
                 print('Environment terminated!')
@@ -76,10 +77,10 @@ class DDPG(Algorithm):
             # plot environment after episode finished
             print('Samples: ',self.R.data.__len__())
             if k % 10 == 0:
-                self.plot()
                 self.learning_curve()
                 # if self.meanCost[-1] < 0.01: # goal reached
-            if k % 10 == 0:
+            if k % self.plotEpisode == 0.:
+                self.plot()
                 self.animation()
 
 
@@ -118,20 +119,22 @@ class ActorCritic(Agent):
         eps (float [0, 1]): with probability eps a random action/control is returned
     """
 
-    def __init__(self, xDim, uDim, uMax, eps=0.01, gamma=0.99, tau=0.001):
+    def __init__(self, xDim, uDim, uMax, eps=0.0, gamma=0.99, tau=0.001):
         super(ActorCritic, self).__init__(1)
         self.xDim = xDim
         self.uDim = uDim
         self.uMax = uMax
         self.actor1 = Actor(xDim, uDim, uMax)
-        self.actor2 = self.actor1
+        self.actor2 = Actor(xDim, uDim, uMax)
+        self.blend_hard(self.actor1, self.actor2)
         self.critic1 = Critic(xDim, uDim)
-        self.critic2 = self.critic1
+        self.critic2 = Critic(xDim, uDim)
+        self.blend_hard(self.critic1, self.critic2)
         self.eps = eps
         self.gamma = gamma
         self.tau = tau
-        self.optimCritic = torch.optim.Adam(self.critic1.parameters(), lr=10e-3)
-        self.optimActor = torch.optim.Adam(self.actor1.parameters(), lr=10e-4)
+        self.optimCritic = torch.optim.Adam(self.critic1.parameters(), lr=1e-3, weight_decay=1e-2)
+        self.optimActor = torch.optim.Adam(self.actor1.parameters(), lr=1e-4)
 
 
     def training(self, dataSet):
@@ -150,8 +153,9 @@ class ActorCritic(Agent):
 
             # backward + optimize
             lossCritic = criterion(qOutputs, qTargets.detach())
-            lossActor = -torch.mean(self.critic1(xInputs, muOutputs))
+            lossActor = self.critic1(xInputs, muOutputs).mean() # -self.critic1(xInputs, muOutputs).mean() when using rewards instead of cost
 
+            self.train()
             # zero the parameter gradients
             self.optimCritic.zero_grad()
             self.optimActor.zero_grad()
@@ -162,7 +166,7 @@ class ActorCritic(Agent):
 
             self.optimCritic.step()
             self.optimActor.step()
-
+            self.eval()
             self.blend(self.critic1, self.critic2)
             self.blend(self.actor1, self.actor2)
 
@@ -183,7 +187,12 @@ class ActorCritic(Agent):
 
     def blend(self, source, target):
         for wTarget, wSource in zip(target.parameters(), source.parameters()):
-            wTarget.data = self.tau*wSource.data + (1 - self.tau)*wTarget.data
+            wTarget.data.copy_(self.tau*wSource.data + (1 - self.tau)*wTarget.data)
+        return
+
+    def blend_hard(self, source, target):
+        for wTarget, wSource in zip(target.parameters(), source.parameters()):
+            wTarget.data.copy_(wSource.data)
         return
 
     def take_action(self, dt, x):
@@ -213,7 +222,7 @@ class ActorCritic(Agent):
         self.critic1.eval()
         self.critic2.eval()
 
-        batch = dataSet.minibatch(5)
+        batch = dataSet.minibatch(64)
         xInputs = torch.Tensor(len(batch), self.xDim)
         uInputs = torch.Tensor(len(batch), self.uDim)
         qTargets = torch.Tensor(len(batch), 1)

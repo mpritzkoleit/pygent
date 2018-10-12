@@ -48,7 +48,7 @@ class Critic(nn.Module):
         self.uDim = uDim
         self.layer1 = nn.Linear(xDim, 400)
         self.layer1_bn = nn.BatchNorm1d(400)
-        self.layer21 = nn.Linear(400, 300)
+        self.layer21 = nn.Linear(400+uDim, 300)
         self.layer22 = nn.Linear(uDim, 300, bias=False) # Ax+Bu+b
         self.layer3 = nn.Linear(300, 1)
 
@@ -66,7 +66,7 @@ class Critic(nn.Module):
     def forward(self, x, u):
         # connect layers
         h1 = F.relu(self.layer1_bn(self.layer1(x)))
-        h2 = F.relu(self.layer21(h1) + self.layer22(u))
+        h2 = F.relu(self.layer21(torch.cat((h1, u), 1))) #+ self.layer22(u))
         y = F.relu(self.layer3(h2))
         return y
 
