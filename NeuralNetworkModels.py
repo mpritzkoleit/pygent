@@ -55,11 +55,8 @@ class Critic(nn.Module):
         # weight initialization
         wMin = -3*10e-3
         wMax = 3*10e-3
-        self.layer1.weight = torch.nn.init.uniform_(self.layer1.weight, a=wMin, b=wMax)
-        self.layer1.bias = torch.nn.init.uniform_(self.layer1.bias, a=wMin, b=wMax)
-        self.layer21.weight = torch.nn.init.uniform_(self.layer21.weight, a=wMin, b=wMax)
-        self.layer21.bias = torch.nn.init.uniform_(self.layer21.bias, a=wMin, b=wMax)
-        self.layer22.weight = torch.nn.init.uniform_(self.layer22.weight, a=wMin, b=wMax)
+        self.fanin_init(self.layer1)
+        self.fanin_init(self.layer21)
         self.layer3.weight = torch.nn.init.uniform_(self.layer3.weight, a=wMin, b=wMax)
         self.layer3.bias = torch.nn.init.uniform_(self.layer3.bias, a=wMin, b=wMax)
 
@@ -69,6 +66,14 @@ class Critic(nn.Module):
         h2 = F.relu(self.layer21(torch.cat((h1, u), 1))) #+ self.layer22(u))
         y = F.relu(self.layer3(h2))
         return y
+
+    def fanin_init(self, layer):
+        f = layer.in_features
+        w_init = 1/np.sqrt(f)
+        layer.weight = torch.nn.init.uniform_(layer.weight, a=-w_init, b=w_init)
+        layer.bias = torch.nn.init.uniform_(layer.bias, a=-w_init, b=w_init)
+        pass
+
 
 
 
@@ -94,10 +99,8 @@ class Actor(nn.Module):
         # weight initialization
         wMin = -3*10e-3
         wMax = 3*10e-3
-        self.layer1.weight = torch.nn.init.uniform_(self.layer1.weight, a=wMin, b=wMax)
-        self.layer1.bias = torch.nn.init.uniform_(self.layer1.bias, a=wMin, b=wMax)
-        self.layer2.weight = torch.nn.init.uniform_(self.layer2.weight, a=wMin, b=wMax)
-        self.layer2.bias = torch.nn.init.uniform_(self.layer2.bias, a=wMin, b=wMax)
+        self.fanin_init(self.layer1)
+        self.fanin_init(self.layer2)
         self.layer3.weight = torch.nn.init.uniform_(self.layer3.weight, a=wMin, b=wMax)
         self.layer3.bias = torch.nn.init.uniform_(self.layer3.bias, a=wMin, b=wMax)
 
@@ -108,3 +111,10 @@ class Actor(nn.Module):
         y = F.tanh(self.layer3(h2))
         y = torch.mul(y, self.uMax) # scale output
         return y
+
+    def fanin_init(self, layer):
+        f = layer.in_features
+        w_init = 1/np.sqrt(f)
+        layer.weight = torch.nn.init.uniform_(layer.weight, a=-w_init, b=w_init)
+        layer.bias = torch.nn.init.uniform_(layer.bias, a=-w_init, b=w_init)
+        pass
