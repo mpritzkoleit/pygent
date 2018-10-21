@@ -1,13 +1,9 @@
 import numpy as np
-# import tensorflow as tf
 from abc import abstractmethod, abstractproperty
-# import scipy.integrate as sci
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
-import random
 from matplotlib import animation
-# import torch
-
+import gym
 
 class Environment(object):
     """ Base class for an environment.
@@ -63,13 +59,77 @@ class Environment(object):
     def step(self, *args):
         return
 
-    @abstractmethod
-    def plot(self, *args):
-        return
+    def plot(self):
+        """ Plots the environments history
+
+        Returns:
+            fig (matplotlib.pyplot.figure)
+            ax (matploltib.pyplot.axes)
+
+        """
+
+        fig, ax = plt.subplots(len(self.x), 1, sharex='col')
+        # Plot state trajectories
+        fig.suptitle('States')
+        for i in range(len(self.x)):
+            ax[i].step(self.tt, self.history[:, i], label=r'$x_'+str(i+1)+'$')
+            ax[i].grid(True)
+            ax[i].legend(loc='upper right')
+        plt.xlabel('t in s')
+
+        return fig, ax
 
     def animation(self, episode, meanCost):
         return
 
+class OpenAIGym(Environment):
+    """Environment subclass that uses a state space model of the form dx/dt = f(x,u)
+
+    Attributes:
+        ode (function): ODE for simulation
+        cost (function): ODE for simulation
+
+    """
+
+    def __init__(self, id, render=True):
+        self.env = gym.make(id)
+        x0 = self.env.reset()
+        super(OpenAIGym, self).__init__(list(x0))
+        self.n = len(self.x_)
+        self.dt = self.env.env.dt
+        self.render = render
+
+    def step(self, dt, u):
+        """ Simulates the environment for 1 step of time t.
+
+        Args:
+            dt (int, float): duration of step (not solver step size)
+            u (array): control/action
+
+        Returns:
+            c (float): cost of state transition
+
+        """
+        if self.render:
+            self.env.render()
+
+        self.x_ = self.x  # shift state (x[k-1] = x[k])
+        # system simulation
+        x, c, terminate, info = self.env.step(self.env.action_space.sample())
+        self.x = list(x)
+
+        self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
+        self.tt.extend([self.tt[-1] + dt])  # increment simulation time
+        self.terminated = terminate
+        return c
+
+    def reset(self, x0):
+        x0 = list(self.env.reset())
+        self.history = np.array([x0])
+        self.x_ = x0
+        self.x = x0
+        self.tt = [0]
+        self.terminated = False
 
 
 class StateSpaceModel(Environment):
@@ -123,26 +183,6 @@ class StateSpaceModel(Environment):
                     x[i] += 2 * np.pi
 
         return x
-
-    def plot(self):
-        """ Plots the environments history
-
-        Returns:
-            fig (matplotlib.pyplot.figure)
-            ax (matploltib.pyplot.axes)
-
-        """
-
-        fig, ax = plt.subplots(len(self.x), 1, sharex='col')
-        # Plot state trajectories
-        fig.suptitle('States')
-        for i in range(len(self.x)):
-            ax[i].step(self.tt, self.history[:, i], label=r'$x_'+str(i+1)+'$')
-            ax[i].grid(True)
-            ax[i].legend(loc='upper right')
-        plt.xlabel('t in s')
-
-        return fig, ax
 
 
 class Pendulum(StateSpaceModel):
