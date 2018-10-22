@@ -96,7 +96,7 @@ class OpenAIGym(Environment):
         x0 = self.env.reset()
         super(OpenAIGym, self).__init__(list(x0))
         self.n = len(self.x_)
-        self.dt = self.env.env.dt
+        #self.dt = self.env.env.dt
         self.render = render
 
     def step(self, dt, u):
@@ -121,7 +121,7 @@ class OpenAIGym(Environment):
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         self.terminated = terminate
-        return c
+        return -c
 
     def reset(self, x0):
         x0 = list(self.env.reset())

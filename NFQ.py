@@ -223,7 +223,7 @@ class NFQ(Algorithm):
                 self.plot()
                 self.learning_curve()
                 # if self.meanCost[-1] < 0.01: # goal reached
-                self.animation()
+                #self.animation()
 
 
     def plot(self):

@@ -144,7 +144,7 @@ class ActorCritic(Agent):
             self.train()
             # backward + optimize
             lossCritic = criterion(qOutputs, qTargets)
-            lossActor = -self.critic1(x_Inputs, muOutputs).mean() # -self.critic1(xInputs, muOutputs).mean() when using rewards instead of cost
+            lossActor = self.critic1(x_Inputs, muOutputs).mean() # -self.critic1(xInputs, muOutputs).mean() when using rewards instead of cost
 
             #loss.backward(retain_graph=True)
             self.optimCritic.zero_grad()
