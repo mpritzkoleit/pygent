@@ -183,7 +183,7 @@ class NFQ(Algorithm):
         for _ in tt:
             # agent computes control/action
             if self.episode > 0:
-                u = self.agent.take_action(self.dt, self.environment.x)
+                u = self.agent.take_action(self.dt, self.environment.o)
             else:
                 u = self.agent.take_random_action(self.dt)
             # simulation of environment
@@ -195,7 +195,7 @@ class NFQ(Algorithm):
             cost.append(c)
 
             # store transition in dataset (x_, u, x, c)
-            transition = ({'x_': self.environment.x_, 'u': self.agent.u, 'x': self.environment.x, 'c': c})
+            transition = ({'x_': self.environment.o_, 'u': self.agent.u, 'x': self.environment.o, 'c': c})
             self.D.add_sample(transition)
 
             if self.environment.terminated:

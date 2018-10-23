@@ -80,7 +80,7 @@ class Environment(object):
         return fig, ax
 
     def animation(self, episode, meanCost):
-        return
+        pass
 
 class OpenAIGym(Environment):
     """Environment subclass that uses a state space model of the form dx/dt = f(x,u)
@@ -95,8 +95,11 @@ class OpenAIGym(Environment):
         self.env = gym.make(id)
         x0 = self.env.reset()
         super(OpenAIGym, self).__init__(list(x0))
-        self.n = len(self.x_)
+        #self.xDim = self.env.state_space.size()[0]
+        #self.uDim = self.env.action_space.size()[0]
         #self.dt = self.env.env.dt
+        self.o_ = self.x_
+        self.o = self.x
         self.render = render
 
     def step(self, dt, u):
@@ -114,10 +117,11 @@ class OpenAIGym(Environment):
             self.env.render()
 
         self.x_ = self.x  # shift state (x[k-1] = x[k])
+        self.o_ = self.o
         # system simulation
-        x, c, terminate, info = self.env.step(self.env.action_space.sample())
+        x, c, terminate, info = self.env.step(u)
         self.x = list(x)
-
+        self.o = self.x
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         self.terminated = terminate
@@ -147,6 +151,8 @@ class StateSpaceModel(Environment):
         self.ode = ode
         self.cost = cost
         self.xIsAngle = np.zeros([len(self.x_)], dtype=bool)
+        self.o = self.x
+        self.o_ = self.x_
 
     def step(self, dt, u):
         """ Simulates the environment for 1 step of time t.
@@ -164,12 +170,14 @@ class StateSpaceModel(Environment):
         sol = solve_ivp(lambda t, x: self.ode(t, x, u), (0, dt), self.x)
 
         self.x_ = self.x  # shift state (x[k-1] = x[k])
+        self.o_ = self.o
         y = list(sol.y[:, -1])  # extract simulation result
         self.x = self.mapAngles(y)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         c, terminate = self.cost(self.x_, u, self.x)
         self.terminated = terminate
+        self.o = observation(self.x, self.xIsAngle)
         return c
 
     def mapAngles(self, y):
@@ -190,6 +198,8 @@ class Pendulum(StateSpaceModel):
     def __init__(self, cost, x0):
         super(Pendulum, self).__init__(self.ode, cost, x0)
         self.xIsAngle = [True, False]
+        self.o = observation(self.x, self.xIsAngle)
+        self.o_ = self.o
 
     @staticmethod
     def ode(t, x, u):
@@ -238,6 +248,8 @@ class CartPole(StateSpaceModel):
     def __init__(self, cost, x0):
         super(CartPole, self).__init__(self.ode, cost, x0)
         self.xIsAngle = [False, True, False, False]
+        self.o = observation(self.x, self.xIsAngle)
+        self.o_ = self.o
 
     @staticmethod
     def ode(t, x, u):
@@ -317,3 +329,13 @@ class CartPole(StateSpaceModel):
 #class AcroBot(StateSpaceModel):
 #class Building(StateSpaceModel):
 #class Ball(StateSpaceModel):
+def observation(x, xIsAngle):
+    obsv = []
+    for i, state in enumerate(x):
+        if xIsAngle[i]:
+            obsv.append(np.cos(state))
+            obsv.append(np.sin(state))
+        else:
+            obsv.append(state)
+
+    return obsv

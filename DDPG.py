@@ -5,7 +5,7 @@ from Algorithms import Algorithm
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
-from NeuralNetworkModels import Actor, Critic
+from NeuralNetworkModels import ActorBN, CriticBN, Actor, Critic
 import random
 import time
 
@@ -42,14 +42,17 @@ class DDPG(Algorithm):
         self.agent.reset()
         for _ in tt:
             # agent computes control/action
-            u = self.agent.take_random_action(self.dt, self.environment.x)
+            if self.episode % 10 == 0:
+                u = self.agent.take_action(self.dt, self.environment.o)
+            else:
+                u = self.agent.take_random_action(self.dt, self.environment.o)
 
             # simulation of environment
             c = self.environment.step(self.dt, u)
             cost.append(c)
 
             # store transition in dataset (x_, u, x, c)
-            transition = ({'x_': self.environment.x_, 'u': self.agent.u, 'x': self.environment.x, 'c': [c]})
+            transition = ({'x_': self.environment.o_, 'u': self.agent.u, 'x': self.environment.o, 'c': [c]})
             self.R.add_sample(transition)
             if self.R.length > 64 and self.episode > 0:
                 self.agent.training(self.R)
@@ -86,7 +89,8 @@ class DDPG(Algorithm):
 
     def animation(self):
         ani = self.environment.animation(self.episode-1, self.meanCost[self.episode-1])
-        ani.save('results/'+str(self.episode-1)+'_animation.mp4', fps=1/self.dt)
+        if ani != None:
+            ani.save('results/'+str(self.episode-1)+'_animation.mp4', fps=1/self.dt)
         plt.close('all')
 
 
@@ -234,31 +238,6 @@ class ActorCritic(Agent):
         ax.legend()
 
         return fig
-
-class ActionNoise(object):
-    def reset(self):
-        pass
-
-# class OrnsteinUhlenbeckProcess(object):
-class OrnsteinUhlenbeckActionNoise(ActionNoise):
-    def __init__(self, mu, sigma, theta=.15, dt=5e-2, x0=None):
-        self.theta = theta
-        self.mu = mu
-        self.sigma = sigma
-        self.dt = dt
-        self.x0 = x0
-        self.reset()
-
-    def __call__(self):
-        x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + self.sigma * np.sqrt(self.dt) * np.random.normal(size=self.mu.shape)
-        self.x_prev = x
-        return x
-
-    def reset(self):
-        self.x_prev = self.x0 if self.x0 is not None else np.zeros_like(self.mu)
-
-    def __repr__(self):
-        return 'OrnsteinUhlenbeckActionNoise(mu={}, sigma={})'.format(self.mu, self.sigma)
 
 class OUnoise:
     def __init__(self, action_dim, mu=0, theta=0.15, sigma=0.2):
