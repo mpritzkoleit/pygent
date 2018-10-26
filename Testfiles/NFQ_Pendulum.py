@@ -4,13 +4,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 def cost(x_, u, x):
     x1, x2 = x
+    terminate = False
     if abs(x2) > 10:
         c = 1.
+        terminate = True
     elif abs(x1) < 0.1  and abs(x2) < 0.5:
         c = 0.
     else:
         c = 0.01
-    return c
+    return c, terminate
 
 x0 = [np.pi, 0]
 

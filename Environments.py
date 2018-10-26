@@ -326,9 +326,7 @@ class CartPole(StateSpaceModel):
                                       interval=self.tt[1] * 1000, blit=False, init_func=init)
         return ani
 
-#class AcroBot(StateSpaceModel):
-#class Building(StateSpaceModel):
-#class Ball(StateSpaceModel):
+
 def observation(x, xIsAngle):
     obsv = []
     for i, state in enumerate(x):
@@ -339,3 +337,9 @@ def observation(x, xIsAngle):
             obsv.append(state)
 
     return obsv
+
+#class AcroBot(StateSpaceModel):
+#class Building(StateSpaceModel):
+#class Ball(StateSpaceModel):
+# #class DoubleCartPole
+#class TripleCartPole

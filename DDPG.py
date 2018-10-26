@@ -42,7 +42,7 @@ class DDPG(Algorithm):
         self.agent.reset()
         for _ in tt:
             # agent computes control/action
-            if self.episode % 10 == 0:
+            if self.episode % 25 == 0:
                 u = self.agent.take_action(self.dt, self.environment.o)
             else:
                 u = self.agent.take_random_action(self.dt, self.environment.o)
@@ -77,7 +77,7 @@ class DDPG(Algorithm):
                 # if self.meanCost[-1] < 0.01: # goal reached
             if k % self.plotEpisode == 0:
                 self.plot()
-                #self.animation()
+                self.animation()
 
 
     def plot(self):
