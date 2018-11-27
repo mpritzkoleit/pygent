@@ -24,9 +24,9 @@ dt = 0.05
 
 xDim = 3
 uDim = 1
-uMax = 2
+uMax = 1
 
-algorithm = DDPG(pendulum, xDim, uDim, uMax, t, dt, 5)
+algorithm = DDPG(pendulum, xDim, uDim, uMax, t, dt, 25)
 
 #algorithm.run_episode()
 algorithm.run_learning(1000)
