@@ -25,7 +25,7 @@ class DDPG(Algorithm):
     """
 
     def __init__(self, environment, xDim, uDim, uMax, t, dt, plotEpisode=10, nData=1e6):
-        agent = ActorCritic(xDim, uDim, uMax)
+        agent = ActorCritic(xDim, uDim, uMax, dt)
         super(DDPG, self).__init__(environment, agent, t, dt)
         self.R = DataSet(nData)
         self.episode = 0
@@ -116,7 +116,7 @@ class ActorCritic(Agent):
         eps (float [0, 1]): with probability eps a random action/control is returned
     """
 
-    def __init__(self, xDim, uDim, uMax, gamma=0.99, tau=0.001):
+    def __init__(self, xDim, uDim, uMax, dt, gamma=0.99, tau=0.001):
         super(ActorCritic, self).__init__(1)
         self.xDim = xDim
         self.uDim = uDim
@@ -131,7 +131,7 @@ class ActorCritic(Agent):
         self.tau = tau
         self.optimCritic = torch.optim.Adam(self.critic1.parameters(), lr=1e-3, weight_decay=1e-2)
         self.optimActor = torch.optim.Adam(self.actor1.parameters(), lr=1e-4)
-        self.noise = OUnoise(uDim)
+        self.noise = OUnoise(uDim, dt)
 
     def training(self, dataSet):
         # loss function (mean squared error)
@@ -203,7 +203,7 @@ class ActorCritic(Agent):
         #self.u = [np.random.uniform(-self.uMax, self.uMax)]
         self.eval()
         x = torch.Tensor([x])
-        u = np.asarray(self.actor1(x).detach())[0] + self.noise.sample()*self.uMax
+        u = np.asarray(self.actor1(x).detach())[0] + self.noise.sample()
         self.u = np.clip(u, -self.uMax, self.uMax)
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
@@ -240,18 +240,19 @@ class ActorCritic(Agent):
         return fig
 
 class OUnoise:
-    def __init__(self, action_dim, mu=0, theta=0.15, sigma=0.2):
+    def __init__(self, action_dim, dt, mu=0, theta=0.15, sigma=0.2):
         self.action_dim = action_dim
         self.mu = mu
         self.theta = theta
         self.sigma = sigma
         self.X = np.ones(self.action_dim) * self.mu
+        self.dt = dt
 
     def reset(self):
         self.X = np.ones(self.action_dim) * self.mu
 
     def sample(self):
-        dx = self.theta * (self.mu - self.X)
-        dx = dx + self.sigma * np.random.randn(len(self.X))
+        dx = self.theta * (self.mu - self.X)*self.dt + self.sigma * np.random.normal(0, self.dt, len(self.X))
         self.X = self.X + dx
+
         return self.X
