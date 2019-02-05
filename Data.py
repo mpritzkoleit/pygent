@@ -5,6 +5,7 @@ from abc import abstractmethod, abstractproperty
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 import random
+import pickle
 
 class DataSet(object):
     """ DataSet to store data
@@ -14,9 +15,9 @@ class DataSet(object):
 
     """
 
-    def __init__(self, length):
+    def __init__(self, lengthMax):
         self.data = list()
-        self.length = length
+        self.length = lengthMax
 
     def add_sample(self, sample):
         """ Adds sample to data
@@ -71,3 +72,10 @@ class DataSet(object):
     def minibatch(self, n):
         batch = random.sample(self.data, min(n, len(self.data)))
         return batch
+
+    def save(self, path):
+        pickle.dump(self.data, open(path, 'wb'))
+
+    def load(self, path):
+        self.data = pickle.load(open(path, 'rb'))
+

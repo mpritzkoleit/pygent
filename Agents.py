@@ -54,6 +54,23 @@ class FeedBack(Agent):
 
         return self.u
 
+    def control(self, dt, u):
+        """ Arbitrary control
+
+                Args:
+                    dt (int, float): duration of step (not solver step size)
+                    x (array): state
+
+                Returns:
+                    u (array): control/action
+
+                """
+
+        self.u = u
+        self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
+        self.tt.extend([self.tt[-1] + dt])  # increment simulation time
+        return self.u
+
     def plot(self):
         """ Plots the agents history (the control trajectory)
 
@@ -62,15 +79,20 @@ class FeedBack(Agent):
 
         """
 
-        fig, ax = plt.subplots(len(self.u), 1, sharex='col')
+        fig, ax = plt.subplots(len(self.u), 1, sharex='col', dpi=150)
         # Plot control trajectories
         fig.suptitle('Controls')
-        for i in range(len(self.u)):
-            ax[i].step(self.tt, self.history[:, i], label=r'$u_'+str(i+1)+'$')
-            ax[i].grid(True)
-            ax[i].legend(loc='upper right')
+        if len(self.u) > 1:
+            for i, axes in enumerate(ax):
+                ax[i].step(self.tt, self.history[:, i], label=r'$u_'+str(i+1)+'$')
+                ax[i].grid(True)
+                ax[i].legend(loc='upper right')
+        else:
+            ax.step(self.tt, self.history[:, 0], label=r'$u_1$')
+            ax.grid(True)
+            ax.legend(loc='upper right')
         plt.xlabel('t in s')
-
+        # Todo: save data in numpy arrays
         return fig, ax
 
 

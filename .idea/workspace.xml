@@ -1,103 +1,339 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="e271805a-d1f0-4a90-bacc-be84444af823" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Algorithms.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/DDPG.py" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/DDPG_test.py" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/0_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/0_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/0_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/100_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/100_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/100_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/10_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/10_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/10_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/110_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/110_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/110_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/120_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/120_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/120_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/130_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/130_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/130_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/150_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/150_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/150_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/20_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/20_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/20_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/30_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/30_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/30_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/40_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/40_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/40_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/50_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/50_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/50_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/60_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/60_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/60_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/70_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/70_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/70_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/80_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/80_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/80_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/90_agent.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/90_animation.mp4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/90_environment.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/results/learning_curve.png" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Agents.py" afterPath="$PROJECT_DIR$/Agents.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Environments.py" afterPath="$PROJECT_DIR$/Environments.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MLP_test.py" afterPath="$PROJECT_DIR$/MLP_test.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/NFQ.py" afterPath="$PROJECT_DIR$/NFQ.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/NeuralNetworkModels.py" afterPath="$PROJECT_DIR$/NeuralNetworkModels.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cartPole_test.py" afterPath="$PROJECT_DIR$/cartPole_test.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/learning_test.py" afterPath="$PROJECT_DIR$/learning_test.py" />
+    <list default="true" id="3ea8ee0d-49a1-4fbc-97dd-280ac894a19e" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/other.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/learning_curve.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/10_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/10_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/20_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/20_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/30_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/30_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/40_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/40_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/50_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/50_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/60_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/60_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/70_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/70_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/80_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum-Gym/plots/80_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/100_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/10_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/110_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/120_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/130_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/140_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/150_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/160_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/170_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/180_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/190_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/200_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/20_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/210_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/220_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/230_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/240_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/250_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/260_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/270_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/280_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/290_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/300_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/30_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/310_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/320_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/330_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/340_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/350_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/360_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/370_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/380_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/40_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/50_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/60_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/70_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/80_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/animations/90_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/data/checkpoint.pth" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/data/dataSet.p" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/data/learningCurve.p" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/learning_curve.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/learning_curve.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/100_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/100_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/10_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/10_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/10_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/10_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/110_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/110_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/120_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/120_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/130_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/130_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/140_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/140_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/150_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/150_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/160_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/160_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/170_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/170_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/180_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/180_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/190_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/190_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/200_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/200_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/20_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/20_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/20_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/20_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/210_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/210_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/220_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/220_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/230_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/230_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/240_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/240_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/250_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/250_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/260_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/260_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/270_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/270_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/280_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/280_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/290_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/290_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/300_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/300_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/30_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/30_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/30_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/30_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/310_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/310_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/320_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/320_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/330_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/330_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/340_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/340_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/350_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/350_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/360_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/360_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/370_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/370_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/380_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/380_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/40_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/40_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/50_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/50_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/60_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/60_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/70_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/70_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/80_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/80_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/90_agent.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/Pendulum/plots/90_environment.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/100_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/10_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/110_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/120_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/130_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/140_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/150_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/160_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/170_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/180_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/190_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/200_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/20_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/210_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/220_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/230_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/240_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/30_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/40_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/50_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/60_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/70_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/80_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/animations/90_animation.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/data/checkpoint.pth" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/data/dataSet.p" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/data/learningCurve.p" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/learning_curve.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/100_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/100_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/10_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/10_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/110_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/110_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/120_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/120_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/130_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/130_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/140_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/140_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/150_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/150_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/160_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/160_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/170_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/170_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/180_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/180_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/190_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/190_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/200_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/200_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/20_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/20_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/210_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/210_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/220_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/220_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/230_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/230_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/240_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/240_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/30_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/30_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/40_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/40_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/50_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/50_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/60_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/60_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/70_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/70_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/80_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/80_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/90_agent.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Controllers/DDPG/cartPole/plots/90_environment.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Examples/DDPG_CartPole.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Examples/DDPG_CartPoleDoubleParallel.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Examples/DDPG_Pendulum.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Examples/ODEPG.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Examples/RBFController.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Examples/iLQR_CartPole.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Examples/iLQR_CartPoleDoubelParallel.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Examples/iLQR_Pendulum.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Models/CartPole.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Models/CartPoleDoubleParallel.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Models/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Models/cartPole.so" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Models/cartPoleDoubleODE.p" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Models/cartPoleDoubleParallel.c" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Models/cartPoleDoubleParallel.o" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Models/cartPoleDoubleParallel.so" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Models/load_test.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Models/ode.p" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Utilities.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/iLQR.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/PyGent.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/PyGent.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Agents.py" beforeDir="false" afterPath="$PROJECT_DIR$/Agents.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Algorithms.py" beforeDir="false" afterPath="$PROJECT_DIR$/Algorithms.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DDPG.py" beforeDir="false" afterPath="$PROJECT_DIR$/DDPG.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Data.py" beforeDir="false" afterPath="$PROJECT_DIR$/Data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Environments.py" beforeDir="false" afterPath="$PROJECT_DIR$/Environments.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NFQ.py" beforeDir="false" afterPath="$PROJECT_DIR$/NFQ.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NeuralNetworkModels.py" beforeDir="false" afterPath="$PROJECT_DIR$/NeuralNetworkModels.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Testfiles/DDPG_CartPole.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Testfiles/DDPG_Pendulum.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Testfiles/Dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/Examples/Dataset.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Testfiles/MLP.py" beforeDir="false" afterPath="$PROJECT_DIR$/Examples/MLP.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Testfiles/NFQ_CartPole.py" beforeDir="false" afterPath="$PROJECT_DIR$/Examples/NFQ_CartPole.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Testfiles/NFQ_Pendulum.py" beforeDir="false" afterPath="$PROJECT_DIR$/Examples/NFQ_Pendulum.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Testfiles/OpenAIGym.py" beforeDir="false" afterPath="$PROJECT_DIR$/Examples/OpenAIGym.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Testfiles/feedback.py" beforeDir="false" afterPath="$PROJECT_DIR$/Examples/feedback.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
-    <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="FavoritesManager">
-    <favorites_list name="PyGent" />
+  <component name="CoverageDataManager">
+    <SUITE FILE_PATH="coverage/PyGent$iLQR_Pendulum.coverage" NAME="iLQR_Pendulum Coverage Results" MODIFIED="1548916056589" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Testfiles" />
+    <SUITE FILE_PATH="coverage/PyGent$iLQR_CartPole.coverage" NAME="iLQR_CartPole Coverage Results" MODIFIED="1548914924531" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Testfiles" />
+    <SUITE FILE_PATH="coverage/PyGent$CartPole.coverage" NAME="CartPole Coverage Results" MODIFIED="1548853165535" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/Models" />
+  </component>
+  <component name="DatabaseView">
+    <option name="SHOW_INTERMEDIATE" value="true" />
+    <option name="GROUP_DATA_SOURCES" value="true" />
+    <option name="GROUP_SCHEMA" value="true" />
+    <option name="GROUP_CONTENTS" value="false" />
+    <option name="SORT_POSITIONED" value="false" />
+    <option name="SHOW_EMPTY_GROUPS" value="false" />
+    <option name="AUTO_SCROLL_FROM_SOURCE" value="false" />
+    <option name="HIDDEN_KINDS">
+      <set />
+    </option>
+    <expand />
+    <select />
+  </component>
+  <component name="FUSProjectUsageTrigger">
+    <session id="1581102064">
+      <usages-collector id="statistics.lifecycle.project">
+        <counts>
+          <entry key="project.closed" value="8" />
+          <entry key="project.open.time.0" value="1" />
+          <entry key="project.open.time.10" value="5" />
+          <entry key="project.open.time.12" value="1" />
+          <entry key="project.open.time.5" value="1" />
+          <entry key="project.open.time.8" value="1" />
+          <entry key="project.opened" value="9" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.edit">
+        <counts>
+          <entry key="Python Console" value="12" />
+          <entry key="Utilities" value="38" />
+          <entry key="iLQR_CartPole" value="91" />
+          <entry key="iLQR_Pendulum" value="37" />
+          <entry key="py" value="678" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.edit">
+        <counts>
+          <entry key="Python" value="856" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.open">
+        <counts>
+          <entry key="py" value="23" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.open">
+        <counts>
+          <entry key="Python" value="23" />
+        </counts>
+      </usages-collector>
+    </session>
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file leaf-file-name="DDPG.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/DDPG.py">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/Examples/DDPG_Pendulum.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-841">
-              <caret line="81" column="20" lean-forward="false" selection-start-line="81" selection-start-column="20" selection-end-line="81" selection-end-column="20" />
-              <folding>
-                <element signature="e#0#18#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="NeuralNetworkModels.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/NeuralNetworkModels.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1335">
-              <caret line="96" column="87" lean-forward="false" selection-start-line="96" selection-start-column="43" selection-end-line="96" selection-end-column="87" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="DDPG_test.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/DDPG_test.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="240">
-              <caret line="16" column="65" lean-forward="false" selection-start-line="16" selection-start-column="65" selection-end-line="16" selection-end-column="65" />
+            <state relative-caret-position="31">
+              <caret line="21" column="18" selection-start-line="21" selection-start-column="18" selection-end-line="21" selection-end-column="18" />
               <folding>
                 <element signature="e#0#33#0" expanded="true" />
               </folding>
@@ -105,26 +341,113 @@
           </provider>
         </entry>
       </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Examples/iLQR_CartPoleDoubelParallel.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="45">
+              <caret line="6" column="12" selection-start-line="6" selection-start-column="12" selection-end-line="6" selection-end-column="12" />
+              <folding>
+                <element signature="e#0#47#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Examples/DDPG_CartPole.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="300">
+              <caret line="22" column="11" selection-start-line="22" selection-start-column="11" selection-end-line="22" selection-end-column="19" />
+              <folding>
+                <element signature="e#0#33#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Examples/DDPG_CartPoleDoubleParallel.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="255">
+              <caret line="19" column="6" selection-start-line="19" selection-start-column="6" selection-end-line="19" selection-end-column="6" />
+              <folding>
+                <element signature="e#0#47#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Examples/OpenAIGym.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Models/CartPoleDoubleParallel.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="60">
+              <caret line="7" column="44" selection-start-line="7" selection-start-column="44" selection-end-line="7" selection-end-column="44" />
+              <folding>
+                <element signature="e#0#9#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Models/CartPole.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="60">
+              <caret line="7" column="44" selection-start-line="7" selection-start-column="44" selection-end-line="7" selection-end-column="44" />
+              <folding>
+                <element signature="e#0#9#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Examples/iLQR_CartPole.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="300">
+              <caret line="23" selection-start-line="23" selection-end-line="23" />
+              <folding>
+                <element signature="e#0#33#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Environments.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1755">
+              <caret line="128" column="29" selection-start-line="128" selection-start-column="29" selection-end-line="128" selection-end-column="29" />
+              <folding>
+                <element signature="e#0#30#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/NeuralNetworkModels.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
     </leaf>
-  </component>
-  <component name="FileTemplateManagerImpl">
-    <option name="RECENT_TEMPLATES">
-      <list>
-        <option value="Python Script" />
-      </list>
-    </option>
-  </component>
-  <component name="FindInProjectRecents">
-    <findStrings>
-      <find>take_action</find>
-      <find>x</find>
-      <find>1.0</find>
-      <find>train</find>
-      <find>print</find>
-    </findStrings>
-    <replaceStrings>
-      <replace />
-    </replaceStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -132,26 +455,25 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/PyGent.py" />
-        <option value="$PROJECT_DIR$/DataSet.py" />
-        <option value="$PROJECT_DIR$/dataset_test.py" />
-        <option value="$PROJECT_DIR$/Data.py" />
-        <option value="$PROJECT_DIR$/test_file.py" />
-        <option value="$PROJECT_DIR$/Agent.py" />
-        <option value="$PROJECT_DIR$/Environment.py" />
-        <option value="$PROJECT_DIR$/learning_test.py" />
-        <option value="$PROJECT_DIR$/Agents.py" />
-        <option value="$PROJECT_DIR$/Algorithms" />
-        <option value="$PROJECT_DIR$/results/DDPG.py" />
-        <option value="$PROJECT_DIR$/MLP_test.py" />
-        <option value="$PROJECT_DIR$/NFQ.py" />
-        <option value="$PROJECT_DIR$/cartPole_test.py" />
+        <option value="$PROJECT_DIR$/Models/load_test.py" />
+        <option value="$PROJECT_DIR$/Testfiles/iLQR_CartPole.py" />
+        <option value="$PROJECT_DIR$/Testfiles/iLQR_Pendulum.py" />
+        <option value="$PROJECT_DIR$/Utilities.py" />
+        <option value="$PROJECT_DIR$/Testfiles/iLQR_CartPoleDoubelParallel.py" />
         <option value="$PROJECT_DIR$/Environments.py" />
-        <option value="$PROJECT_DIR$/DDPG.py" />
-        <option value="$PROJECT_DIR$/DDPG_test.py" />
-        <option value="$PROJECT_DIR$/NeuralNetworkModels.py" />
+        <option value="$PROJECT_DIR$/Models/CartPole.py" />
+        <option value="$PROJECT_DIR$/Models/CartPoleDoubleParallel.py" />
+        <option value="$PROJECT_DIR$/Examples/DDPG_CartPole.py" />
+        <option value="$PROJECT_DIR$/Examples/DDPG_CartPoleDoubleParallel.py" />
+        <option value="$PROJECT_DIR$/Examples/DDPG_Pendulum.py" />
       </list>
     </option>
+  </component>
+  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsGulpfileManager">
+    <detection-done>true</detection-done>
+    <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds" fullScreen="true">
     <option name="width" value="1440" />
@@ -159,17 +481,7 @@
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
-    <navigator currentView="ProjectPane" proportions="" version="1">
-      <flattenPackages />
-      <showMembers />
-      <showModules />
-      <showLibraryContents />
-      <hideEmptyPackages />
-      <abbreviatePackageNames />
-      <autoscrollToSource />
-      <autoscrollFromSource />
-      <sortByType />
-      <manualOrder />
+    <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
@@ -180,22 +492,46 @@
               <item name="PyGent" type="b2602c69:ProjectViewProjectNode" />
               <item name="PyGent" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="PyGent" type="b2602c69:ProjectViewProjectNode" />
+              <item name="PyGent" type="462c0819:PsiDirectoryNode" />
+              <item name="Controllers" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="PyGent" type="b2602c69:ProjectViewProjectNode" />
+              <item name="PyGent" type="462c0819:PsiDirectoryNode" />
+              <item name="Controllers" type="462c0819:PsiDirectoryNode" />
+              <item name="DDPG" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="PyGent" type="b2602c69:ProjectViewProjectNode" />
+              <item name="PyGent" type="462c0819:PsiDirectoryNode" />
+              <item name="Controllers" type="462c0819:PsiDirectoryNode" />
+              <item name="DDPG" type="462c0819:PsiDirectoryNode" />
+              <item name="Pendulum" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="PyGent" type="b2602c69:ProjectViewProjectNode" />
+              <item name="PyGent" type="462c0819:PsiDirectoryNode" />
+              <item name="Examples" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="PyGent" type="b2602c69:ProjectViewProjectNode" />
+              <item name="PyGent" type="462c0819:PsiDirectoryNode" />
+              <item name="Models" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="Scratches" />
       <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="settings.editor.selected.configurable" value="vcs.Git" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-  </component>
-  <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$" />
-    </key>
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -209,60 +545,50 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.DDPG_test">
-    <configuration name="DDPG_test" type="PythonConfigurationType" factoryName="Python" temporary="true">
+  <component name="RunManager" selected="Python.DDPG_Pendulum">
+    <configuration name="DDPG_Pendulum" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="PyGent" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Examples" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Examples/DDPG_Pendulum.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="OpenAIGym" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="PyGent" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Testfiles" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="PyGent" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/DDPG_test.py" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Testfiles/OpenAIGym.py" />
       <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
-    </configuration>
-    <configuration name="MLP_test" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="PyGent" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/MLP_test.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-    </configuration>
-    <configuration default="true" type="tests" factoryName="Doctests">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="PyForce" />
-      <option name="SCRIPT_NAME" value="" />
-      <option name="CLASS_NAME" value="" />
-      <option name="METHOD_NAME" value="" />
-      <option name="FOLDER_NAME" value="" />
-      <option name="TEST_TYPE" value="TEST_SCRIPT" />
-      <option name="PATTERN" value="" />
-      <option name="USE_PATTERN" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
     </configuration>
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <module name="PyGent" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -273,148 +599,109 @@
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="PyForce" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="" />
       <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
     </configuration>
-    <configuration default="true" type="Tox" factoryName="Tox">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="PyForce" />
-    </configuration>
-    <configuration default="true" type="tests" factoryName="Nosetests">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="PyForce" />
-      <option name="_new_regexPattern" value="&quot;&quot;" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
-    </configuration>
-    <configuration default="true" type="tests" factoryName="Unittests">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="PyForce" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
-    </configuration>
-    <configuration default="true" type="tests" factoryName="py.test">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="PyForce" />
-      <option name="_new_keywords" value="&quot;&quot;" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
-    </configuration>
-    <configuration name="cartPole_test" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="iLQR_CartPole" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="PyGent" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Testfiles" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="PyGent" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/cartPole_test.py" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Testfiles/iLQR_CartPole.py" />
       <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
     </configuration>
-    <configuration name="learning_test" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="iLQR_CartPoleDoubelParallel" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="PyGent" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Testfiles" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="PyGent" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/learning_test.py" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Testfiles/iLQR_CartPoleDoubelParallel.py" />
       <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
     </configuration>
-    <configuration name="test_file" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="iLQR_Pendulum" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="PyGent" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Testfiles" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="PyGent" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test_file.py" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Testfiles/iLQR_Pendulum.py" />
       <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
     </configuration>
-    <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Python.test_file" />
-      <item index="1" class="java.lang.String" itemvalue="Python.MLP_test" />
-      <item index="2" class="java.lang.String" itemvalue="Python.learning_test" />
-      <item index="3" class="java.lang.String" itemvalue="Python.cartPole_test" />
-      <item index="4" class="java.lang.String" itemvalue="Python.DDPG_test" />
+    <list>
+      <item itemvalue="Python.iLQR_CartPole" />
+      <item itemvalue="Python.iLQR_Pendulum" />
+      <item itemvalue="Python.iLQR_CartPoleDoubelParallel" />
+      <item itemvalue="Python.OpenAIGym" />
+      <item itemvalue="Python.DDPG_Pendulum" />
     </list>
     <recent_temporary>
-      <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.DDPG_test" />
-        <item index="1" class="java.lang.String" itemvalue="Python.MLP_test" />
-        <item index="2" class="java.lang.String" itemvalue="Python.cartPole_test" />
-        <item index="3" class="java.lang.String" itemvalue="Python.learning_test" />
-        <item index="4" class="java.lang.String" itemvalue="Python.test_file" />
+      <list>
+        <item itemvalue="Python.DDPG_Pendulum" />
+        <item itemvalue="Python.OpenAIGym" />
+        <item itemvalue="Python.iLQR_CartPoleDoubelParallel" />
+        <item itemvalue="Python.iLQR_CartPole" />
+        <item itemvalue="Python.iLQR_Pendulum" />
       </list>
     </recent_temporary>
-  </component>
-  <component name="ShelveChangesManager" show_recycled="false">
-    <option name="remove_strategy" value="false" />
   </component>
   <component name="SvnConfiguration">
     <configuration>$USER_HOME$/.subversion</configuration>
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="e271805a-d1f0-4a90-bacc-be84444af823" name="Default" comment="" />
-      <created>1538231445203</created>
+      <changelist id="3ea8ee0d-49a1-4fbc-97dd-280ac894a19e" name="Default Changelist" comment="" />
+      <created>1548845189740</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1538231445203</updated>
+      <updated>1548845189740</updated>
     </task>
     <servers />
   </component>
@@ -430,395 +717,220 @@
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1440" height="900" extended-state="0" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.13876967" sideWeight="0.49413735" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3268999" sideWeight="0.48712447" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3445879" sideWeight="0.60756123" order="8" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3039807" sideWeight="0.32761088" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3437877" sideWeight="0.4892704" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3437877" sideWeight="0.5107296" order="10" side_tool="true" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.18168813" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3437877" sideWeight="0.5107296" order="9" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.34258142" sideWeight="0.509299" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.1788269" sideWeight="0.50586265" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.31402004" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32969216" sideWeight="0.4978701" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.27825466" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" sideWeight="0.49928468" weight="0.32891566" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.32863188" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49713877" weight="0.39915374" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" sideWeight="0.49785408" weight="0.32891566" />
+      <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="8" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Database Changes" order="9" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Event Log" order="10" sideWeight="0.5114449" side_tool="true" visible="true" weight="0.85542166" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="11" sideWeight="0.48855507" visible="true" weight="0.85542166" />
+      <window_info anchor="bottom" id="Python Console" order="12" sideWeight="0.5593705" weight="0.0012048193" />
+      <window_info anchor="right" id="Commander" order="0" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="SciView" order="3" sideWeight="0.875" visible="true" weight="0.3297568" />
+      <window_info anchor="right" x="0" y="0" width="310" height="601" id="Documentation" order="4" sideWeight="0.125" side_tool="true" visible="true" weight="0.3297568" />
+      <window_info anchor="right" id="Database" order="5" sideWeight="0.49819058" weight="0.3297568" />
     </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
   </component>
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
   </component>
-  <component name="VcsManagerConfiguration">
-    <option name="LOCAL_CHANGES_DETAILS_PREVIEW_SHOWN" value="true" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/DDPG_test.py</url>
-          <option name="timeStamp" value="143" />
-        </line-breakpoint>
-      </breakpoints>
-      <breakpoints-dialog>
-        <breakpoints-dialog />
-      </breakpoints-dialog>
-      <default-breakpoints>
-        <breakpoint type="python-exception">
-          <properties notifyOnTerminate="true" exception="BaseException">
-            <option name="notifyOnTerminate" value="true" />
-          </properties>
-        </breakpoint>
-      </default-breakpoints>
-      <option name="time" value="144" />
-    </breakpoint-manager>
-    <watches-manager />
+  <component name="debuggerHistoryManager">
+    <expressions id="evaluateCodeFragment">
+      <expression>
+        <expression-string>np.linalg.inv(A)@(Ad-np.eye(n))@B*dt</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>B</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>np.linalg.inv(A)*(Ad-np.eye(n))*B*dt</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>dx_func = sp.lambdify((x1, x2, x3, x4, u), dx_t_sym[:], modules=&quot;numpy&quot;)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>dx_func = sp.lambdify((x1, x2, x3, x4, u), dx_t_sym[:], modules=&quot;numpy&quot;) 
+dill.dump(dx_func, open('ode.p', 'wb'))</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>dill.dump(dx_func, open('ode.p', 'wb'))</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>dill.dump(dx_c_func, open('ode.p', 'wb'))</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>dx_c_func</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>import cartPole</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>CODE_FRAGMENT</evaluation-mode>
+      </expression>
+    </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/dataset_test.py">
+    <entry file="file://$PROJECT_DIR$/Models/load_test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="24" column="0" lean-forward="false" selection-start-line="24" selection-start-column="0" selection-end-line="24" selection-end-column="0" />
+        <state relative-caret-position="15">
+          <caret line="1" column="32" selection-start-line="1" selection-start-column="32" selection-end-line="1" selection-end-column="32" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/cartPole_test.py">
+    <entry file="file://$PROJECT_DIR$/Examples/RBFController.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file:///Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/numpy/linalg/linalg.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="210">
-          <caret line="16" column="29" lean-forward="true" selection-start-line="16" selection-start-column="29" selection-end-line="16" selection-end-column="29" />
+        <state relative-caret-position="150">
+          <caret line="89" selection-start-line="89" selection-end-line="89" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Environments.py">
+    <entry file="file://$PROJECT_DIR$/Utilities.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="15" column="0" lean-forward="false" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
+        <state relative-caret-position="1590">
+          <caret line="111" column="32" selection-start-line="111" selection-start-column="32" selection-end-line="111" selection-end-column="32" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/learning_test.py">
+    <entry file="file://$PROJECT_DIR$/iLQR.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Examples/iLQR_Pendulum.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="33" lean-forward="false" selection-start-line="0" selection-start-column="33" selection-end-line="0" selection-end-column="33" />
+        <state relative-caret-position="285">
+          <caret line="22" selection-start-line="22" selection-end-line="22" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/NeuralNetworkModels.py">
+    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_import_hook.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="615">
-          <caret line="48" column="41" lean-forward="false" selection-start-line="48" selection-start-column="41" selection-end-line="48" selection-end-column="41" />
+        <state relative-caret-position="255">
+          <caret line="19" selection-start-line="19" selection-end-line="19" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/NFQ.py">
+    <entry file="file://$PROJECT_DIR$/Examples/DDPG_Pendulum.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="11" column="13" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="11" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/MLP_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="10" column="0" lean-forward="false" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/cartPole_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="300">
-          <caret line="22" column="9" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="31" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/DDPG_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="105">
-          <caret line="9" column="15" lean-forward="false" selection-start-line="9" selection-start-column="15" selection-end-line="9" selection-end-column="15" />
+        <state relative-caret-position="31">
+          <caret line="21" column="18" selection-start-line="21" selection-start-column="18" selection-end-line="21" selection-end-column="18" />
           <folding>
             <element signature="e#0#33#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dataset_test.py">
+    <entry file="file://$PROJECT_DIR$/Examples/iLQR_CartPoleDoubelParallel.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="24" column="0" lean-forward="false" selection-start-line="24" selection-start-column="0" selection-end-line="24" selection-end-column="0" />
+        <state relative-caret-position="45">
+          <caret line="6" column="12" selection-start-line="6" selection-start-column="12" selection-end-line="6" selection-end-column="12" />
+          <folding>
+            <element signature="e#0#47#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/DDPG.py">
+    <entry file="file://$PROJECT_DIR$/Examples/DDPG_CartPole.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2250">
-          <caret line="150" column="48" lean-forward="true" selection-start-line="150" selection-start-column="12" selection-end-line="150" selection-end-column="48" />
+        <state relative-caret-position="300">
+          <caret line="22" column="11" selection-start-line="22" selection-start-column="11" selection-end-line="22" selection-end-column="19" />
+          <folding>
+            <element signature="e#0#33#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Examples/DDPG_CartPoleDoubleParallel.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="19" column="6" selection-start-line="19" selection-start-column="6" selection-end-line="19" selection-end-column="6" />
+          <folding>
+            <element signature="e#0#47#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Examples/OpenAIGym.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Environments.py">
+    <entry file="file://$PROJECT_DIR$/Models/CartPoleDoubleParallel.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3960">
-          <caret line="271" column="29" lean-forward="false" selection-start-line="271" selection-start-column="29" selection-end-line="271" selection-end-column="29" />
+        <state relative-caret-position="60">
+          <caret line="7" column="44" selection-start-line="7" selection-start-column="44" selection-end-line="7" selection-end-column="44" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/learning_test.py">
+    <entry file="file://$PROJECT_DIR$/Models/CartPole.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="390">
-          <caret line="29" column="27" lean-forward="false" selection-start-line="29" selection-start-column="27" selection-end-line="29" selection-end-column="27" />
+        <state relative-caret-position="60">
+          <caret line="7" column="44" selection-start-line="7" selection-start-column="44" selection-end-line="7" selection-end-column="44" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/dataset_test.py">
+    <entry file="file://$PROJECT_DIR$/Examples/iLQR_CartPole.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="24" column="0" lean-forward="false" selection-start-line="24" selection-start-column="0" selection-end-line="24" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/cartPole_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="33" lean-forward="true" selection-start-line="0" selection-start-column="33" selection-end-line="0" selection-end-column="33" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/NFQ.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3660">
-          <caret line="254" column="21" lean-forward="false" selection-start-line="254" selection-start-column="21" selection-end-line="254" selection-end-column="21" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Environments.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="705">
-          <caret line="53" column="19" lean-forward="false" selection-start-line="53" selection-start-column="19" selection-end-line="53" selection-end-column="19" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Agents.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="27" column="8" lean-forward="false" selection-start-line="27" selection-start-column="8" selection-end-line="27" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/MLP_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="135">
-          <caret line="11" column="0" lean-forward="false" selection-start-line="11" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/NeuralNetworkModels.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="420">
-          <caret line="35" column="32" lean-forward="false" selection-start-line="35" selection-start-column="32" selection-end-line="35" selection-end-column="32" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dataset_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="450">
-          <caret line="32" column="60" lean-forward="false" selection-start-line="32" selection-start-column="60" selection-end-line="32" selection-end-column="60" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test_file.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="465">
-          <caret line="34" column="10" lean-forward="true" selection-start-line="34" selection-start-column="10" selection-end-line="34" selection-end-column="10" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/NFQ.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="615">
-          <caret line="49" column="29" lean-forward="false" selection-start-line="49" selection-start-column="29" selection-end-line="49" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/PyGent.py" />
-    <entry file="file://$PROJECT_DIR$/test_file.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="6" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="6" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/PyGent.py" />
-    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="17" column="0" lean-forward="false" selection-start-line="17" selection-start-column="0" selection-end-line="17" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/PyGent.py" />
-    <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/pydevd.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2297">
-          <caret line="1025" column="0" lean-forward="false" selection-start-line="1025" selection-start-column="0" selection-end-line="1025" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Library/Caches/PyCharmCE2017.2/python_stubs/1437855905/builtins.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="250">
-          <caret line="784" column="8" lean-forward="false" selection-start-line="784" selection-start-column="8" selection-end-line="784" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test_file.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="524">
-          <caret line="39" column="0" lean-forward="true" selection-start-line="39" selection-start-column="0" selection-end-line="39" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/matplotlib/animation.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="442">
-          <caret line="1771" column="0" lean-forward="false" selection-start-line="1771" selection-start-column="0" selection-end-line="1771" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/matplotlib/axes/_base.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="234">
-          <caret line="241" column="0" lean-forward="false" selection-start-line="241" selection-start-column="0" selection-end-line="241" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/torch/nn/functional.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="234">
-          <caret line="1536" column="0" lean-forward="false" selection-start-line="1536" selection-start-column="0" selection-end-line="1536" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Data.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-77">
-          <caret line="27" column="14" lean-forward="false" selection-start-line="27" selection-start-column="13" selection-end-line="27" selection-end-column="14" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/torch/tensor.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="134">
-          <caret line="375" column="0" lean-forward="false" selection-start-line="375" selection-start-column="0" selection-end-line="375" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/results/DDPG.py" />
-    <entry file="file://$PROJECT_DIR$/Algorithms.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="15">
-          <caret line="1" column="0" lean-forward="false" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/NFQ.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="21">
-          <caret line="29" column="24" lean-forward="false" selection-start-line="29" selection-start-column="24" selection-end-line="29" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/learning_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="33" lean-forward="false" selection-start-line="0" selection-start-column="33" selection-end-line="0" selection-end-column="33" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/torch/nn/init.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="184">
-          <caret line="63" column="0" lean-forward="false" selection-start-line="63" selection-start-column="0" selection-end-line="63" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/torch/nn/modules/module.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="173">
-          <caret line="490" column="0" lean-forward="false" selection-start-line="490" selection-start-column="0" selection-end-line="490" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/cartPole_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="240">
-          <caret line="16" column="29" lean-forward="false" selection-start-line="16" selection-start-column="29" selection-end-line="16" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/dataset_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-13">
-          <caret line="0" column="18" lean-forward="false" selection-start-line="0" selection-start-column="18" selection-end-line="0" selection-end-column="18" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/codecs.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="259">
-          <caret line="308" column="0" lean-forward="false" selection-start-line="308" selection-start-column="0" selection-end-line="308" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Environments.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="660">
-          <caret line="51" column="0" lean-forward="false" selection-start-line="51" selection-start-column="0" selection-end-line="51" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Agents.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-522">
-          <caret line="13" column="18" lean-forward="false" selection-start-line="13" selection-start-column="18" selection-end-line="13" selection-end-column="18" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/MLP_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="150">
-          <caret line="10" column="0" lean-forward="false" selection-start-line="10" selection-start-column="0" selection-end-line="10" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/DDPG_test.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="240">
-          <caret line="16" column="65" lean-forward="false" selection-start-line="16" selection-start-column="65" selection-end-line="16" selection-end-column="65" />
+        <state relative-caret-position="300">
+          <caret line="23" selection-start-line="23" selection-end-line="23" />
           <folding>
             <element signature="e#0#33#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/NeuralNetworkModels.py">
+    <entry file="file://$PROJECT_DIR$/Environments.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1335">
-          <caret line="96" column="87" lean-forward="false" selection-start-line="96" selection-start-column="43" selection-end-line="96" selection-end-column="87" />
-          <folding />
+        <state relative-caret-position="1755">
+          <caret line="128" column="29" selection-start-line="128" selection-start-column="29" selection-end-line="128" selection-end-column="29" />
+          <folding>
+            <element signature="e#0#30#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/DDPG.py">
+    <entry file="file://$PROJECT_DIR$/NeuralNetworkModels.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-841">
-          <caret line="81" column="20" lean-forward="false" selection-start-line="81" selection-start-column="20" selection-end-line="81" selection-end-column="20" />
+        <state>
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>

@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from NeuralNetworkModels import MLP
 from Algorithms import Algorithm
 import random
-
+from Environments import observation
 class QNetwork(Agent):
     """ Q-Network (Multi-Layer-Perceptron)
         Q(x,u) -> R
@@ -166,7 +166,10 @@ class NFQ(Algorithm):
 
     """
 
-    def __init__(self, environment, controls, xGoal, t, dt, netStructure, eps, gamma, nData=180000):
+    def __init__(self, environment, controls, xGoal, t, dt, h_layers, eps, gamma, nData=180000):
+        xGoal = observation(xGoal, environment.xIsAngle)
+        uDim = 1 # dimension input
+        netStructure = [len(xGoal) + uDim] + h_layers + [1]
         agent = QNetwork(controls, netStructure, eps, gamma, xGoal)
         super(NFQ, self).__init__(environment, agent, t, dt)
         self.D = DataSet(nData)

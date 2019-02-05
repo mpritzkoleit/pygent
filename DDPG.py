@@ -5,7 +5,9 @@ from Algorithms import Algorithm
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
-from NeuralNetworkModels import ActorBN, CriticBN, Actor, Critic
+from NeuralNetworkModels import Actor, Critic# ActorBN as Actor, CriticBN as Critic #,
+import os
+import pickle
 import random
 import time
 
@@ -24,13 +26,26 @@ class DDPG(Algorithm):
 
     """
 
-    def __init__(self, environment, xDim, uDim, uMax, t, dt, plotEpisode=10, nData=1e6):
-        agent = ActorCritic(xDim, uDim, uMax, dt)
+    def __init__(self, environment, t, dt, plotInterval=10, nData=1e6, path='../Controllers/DDPG/', checkInterval=100, evalPolicyInterval=50):
+        xDim = environment.oDim
+        uDim = environment.uDim
+        uMax = environment.uMax
+        agent = ActorCritic(xDim, uDim, torch.Tensor(uMax), dt)
         super(DDPG, self).__init__(environment, agent, t, dt)
         self.R = DataSet(nData)
-        self.episode = 0
-        self.plotEpisode = plotEpisode
-        self.epsDecay = 1
+        self.plotInterval = plotInterval # inter
+        self.evalPolicyInterval = evalPolicyInterval
+        self.checkInterval = checkInterval  # checkpoint interval
+        self.epsDecay = 1.
+        self.path = path
+        if not os.path.isdir(path):
+            os.makedirs(path)
+        if not os.path.isdir(path+'plots/'):
+            os.makedirs(path+'plots/')
+        if not os.path.isdir(path + 'animations/'):
+            os.makedirs(path + 'animations/')
+        if not os.path.isdir(path + 'data/'):
+            os.makedirs(path + 'data/')
 
     def run_episode(self):
         print('started episode ', self.episode)
@@ -42,11 +57,10 @@ class DDPG(Algorithm):
         self.agent.reset()
         for _ in tt:
             # agent computes control/action
-            if self.episode % 25 == 0:
+            if self.episode % self.evalPolicyInterval == 0:
                 u = self.agent.take_action(self.dt, self.environment.o)
             else:
                 u = self.agent.take_random_action(self.dt, self.environment.o)
-
             # simulation of environment
             c = self.environment.step(self.dt, u)
             cost.append(c)
@@ -54,7 +68,7 @@ class DDPG(Algorithm):
             # store transition in dataset (x_, u, x, c)
             transition = ({'x_': self.environment.o_, 'u': self.agent.u, 'x': self.environment.o, 'c': [c]})
             self.R.add_sample(transition)
-            if self.R.length > 64 and self.episode > 0:
+            if self.R.data.__len__() > 64 and self.episode > 0:
                 self.agent.training(self.R)
             if self.environment.terminated:
                 print('Environment terminated!')
@@ -65,42 +79,94 @@ class DDPG(Algorithm):
 
         pass
 
+    def run_controller(self, x0):
+        print('started episode ', self.episode)
+        tt = np.arange(0, self.t, self.dt)
+        # list of incremental costs
+        cost = []
+        # reset environment/agent to initial state, delete history
+        self.environment.reset(x0)
+        self.agent.reset()
+        for _ in tt:
+            # agent computes control/action
+            u = self.agent.take_action(self.dt, self.environment.o)
+
+            # simulation of environment
+            c = self.environment.step(self.dt, u)
+            cost.append(c)
+
+            if self.environment.terminated:
+                print('Environment terminated!')
+                break
+        # store the mean of the incremental cost
+        self.meanCost.append(np.mean(cost))
+        pass
+
     def run_learning(self, n):
-        self.episode = 0
-        self.meanCost = []
-        for k in range(n):
+        for k in range(1, n+1):
             self.run_episode()
             # plot environment after episode finished
             print('Samples: ',self.R.data.__len__())
             if k % 10 == 0:
                 self.learning_curve()
+            if k % self.checkInterval == 0:
+                self.save()
                 # if self.meanCost[-1] < 0.01: # goal reached
-            if k % self.plotEpisode == 0:
+            if k % self.plotInterval == 0:
                 self.plot()
                 self.animation()
+
+    def save(self):
+        # save model
+        torch.save({'actor': self.agent.actor1.state_dict(),
+                 'critic': self.agent.critic1.state_dict()}, self.path+'data/checkpoint.pth')
+        self.R.save(self.path+'data/dataSet.p')
+        pickle.dump(self.meanCost, open(self.path+'data/learningCurve.p', 'wb'))
+        pass
+
+    def load(self):
+        if os.path.isfile(self.path+'data/checkpoint.pth'):
+            checkpoint = torch.load(self.path+'data/checkpoint.pth')
+            self.agent.actor1.load_state_dict(checkpoint['actor'])
+            self.agent.actor2.load_state_dict(checkpoint['actor'])
+            self.agent.critic1.load_state_dict(checkpoint['critic'])
+            self.agent.critic2.load_state_dict(checkpoint['critic'])
+        else:
+            print('Checkpoint file not found!')
+        if os.path.isfile(self.path + 'data/dataSet.p'):
+            self.R.load(self.path+'data/dataSet.p')
+        else:
+            print('No dataset found!')
+        if os.path.isfile(self.path + 'data/learningCurve.p'):
+            self.meanCost = pickle.load(open(self.path + 'data/learningCurve.p', 'rb'))
+            self.episode = self.meanCost.__len__() + 1
+        else:
+            print('No learning curve data found!')
+        pass
 
 
     def plot(self):
         self.environment.plot()
-        plt.savefig('results/'+str(self.episode-1)+'_environment')
+        plt.savefig(self.path+'plots/'+str(self.episode-1)+'_environment.pdf')
         self.agent.plot()
-        plt.savefig('results/'+str(self.episode-1)+'_agent')
+        plt.savefig(self.path+'plots/'+str(self.episode-1)+'_agent.pdf')
         plt.close('all')
 
+
     def animation(self):
-        ani = self.environment.animation(self.episode-1, self.meanCost[self.episode-1])
+        ani = self.environment.animation(self.episode-1, self.meanCost[self.episode-2])
         if ani != None:
-            ani.save('results/'+str(self.episode-1)+'_animation.mp4', fps=1/self.dt)
+            ani.save(self.path+'animations/'+str(self.episode-1)+'_animation.mp4', fps=1/self.dt)
         plt.close('all')
 
 
     def learning_curve(self):
-        fig, (ax) = plt.subplots(1, 1)
-        ax.step(np.arange(self.episode), self.meanCost)
+        fig, (ax) = plt.subplots(1, 1, dpi=150)
+        ax.step(np.arange(1, self.episode), self.meanCost)
         plt.title('Learning curve')
         plt.ylabel('Mean cost')
         plt.xlabel('Episode')
-        plt.savefig('results/learning_curve')
+        plt.savefig(self.path+'learning_curve.pdf')
         plt.close('all')
 
 class ActorCritic(Agent):
@@ -203,8 +269,8 @@ class ActorCritic(Agent):
         #self.u = [np.random.uniform(-self.uMax, self.uMax)]
         self.eval()
         x = torch.Tensor([x])
-        u = np.asarray(self.actor1(x).detach())[0] + self.noise.sample()
-        self.u = np.clip(u, -self.uMax, self.uMax)
+        u = np.asarray(self.actor1(x).detach())[0] + self.noise.sample()*self.uMax.numpy()
+        self.u = np.clip(u, -self.uMax.numpy(), self.uMax.numpy())
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
@@ -246,7 +312,7 @@ class OUnoise:
         self.theta = theta
         self.sigma = sigma
         self.X = np.ones(self.action_dim) * self.mu
-        self.dt = dt
+        self.dt =dt
 
     def reset(self):
         self.X = np.ones(self.action_dim) * self.mu

@@ -29,9 +29,10 @@ class MLP(nn.Module):
         # connect layers
         for i in range(self.nLayers - 2):
             layer = getattr(self, 'layer'+str(i))
-            x = F.tanh(layer(x))
+            x = torch.tanh(layer(x))
         layer = getattr(self, 'layer' + str(self.nLayers-2))
-        x = F.sigmoid(layer(x)) + F.sigmoid(layer(x))
+        x = torch.tanh(layer(x)) #+ torch.sigmoid(layer(x))
+        # Todo: Warum torch.sigmoid(layer(x)) + torch.sigmpid(layer(x))?
         return x
 
 class CriticBN(nn.Module):
@@ -139,7 +140,7 @@ class ActorBN(nn.Module):
         h2_bn = self.layer2_bn(self.layer2(h1))
         h2 = F.relu(h2_bn)
         h3 = self.layer3(h2)
-        y = F.tanh(h3)
+        y = torch.tanh(h3)
         y = torch.mul(y, self.uMax) # scale output
         return y
 
@@ -171,7 +172,7 @@ class Actor(nn.Module):
     def forward(self, x):
         h1 = F.relu(self.layer1(x))
         h2 = F.relu(self.layer2(h1))
-        h3 = F.tanh(self.layer3(h2))
+        h3 = torch.tanh(self.layer3(h2))
         y = torch.mul(h3, self.uMax) # scale output
         return y
 
@@ -273,3 +274,27 @@ def fanin_init(layer):
     layer.weight = torch.nn.init.uniform_(layer.weight, a=-w_init, b=w_init)
     layer.bias = torch.nn.init.uniform_(layer.bias, a=-w_init, b=w_init)
     pass
+
+class RBFController(nn.Module):
+
+    def __init__(self, xDim, uDim, n=50):
+        super(RBFController, self).__init__()
+        self.xDim = xDim
+        self.uDim = uDim
+        self.n = 50
+        self.mu = nn.Parameter(torch.Tensor(n, 1))
+        self.w = nn.Parameter(torch.Tensor(uDim, n))
+        self.lam = nn.Parameter(xDim, xDim)
+
+
+    def forward(self, x):
+        u = self.kernel(x)
+        return u
+
+    def kernel(self, x): #exp((x-mu).T*lamda.inv()*(x-mu) a.
+        torch.pow(x-self.mu).t() #torch.inverse(self.lam)
+
+
+
+
+

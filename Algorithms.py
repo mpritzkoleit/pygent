@@ -15,9 +15,11 @@ class Algorithm(object):
     def __init__(self, environment, agent, t, dt):
         self.t = t
         self.dt = dt
+        self.steps = int(t/dt)
         self.agent = agent
         self.environment = environment
         self.meanCost = []
+        self.episode = 1
 
     @abstractmethod
     def run_episode(self):
