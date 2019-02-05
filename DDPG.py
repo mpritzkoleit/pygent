@@ -26,7 +26,7 @@ class DDPG(Algorithm):
 
     """
 
-    def __init__(self, environment, t, dt, plotInterval=10, nData=1e6, path='../Controllers/DDPG/', checkInterval=100, evalPolicyInterval=50):
+    def __init__(self, environment, t, dt, plotInterval=10, nData=1e6, path='../Results/DDPG/', checkInterval=100, evalPolicyInterval=50):
         xDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax

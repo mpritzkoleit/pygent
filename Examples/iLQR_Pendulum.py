@@ -16,7 +16,8 @@ t = 3
 dt = 0.01
 
 controller = iLQR(cartPole, t, dt)
-controller.run_optim()
+#controller.run_optim()
+controller.run(x0)
 
 controller.plot()
 plt.show()

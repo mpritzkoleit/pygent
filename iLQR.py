@@ -10,6 +10,7 @@ import random
 import time
 from Utilities import nth_derivative, torch_jacobian, hessian, hessian2, hessian3, c2d, unpackBlockMatrix, system_linearization
 import sympy as sp
+import os
 
 class iLQR(Algorithm):
     """ iLQR -
@@ -26,9 +27,19 @@ class iLQR(Algorithm):
 
     """
 
-    def __init__(self, environment, t, dt, maxIters=500, tolGrad=1e-4, tolFun=1e-7, fastForward=False):
+    def __init__(self, environment, t, dt, maxIters=500, tolGrad=1e-4,
+                 tolFun=1e-7, fastForward=False, path='../Results/iLQR/'):
         self.uDim = environment.uDim
         self.xDim = environment.xDim
+        self.path = path
+        if not os.path.isdir(path):
+            os.makedirs(path)
+        if not os.path.isdir(path+'plots/'):
+            os.makedirs(path+'plots/')
+        if not os.path.isdir(path + 'animations/'):
+            os.makedirs(path + 'animations/')
+        if not os.path.isdir(path + 'data/'):
+            os.makedirs(path + 'data/')
         self.fastForward = fastForward  # if True use Eulers Method instead of ODE solver
         agent = FeedBack(None, self.uDim)
         super(iLQR, self).__init__(environment, agent, t, dt)
@@ -164,8 +175,13 @@ class iLQR(Algorithm):
 
         return V1, V2, success
 
-    def run_controller(self):
-        # Todo: implement saving and loading the control gains, implement running them
+    def run(self, x0):
+        self.environment.reset(x0)
+        self.KK = np.load(self.path+'data/K_.npy')
+        self.kk = np.load(self.path + 'data/k.npy')
+        self.uu = np.load(self.path + 'data/uu.npy')
+        self.xx = np.load(self.path + 'data/xx.npy')
+        self.xx, self.uu, self.cost = self.forward_pass(1.)
         pass
 
 
@@ -227,13 +243,14 @@ class iLQR(Algorithm):
                 self.decrease_mu()
 
                 if dcost < self.tolFun:
+                    # Todo: should also stop if forward pass not succes
                     print('converged: small improvement')
                     break
                 if success_gradient:
                     print('converged: small gradient')
                     break
         print('Iterations ', _, '/ Final Cost-to-Go: ', self.cost)
-
+        self.save()
         return self.xx, self.uu, self.cost
 
 
@@ -321,13 +338,19 @@ class iLQR(Algorithm):
 
     def plot(self):
         self.environment.plot()
-        plt.savefig('results/iLQR_environment')
+        plt.savefig(self.path+'plots/environment.pdf')
         self.agent.plot()
-        plt.savefig('results/iLQR_agent')
+        plt.savefig(self.path+'plots/controller.pdf')
         plt.close('all')
 
     def animation(self):
         ani = self.environment.animation(0, self.cost)
         if ani != None:
-            ani.save('results/iLQR_animation.mp4', fps=1/self.dt)
+            ani.save(self.path+'animations/animation.mp4', fps=1/self.dt)
         plt.close('all')
+
+    def save(self):
+        np.save(self.path+'data/K_', self.KK)
+        np.save(self.path+'data/k', self.kk)
+        np.save(self.path+'data/uu', self.uu)
+        np.save(self.path+'data/xx', self.xx)

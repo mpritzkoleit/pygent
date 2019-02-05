@@ -112,5 +112,6 @@ def c2d(A, B, dt):
     Md = sci.linalg.expm(M * dt)
     Ad = Md[:n, :n]
     Bd = Md[:n, n:]
+
     return Ad, Bd
 
