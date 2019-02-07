@@ -11,7 +11,8 @@ import time
 from Utilities import nth_derivative, torch_jacobian, hessian, hessian2, hessian3, c2d, unpackBlockMatrix, system_linearization
 import sympy as sp
 import os
-
+import cvxopt as opt
+opt.solvers.options['show_progress'] = False
 class iLQR(Algorithm):
     """ iLQR -
 
@@ -28,7 +29,7 @@ class iLQR(Algorithm):
     """
 
     def __init__(self, environment, t, dt, maxIters=500, tolGrad=1e-4,
-                 tolFun=1e-7, fastForward=False, path='../Results/iLQR/'):
+                 tolFun=1e-7, fastForward=False, path='../Results/iLQR/', fcost=None, constrained=False):
         self.uDim = environment.uDim
         self.xDim = environment.xDim
         self.path = path
@@ -45,10 +46,12 @@ class iLQR(Algorithm):
         super(iLQR, self).__init__(environment, agent, t, dt)
         self.environment.xIsAngle = np.zeros(self.xDim, dtype=bool)
         self.cost = 0.
+        self.fcost_fnc = fcost
+        if fcost == None:
+            self.fcost_fnc = lambda x: self.cost_fnc(x, np.zeros((1, self.uDim)))
         #self.sys_init()
         self.cost_init()
         self.init_trajectory()
-        self.finalcost = 10. # c(x_N) = finalcost*c(x_k, None)
         self.max_iters = maxIters
         self.mu_min = 1e-6
         self.mu_max = 1e6
@@ -59,6 +62,9 @@ class iLQR(Algorithm):
         self.zmin = 0.
         self.tolGrad = tolGrad
         self.tolFun = tolFun
+        self.constrained = constrained
+        self.lims = self.environment.uMax
+
 
     def cost_fnc(self, x, u):
         c = self.environment.cost(x, u, None)
@@ -83,7 +89,7 @@ class iLQR(Algorithm):
             else:
                 c = self.environment.step(self.dt, u)
 
-            cost += c*self.dt
+            cost += c
 
         xx = self.environment.history
         uu = self.agent.history[1:]
@@ -92,48 +98,34 @@ class iLQR(Algorithm):
 
 
     def backward_pass(self):
-        x = self.xx[-1]#self.xx[-2]
-        u = self.uu[-1]
-
+        x = self.xx[-1]
         system_matrices = self.sys_lin()
-
-        Cxx, Cuu, Cxu, cx, cu = self.cost_lin(x, 0*u)
-
-        Cux = Cxu.T
-
-        Ct = np.block([[Cxx, Cxu], [Cux, Cuu]])
-
-        CuuInv = np.linalg.inv(Cuu + self.mu * np.eye(self.uDim))
-
-        Kt = -np.matmul(CuuInv, Cux)
-        kt = -np.matmul(CuuInv, cu)
-
         # DARE in Vt, vt
-        Vt = self.finalcost*Cxx #+ np.matmul(Cxu, Kt) + np.matmul(Kt.T, Cux) + np.matmul(Kt.T, np.matmul(Cuu, Kt))
-        vt = self.finalcost*cx #+ np.matmul(Cxu, kt) + np.matmul(Kt.T, cu) + np.matmul(Kt.T, np.matmul(Cuu, kt))
-        dV1 = np.matmul(kt.T, np.matmul(Cuu, kt))
-        dV2 = np.matmul(kt.T, cu)
+        Vt = self.Cfxx(*x)
+        vt = self.cfx(*x)
+        dV1 = np.zeros((1,1))
+        dV2 = np.zeros((1,1))
 
-        self.KK = []#[Kt]
-        self.kk = []#[kt]
+        self.KK = []
+        self.kk = []
 
         V1 = [dV1]
         V2 = [dV2]
 
         success = True
 
-        for i in range(self.steps-1, -1, -1):#range(self.steps - 1):
-            x = self.xx[i]#[-i - 3]
-            u = self.uu[i]#[-i - 2]
+        for i in range(self.steps-1, -1, -1):
+            x = self.xx[i]
+            u = self.uu[i]
 
             Cxx, Cuu, Cxu, cx, cu = self.cost_lin(x, u)
 
             ct = np.block([[cx], [cu]])
 
-            Ct = np.block([[Cxx, Cxu], [Cux, Cuu]])
+            Ct = np.block([[Cxx, Cxu], [Cxu.T, Cuu]])
 
             # Linerisierung
-            Ft, ft = system_matrices[i]#[-i - 2]
+            Ft, ft = system_matrices[i]
 
             Qt = Ct + np.matmul(Ft.T, np.matmul(Vt + self.mu * np.eye(self.xDim), Ft))
 
@@ -143,23 +135,30 @@ class iLQR(Algorithm):
             qx = qt[:self.xDim]
             qu = qt[self.xDim:]
 
-            '''
-            if np.any(np.linalg.eigvals(Quu) <= 0):
-                success = False
-            '''
             try:
                 np.linalg.cholesky(Quu)
 
             except np.linalg.LinAlgError as e:
                 success = False
                 break
-            QuuInv = np.linalg.inv(Quu + self.mu * np.eye(self.uDim))
+            QuuReg = Quu + self.mu * np.eye(self.uDim)
+            QuuInv = np.linalg.inv(QuuReg)
+            if self.constrained: #  solve QP
+                QuuRegOpt = opt.matrix(QuuReg)
+                quOpt = opt.matrix(qu)
+                G = opt.matrix(np.kron(np.array([[1.], [-1.]]), np.eye(self.uDim)))
+                h = opt.matrix(np.array([self.lims-u, self.lims+u]).reshape((2*self.uDim,)))
 
-            if QuuInv[0, 0] < 0:
-                print(QuuInv[0, 0])
-
-            Kt = -np.matmul(QuuInv, Qux)
-            kt = -np.matmul(QuuInv, qu)
+                sol = opt.solvers.qp(QuuRegOpt, quOpt, G, h)
+                kt = np.array(sol['x'])
+                kt_ = -np.matmul(QuuInv, qu) # unconstrained case
+                # determine free controls, that are not clamped
+                clamped = np.isclose(kt, kt_)[:,0] == False
+                Kt = -np.matmul(QuuInv, Qux)
+                Kt[clamped, :] = 0.
+            else:
+                kt = -np.matmul(QuuInv, qu)
+                Kt = -np.matmul(QuuInv, Qux)
 
             Vt = Qxx + np.matmul(Kt.T, np.matmul(Quu, Kt)) + np.matmul(Kt.T, Qux) + np.matmul(Qux.T, Kt)
             vt = qx + np.matmul(Kt.T, np.matmul(Quu, kt)) + np.matmul(Kt.T, qu) + np.matmul(Qux.T, kt)
@@ -257,14 +256,14 @@ class iLQR(Algorithm):
     def init_trajectory(self):
         # random trajectory
         for _ in range(self.steps):
-            u = np.random.uniform(0.01, 0.01, self.uDim)
+            u = np.random.uniform(0.1, 0.1, self.uDim)
             u = self.agent.control(self.dt, u)
             # necessary to store control in agents history
             if self.fastForward:
                 c = self.environment.fast_step(self.dt, u)
             else:
                 c = self.environment.step(self.dt, u)
-            self.cost += c*self.dt
+            self.cost += c
         self.xx = self.environment.history
         self.uu = self.agent.history[1:]
         pass
@@ -289,7 +288,7 @@ class iLQR(Algorithm):
         # 2nd order taylor expansion of the cost function along a trajectory
         #self.environment.
 
-        xx = sp.symbols('x1:'+str(self.xDim+1))
+        xx = sp.symbols('x1:' + str(self.xDim+1))
         uu = sp.symbols('u1:' + str(self.uDim + 1))
 
         c = self.cost_fnc(xx, uu)
@@ -300,11 +299,19 @@ class iLQR(Algorithm):
         Cuu = cu.jacobian(uu)
         Cxu = cx.jacobian(uu)
 
+        # final cost
+        cf = self.fcost_fnc(xx)
+        ccf = sp.Matrix([[cf]])
+        cfx = ccf.jacobian(xx)
+        Cfxx = cfx.jacobian(xx)
+
         self.cx = sp.lambdify((xx, uu), cx.T)
         self.cu = sp.lambdify((xx, uu), cu.T)
         self.Cxx = sp.lambdify((xx, uu), Cxx)
         self.Cuu = sp.lambdify((xx, uu), Cuu)
         self.Cxu = sp.lambdify((xx, uu), Cxu)
+        self.cfx = sp.lambdify(xx, cfx.T)
+        self.Cfxx = sp.lambdify(xx, Cfxx)
 
         pass
 
@@ -321,7 +328,12 @@ class iLQR(Algorithm):
         pass
 
     def cost_lin(self, x, u):
-        return self.Cxx(x, u), self.Cuu(x, u), self.Cxu(x, u), self.cx(x, u), self.cu(x, u)
+        Cxx = self.Cxx(x, u)
+        Cuu = self.Cuu(x, u)
+        Cxu = self.Cxu(x, u)
+        cx = self.cx(x, u)
+        cu = self.cu(x, u)
+        return Cxx, Cuu, Cxu, cx, cu
 
     def decrease_mu(self):
         self.mu_d = min(1 / self.mu_d0, self.mu_d / self.mu_d0)

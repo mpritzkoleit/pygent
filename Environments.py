@@ -188,7 +188,7 @@ class StateSpaceModel(Environment):
         self.x = self.mapAngles(y)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
-        c = self.cost(self.x_, u, self.x)
+        c = self.cost(self.x_, u, self.x)*dt
         self.terminated = self.terminate(self.x_)
         self.o = observation(self.x, self.xIsAngle)
         return c
@@ -216,7 +216,7 @@ class StateSpaceModel(Environment):
         self.x = self.mapAngles(y)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
-        c = self.cost(self.x_, u, self.x)
+        c = self.cost(self.x_, u, self.x)*dt
         self.terminated = self.terminate(self.x_)
         self.o = observation(self.x, self.xIsAngle)
         return c
@@ -237,12 +237,12 @@ class StateSpaceModel(Environment):
 class Pendulum(StateSpaceModel):
 
     def __init__(self, cost, x0):
-        super(Pendulum, self).__init__(self.ode, cost, x0, 1)
+        super(Pendulum, self).__init__(self.ode, cost, x0, uDim=1)
         self.xIsAngle = [True, False]
         self.o = observation(self.x, self.xIsAngle)
         self.o_ = self.o
         self.oDim = len(self.o)  # observation dimensions
-        self.uMax = 2*np.ones(1)
+        self.uMax = 5*np.ones(1)
 
     @staticmethod
     def ode(t, x, u):
@@ -417,7 +417,32 @@ class CartPoleDoubleParallel(StateSpaceModel):
                                           blit=True)
             return ani
 
+class Car(StateSpaceModel):
 
+    def __init__(self, cost, x0):
+        super(Car, self).__init__(self.ode, cost, x0, uDim=2)
+        self.xIsAngle = [False, False, True, False]
+        self.o = observation(self.x, self.xIsAngle)
+        self.o_ = self.o
+        self.oDim = len(self.o)  # observation dimensions
+        self.uMax = np.array([.5, 2.])
+
+    @staticmethod
+    def ode(t, x, u):
+
+        g = 9.81  # gravity
+        d = 2.0  # dissipation
+        u1, u2 = u  # torque
+        x1, x2, x3 = x
+
+        dx1dt = np.cos(x3)*u1
+        dx2dt = np.sin(x3)*u1
+        dx3dt = np.tan(u2)*u1/d
+
+        return np.array([dx1dt, dx2dt, dx3dt])
+
+    def terminate(self, x):
+            return False
 #class AcroBot(StateSpaceModel):
 #class Building(StateSpaceModel):
 #class Ball(StateSpaceModel):
