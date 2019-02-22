@@ -10,7 +10,7 @@ def cost(x_, u_, x):
 
 
 def x0fun():
-    x0 = [np.random.uniform(-np.pi, np.pi), np.random.uniform(-1.0, 1.0)]
+    x0 = [np.random.uniform(-np.pi, np.pi), np.random.uniform(-1.,1.)]
     return x0
 
 
@@ -19,10 +19,10 @@ pendulum = Pendulum(cost, x0fun)
 t = 10.0
 dt = 0.05
 
-path = '../Results/DDPG/Pendulum/'
+path = '../Results/DDPG/Pendulum/Experiment5/'
 algorithm = DDPG(pendulum, t, dt, path=path)
 start = time.time()
-algorithm.run_learning(2000)
+algorithm.run_learning(500)
 #algorithm.run_controller(x0fun())
 end = time.time()
 print('Training duration: %.2f s' % (end - start))

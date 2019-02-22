@@ -3,7 +3,7 @@ import torchdiffeq
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from torchdiffeq import odeint#_adjoint as odeint
+from torchdiffeq import odeint_adjoint as odeint
 import matplotlib.pyplot as plt
 
 from NeuralNetworkModels import Actor
@@ -64,21 +64,16 @@ class Controller(nn.Module):
         return torch.tanh(self.layer1(x))
 
 #ctr = Actor(2, 1)
-ctr = MLP([6, 20, 20, 1])
+ctr = MLP([2, 50, 50, 1])
 #ctr = Controller()
-ode = Lambda2(ctr)
+ode = Lambda(ctr)
 
 tf = 10.
 
-t = torch.linspace(0., tf, 200)
+t = torch.linspace(0., tf, 100)
 def x0fun():
     x20 = np.random.uniform(3.14, 3.14)
     x0 = torch.tensor([[float(x20), 0.]])
-    return x0
-
-def x0fun2():
-    x20 = np.random.uniform(3.14, 3.14)
-    x0 = torch.tensor([[0., float(x20), float(x20), 0., 0., 0.]])
     return x0
 
 #u0 = ctr(0)
@@ -86,20 +81,19 @@ def x0fun2():
 
 #print('ODE', ode(0, x0fun()))
 
-xt_sample = odeint(ode, x0fun2(), t, method='dopri5')
-
+xt_sample = odeint(ode, x0fun(), t, method='dopri5')
 
 optimizer = optim.Adam(ctr.parameters(), lr=1e-3)
 
 for itr in range(1000):
     optimizer.zero_grad()
-    xt_sample = odeint(ode, x0fun2(), t, method='dopri5')
-    loss = torch.mean(torch.abs(xt_sample[:,0,0:3]))
+    xt_sample = odeint(ode, x0fun(), t, method='dopri5')
+    loss = torch.mean(torch.abs(xt_sample[:,0,0])) #+ 0.1e-3*torch.mean(torch.abs(ctr(xt_sample)))
     print('Iteration:', itr, ' Loss: ', loss.item())
     loss.backward()
-    for _ in range(1):
+    for _ in range(10):
         optimizer.step()
-    if itr % 20 == 0:
+    if itr % 10 == 0:
         fig, ax = plt.subplots(2,1)
         ax[0].plot(t.numpy(), xt_sample[:,0,:].detach().numpy())
         ax[1].plot(t.numpy(), ctr(xt_sample)[:,0,:].detach().numpy())
