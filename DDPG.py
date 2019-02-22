@@ -5,7 +5,7 @@ from Algorithms import Algorithm
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
-from NeuralNetworkModels import Actor, Critic# ActorBN as Actor, CriticBN as Critic #,
+from NeuralNetworkModels import Actor, Critic #ActorBN as Actor, CriticBN as Critic #,
 import os
 import pickle
 import random
@@ -26,7 +26,8 @@ class DDPG(Algorithm):
 
     """
 
-    def __init__(self, environment, t, dt, plotInterval=10, nData=1e6, path='../Results/DDPG/', checkInterval=100, evalPolicyInterval=50):
+    def __init__(self, environment, t, dt, plotInterval=50, nData=1e6, path='../Results/DDPG/', checkInterval=100,
+                 evalPolicyInterval=100, costScale=100):
         xDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax
@@ -38,6 +39,7 @@ class DDPG(Algorithm):
         self.checkInterval = checkInterval  # checkpoint interval
         self.epsDecay = 1.
         self.path = path
+        self.costScale = costScale
         if not os.path.isdir(path):
             os.makedirs(path)
         if not os.path.isdir(path+'plots/'):
@@ -62,7 +64,7 @@ class DDPG(Algorithm):
             else:
                 u = self.agent.take_random_action(self.dt, self.environment.o)
             # simulation of environment
-            c = self.environment.step(self.dt, u)
+            c = self.environment.step(self.dt, u)*self.costScale
             cost.append(c)
 
             # store transition in dataset (x_, u, x, c)
@@ -75,6 +77,7 @@ class DDPG(Algorithm):
                 break
         # store the mean of the incremental cost
         self.meanCost.append(np.mean(cost))
+        self.totalCost.append(np.sum(cost))
         self.episode += 1
 
         pass
@@ -100,6 +103,7 @@ class DDPG(Algorithm):
                 break
         # store the mean of the incremental cost
         self.meanCost.append(np.mean(cost))
+        self.totalCost.append(np.sum(cost))
         pass
 
     def run_learning(self, n):
@@ -121,7 +125,8 @@ class DDPG(Algorithm):
         torch.save({'actor': self.agent.actor1.state_dict(),
                  'critic': self.agent.critic1.state_dict()}, self.path+'data/checkpoint.pth')
         self.R.save(self.path+'data/dataSet.p')
-        pickle.dump(self.meanCost, open(self.path+'data/learningCurve.p', 'wb'))
+        pickle.dump(self.meanCost, open(self.path+'data/meanCost.p', 'wb'))
+        pickle.dump(self.totalCost, open(self.path + 'data/totalCost.p', 'wb'))
         pass
 
     def load(self):
@@ -137,9 +142,13 @@ class DDPG(Algorithm):
             self.R.load(self.path+'data/dataSet.p')
         else:
             print('No dataset found!')
-        if os.path.isfile(self.path + 'data/learningCurve.p'):
-            self.meanCost = pickle.load(open(self.path + 'data/learningCurve.p', 'rb'))
+        if os.path.isfile(self.path + 'data/meanCost.p'):
+            self.meanCost = pickle.load(open(self.path + 'data/meanCost.p', 'rb'))
             self.episode = self.meanCost.__len__() + 1
+        else:
+            print('No learning curve data found!')
+        if os.path.isfile(self.path + 'data/totalCost.p'):
+            self.totalCost = pickle.load(open(self.path + 'data/totalCost.p', 'rb'))
         else:
             print('No learning curve data found!')
         pass
@@ -148,25 +157,31 @@ class DDPG(Algorithm):
     def plot(self):
         self.environment.plot()
         plt.savefig(self.path+'plots/'+str(self.episode-1)+'_environment.pdf')
+        plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pgf')
         self.agent.plot()
         plt.savefig(self.path+'plots/'+str(self.episode-1)+'_agent.pdf')
+        plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pgf')
         plt.close('all')
 
 
     def animation(self):
-        ani = self.environment.animation(self.episode-1, self.meanCost[self.episode-2])
+        ani = self.environment.animation()
         if ani != None:
             ani.save(self.path+'animations/'+str(self.episode-1)+'_animation.mp4', fps=1/self.dt)
         plt.close('all')
 
 
     def learning_curve(self):
-        fig, (ax) = plt.subplots(1, 1, dpi=150)
-        ax.step(np.arange(1, self.episode), self.meanCost)
-        plt.title('Learning curve')
-        plt.ylabel('Mean cost')
-        plt.xlabel('Episode')
+        fig, ax = plt.subplots(2, 1, dpi=150, sharex=True)
+        ax[0].step(np.arange(1, self.episode), self.meanCost, 'k', lw=1)
+        ax[0].set_ylabel(r'avg. cost/step')
+        ax[0].grid(True)
+        ax[1].step(np.arange(1, self.episode), self.totalCost, 'k', lw=1)
+        ax[1].set_ylabel(r'total cost')
+        ax[1].grid(True)
+        plt.xlabel(r'Episode')
         plt.savefig(self.path+'learning_curve.pdf')
+        plt.savefig(self.path + 'learning_curve.pgf')
         plt.close('all')
 
 class ActorCritic(Agent):
@@ -183,9 +198,8 @@ class ActorCritic(Agent):
     """
 
     def __init__(self, xDim, uDim, uMax, dt, gamma=0.99, tau=0.001):
-        super(ActorCritic, self).__init__(1)
+        super(ActorCritic, self).__init__(uDim)
         self.xDim = xDim
-        self.uDim = uDim
         self.uMax = uMax
         self.actor1 = Actor(xDim, uDim, uMax)
         self.actor2 = Actor(xDim, uDim, uMax)
@@ -207,7 +221,6 @@ class ActorCritic(Agent):
         x_Inputs, uInputs, qTargets = self.training_data(dataSet)
         # eval mode on (batch normalization)
         for epoch in range(1):  # loop over the dataset multiple times
-            running_loss = 0.0
             qOutputs = self.critic1(x_Inputs, uInputs)
             qOutputs = torch.squeeze(qOutputs)
             muOutputs = self.actor1(x_Inputs)
@@ -262,6 +275,7 @@ class ActorCritic(Agent):
         # self.u = np.clip(np.asarray(self.actor1(x).detach())[0] + self.noise()*self.uMax, -self.uMax, self.uMax)
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
+        self.train()
         return self.u
 
     def take_random_action(self, dt, x):
@@ -273,6 +287,7 @@ class ActorCritic(Agent):
         self.u = np.clip(u, -self.uMax.numpy(), self.uMax.numpy())
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
+        self.train()
         return self.u
 
     def training_data(self, dataSet):
@@ -285,25 +300,9 @@ class ActorCritic(Agent):
         self.eval()
         qTargets = costs + self.gamma*self.critic2(xInputs, self.actor2(xInputs)).detach()
         qTargets = torch.squeeze(qTargets)
+        self.train()
         return x_Inputs, uInputs, qTargets
 
-    def plot(self):
-        """ Plots the agents history
-
-        Returns:
-            fig (matplotlib.pyplot.figure)
-
-        """
-
-        fig, (ax) = plt.subplots(1, 1)
-        for i in range(len(self.u)):
-            ax.step(self.tt, self.history[:, i], label=r'$u_'+str(i+1)+'$')
-        ax.grid(True)
-        plt.xlabel('t in s')
-        plt.title('Controls')
-        ax.legend()
-
-        return fig
 
 class OUnoise:
     def __init__(self, action_dim, dt, mu=0, theta=0.15, sigma=0.2):
@@ -312,7 +311,7 @@ class OUnoise:
         self.theta = theta
         self.sigma = sigma
         self.X = np.ones(self.action_dim) * self.mu
-        self.dt =dt
+        self.dt = dt
 
     def reset(self):
         self.X = np.ones(self.action_dim) * self.mu
