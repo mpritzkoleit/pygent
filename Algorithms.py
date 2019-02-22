@@ -19,6 +19,7 @@ class Algorithm(object):
         self.agent = agent
         self.environment = environment
         self.meanCost = []
+        self.totalCost = []
         self.episode = 1
 
     @abstractmethod

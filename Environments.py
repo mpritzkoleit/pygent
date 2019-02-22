@@ -6,8 +6,11 @@ import numpy as np
 from matplotlib import animation
 import matplotlib.patches as patches
 from scipy.integrate import solve_ivp
-from Models.CartPoleDoubleParallel import modeling as cartPoleDoubleParallelODE
-from Models.CartPole import modeling as cartPoleODE
+from Models.CartPoleDoubleParallel import load_existing as cartPoleDoubleParallelODE
+from Models.CartPoleDoubleSerial import load_existing as cartPoleDoubleSerialODE
+from Models.CartPoleTriple import load_existing as cartPoleTripleODE
+from Models.CartPole import load_existing as cartPoleODE
+from Models.Acrobot import load_existing as acrobotODE
 from Utilities import  observation
 import torch
 
@@ -77,19 +80,19 @@ class Environment(object):
 
         """
 
-        fig, ax = plt.subplots(len(self.x), 1, sharex='col')
+        fig, ax = plt.subplots(len(self.x), 1, sharex=True)
         # Plot state trajectories
-        fig.suptitle('States')
         if len(self.x) > 1:
             for i in range(len(self.x)):
-                ax[i].step(self.tt, self.history[:, i], label=r'$x_'+str(i+1)+'$')
+                ax[i].step(self.tt, self.history[:, i], 'k',  lw=1)
+                ax[i].set_ylabel(r'$x_'+str(i+1)+'$')
                 ax[i].grid(True)
-                ax[i].legend(loc='upper right')
         else:
-            ax.step(self.tt, self.history[:, i], label=r'$x_1$')
+            ax.step(self.tt, self.history[:, 0], 'k',  lw=1)
             ax.grid(True)
-            ax.legend(loc='upper right')
-        plt.xlabel('t in s')
+            plt.ylabel(r'$x_1$')
+        plt.xlabel(r't[s]')
+        plt.tight_layout()
         # Todo: save data in numpy arrays
         return fig, ax
 
@@ -132,7 +135,7 @@ class OpenAIGym(Environment):
         self.o_ = self.o
         # system simulation
         x, r, terminate, info = self.env.step(u)
-        c = -r
+        c = -r # cost = - reward
         self.x = list(x)
         self.o = self.x
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
@@ -178,19 +181,21 @@ class StateSpaceModel(Environment):
             c (float): cost of state transition
 
         """
-
-        # system simulation
-        sol = solve_ivp(lambda t, x: self.ode(t, x, u), (0, dt), self.x)
-
         self.x_ = self.x  # shift state (x[k-1] = x[k])
         self.o_ = self.o
+
+        # system simulation
+        sol = solve_ivp(lambda t, x: self.ode(t, x, u), (0, dt), self.x_)
+
         y = list(sol.y[:, -1])  # extract simulation result
-        self.x = self.mapAngles(y)
+        #self.x = self.mapAngles(y)
+        self.x = y
+        self.o = observation(self.x, self.xIsAngle)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         c = self.cost(self.x_, u, self.x)*dt
         self.terminated = self.terminate(self.x_)
-        self.o = observation(self.x, self.xIsAngle)
+
         return c
 
     def terminate(self, x):
@@ -213,12 +218,13 @@ class StateSpaceModel(Environment):
         self.o_ = self.o
         # euler step
         y = self.x_ + dt*self.ode(None, self.x_, u)
-        self.x = self.mapAngles(y)
+        self.x = y
+        #self.x = self.mapAngles(y)
+        self.o = observation(self.x, self.xIsAngle)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         c = self.cost(self.x_, u, self.x)*dt
         self.terminated = self.terminate(self.x_)
-        self.o = observation(self.x, self.xIsAngle)
         return c
 
     def mapAngles(self, y):
@@ -242,7 +248,7 @@ class Pendulum(StateSpaceModel):
         self.o = observation(self.x, self.xIsAngle)
         self.o_ = self.o
         self.oDim = len(self.o)  # observation dimensions
-        self.uMax = 5*np.ones(1)
+        self.uMax = 2*np.ones(1)
 
     @staticmethod
     def ode(t, x, u):
@@ -265,7 +271,7 @@ class Pendulum(StateSpaceModel):
             return False
 
 
-    def animation(self, episode, meanCost):
+    def animation(self):
         # mapping from theta and s to the x,y-plane (definition of the line points, that represent the pole)
         def pendulum_plot(l, xt):
             x_pole_end = -l * np.sin(xt[:, 0])
@@ -313,13 +319,13 @@ class CartPole(StateSpaceModel):
 
     def terminate(self, x):
         x1, x2, x3, x4 = x
-        if abs(x1) > 1:
+        if np.abs(x1) > 1.0:
             return True
         else:
             return False
 
 
-    def animation(self, episode, meanCost):
+    def animation(self):
         # mapping from theta and s to the x,y-plane (definition of the line points, that represent the pole)
         def cart_pole_plot(l, xt):
             x_pole_end = -l * np.sin(xt[:, 1]) + xt[:, 0]
@@ -339,15 +345,16 @@ class CartPole(StateSpaceModel):
             return pole, cart, time_text,
 
         x_pole_end, y_pole_end, x_cart = cart_pole_plot(0.5, self.history)
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(dpi=150)
         ax.set_aspect('equal')
         ax.set(xlabel=r'$x_1$')
         plt.ylim((-.6, .6))
+        plt.xlim((min(-1.2, 1.2 * min(x_cart)), max(1.2, 1.2 * max(x_cart))))
         plt.yticks([], [])
         plt.title('CartPole')
         time_template = 'time = %.1fs'
         time_text = ax.text(0.05, 1.05, '', transform=ax.transAxes)
-        rail, = ax.plot([min(-1, 1.2 * min(x_cart)), max(1, 1.2 * max(x_cart))], [0, 0], 'ks-', zorder=0)
+        rail, = ax.plot([min(-2.8, 1.2 * min(x_cart)), max(2.8, 1.2 * max(x_cart))], [0, 0], 'ks-', zorder=0)
         pole, = ax.plot([], [], 'b-', zorder=1, lw=3)
         cart = patches.Rectangle((-0.1, -0.05), 0.2, 0.1, fc='b', zorder=1)
         ax.add_artist(cart)
@@ -356,6 +363,65 @@ class CartPole(StateSpaceModel):
                                       blit=True)
         return ani
 
+class CartPoleDoubleSerial(StateSpaceModel):
+    def __init__(self, cost, x0):
+        self.ode = cartPoleDoubleSerialODE()
+        super(CartPoleDoubleSerial, self).__init__(self.ode, cost, x0, uDim=1)
+        self.xIsAngle = [False, True, True, False, False, False]
+        self.o = observation(self.x, self.xIsAngle)
+        self.oDim = len(self.o) #observation dimensions
+        self.o_ = self.o
+        self.uMax = 20*np.ones(1)
+
+    def terminate(self, x):
+        x1, x2, x3, x4, x5, x6 = x
+        if abs(x1) > 1 or abs(x5) > 25 or abs(x6) > 25:
+            return True
+        else:
+            return False
+
+    def animation(self):
+            # mapping from theta and s to the x,y-plane (definition of the line points, that represent the pole)
+            def cart_pole_plot(l1, l2, xt):
+                x_pole1_end = -l1 * np.sin(xt[:, 1]) + xt[:, 0]
+                y_pole1_end = l1 * np.cos(xt[:, 1])
+                x_pole2_end = x_pole1_end -l2 * np.sin(xt[:, 2])
+                y_pole2_end = y_pole1_end +l2 * np.cos(xt[:, 2])
+                x_cart = xt[:, 0]
+
+                return x_pole1_end, y_pole1_end, x_pole2_end, y_pole2_end, x_cart
+
+            # line and text
+            def animate(t):
+                thisx1 = [x_cart[t], x_pole1_end[t]]
+                thisy1 = [0, y_pole1_end[t]]
+                thisx2 = [x_pole1_end[t], x_pole2_end[t]]
+                thisy2 = [y_pole1_end[t], y_pole2_end[t]]
+
+                pole1.set_data(thisx1, thisy1)
+                pole2.set_data(thisx2, thisy2)
+                cart.set_xy([x_cart[t] - 0.1, -0.05])
+                time_text.set_text(time_template % self.tt[t])
+                return pole1, pole2, cart, time_text,
+
+            x_pole1_end, y_pole1_end, x_pole2_end, y_pole2_end, x_cart = cart_pole_plot(0.323, .419, self.history)
+            fig, ax = plt.subplots()
+            ax.set_aspect('equal')
+            ax.set(xlabel=r'$x_1$')
+            plt.ylim((-1.1, 1.1))
+            plt.yticks([], [])
+            plt.title('CartPoleDoubleSerial')
+            time_template = 'time = %.1fs'
+            time_text = ax.text(0.0, 1.05, '', transform=ax.transAxes)
+            rail, = ax.plot([min(-1, 1.2 * min(x_cart)), max(1, 1.2 * max(x_cart))], [0, 0], 'ks-', zorder=0)
+            pole1, = ax.plot([], [], 'b-', zorder=1, lw=3)
+            pole2, = ax.plot([], [], 'b-', zorder=1, lw=3)
+            cart = patches.Rectangle((-0.1, -0.05), 0.2, 0.1, fc='b', zorder=1)
+            ax.add_artist(cart)
+            # animation using matplotlibs animation library
+            ani = animation.FuncAnimation(fig, animate, np.arange(len(self.tt)), interval=self.tt[1] * 1000,
+                                          blit=True)
+            return ani
 
 class CartPoleDoubleParallel(StateSpaceModel):
     def __init__(self, cost, x0):
@@ -365,7 +431,7 @@ class CartPoleDoubleParallel(StateSpaceModel):
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o) #observation dimensions
         self.o_ = self.o
-        self.uMax = 15*np.ones(1)
+        self.uMax = 25*np.ones(1)
 
     def terminate(self, x):
         x1, x2, x3, x4, x5, x6 = x
@@ -374,7 +440,7 @@ class CartPoleDoubleParallel(StateSpaceModel):
         else:
             return False
 
-    def animation(self, episode, meanCost):
+    def animation(self):
             # mapping from theta and s to the x,y-plane (definition of the line points, that represent the pole)
             def cart_pole_plot(l1, l2, xt):
                 x_pole1_end = -l1 * np.sin(xt[:, 1]) + xt[:, 0]
@@ -417,7 +483,74 @@ class CartPoleDoubleParallel(StateSpaceModel):
                                           blit=True)
             return ani
 
+class CartPoleTriple(StateSpaceModel):
+    def __init__(self, cost, x0):
+        self.ode = cartPoleTripleODE()
+        super(CartPoleTriple, self).__init__(self.ode, cost, x0, uDim=1)
+        self.xIsAngle = [False, True, True, True, False, False, False, False]
+        self.o = observation(self.x, self.xIsAngle)
+        self.oDim = len(self.o) #observation dimensions
+        self.o_ = self.o
+        self.uMax = 20*np.ones(1)
+
+    def terminate(self, x):
+        x1, x2, x3, x4, x5, x6, x7, x8 = x
+        if abs(x1) > 0.7:
+            return True
+        else:
+            return False
+
+    def animation(self):
+            # mapping from theta and s to the x,y-plane (definition of the line points, that represent the pole)
+            def cart_pole_plot(l1, l2, l3, xt):
+                x_p1 = -l1*np.sin(xt[:, 1])+xt[:, 0]
+                y_p1 = l1*np.cos(xt[:, 1])
+                x_p2 = x_p1 - l2*np.sin(xt[:, 2])
+                y_p2 = y_p1 + l2*np.cos(xt[:, 2])
+                x_p3 = x_p2 - l3*np.sin(xt[:, 3])
+                y_p3 = y_p2 + l3*np.cos(xt[:, 3])
+                x_cart = xt[:, 0]
+
+                return x_p1, y_p1, x_p2, y_p2, x_p3, y_p3, x_cart
+
+            # line and text
+            def animate(t):
+                thisx1 = [x_cart[t], x_p1[t]]
+                thisy1 = [0, y_p1[t]]
+                thisx2 = [x_p1[t], x_p2[t]]
+                thisy2 = [y_p1[t], y_p2[t]]
+                thisx3 = [x_p2[t], x_p3[t]]
+                thisy3 = [y_p2[t], y_p3[t]]
+
+                pole1.set_data(thisx1, thisy1)
+                pole2.set_data(thisx2, thisy2)
+                pole3.set_data(thisx3, thisy3)
+                cart.set_xy([x_cart[t] - 0.1, -0.05])
+                time_text.set_text(time_template % self.tt[t])
+                return pole1, pole2, pole3, cart, time_text,
+
+            x_p1, y_p1, x_p2, y_p2, x_p3, y_p3, x_cart = cart_pole_plot(0.323, 0.419, 0.484, self.history)
+            fig, ax = plt.subplots()
+            ax.set_aspect('equal')
+            ax.set(xlabel=r'$x_1$')
+            plt.ylim((-1.4, 1.4))
+            plt.yticks([], [])
+            plt.title('CartPoleTriple')
+            time_template = 'time = %.1fs'
+            time_text = ax.text(0.0, 1.05, '', transform=ax.transAxes)
+            rail, = ax.plot([min(-.8, 1.2 * min(x_cart)), max(.8, 1.2 * max(x_cart))], [0, 0], 'ks-', zorder=0)
+            pole1, = ax.plot([], [], 'b-', zorder=1, lw=3)
+            pole2, = ax.plot([], [], 'b-', zorder=1, lw=3)
+            pole3, = ax.plot([], [], 'b-', zorder=1, lw=3)
+            cart = patches.Rectangle((-0.1, -0.05), 0.2, 0.1, fc='b', zorder=1)
+            ax.add_artist(cart)
+            # animation using matplotlibs animation library
+            ani = animation.FuncAnimation(fig, animate, np.arange(len(self.tt)), interval=self.tt[1] * 1000,
+                                          blit=True)
+            return ani
+
 class Car(StateSpaceModel):
+    # Todo: from iLQG paper
 
     def __init__(self, cost, x0):
         super(Car, self).__init__(self.ode, cost, x0, uDim=2)
@@ -430,21 +563,80 @@ class Car(StateSpaceModel):
     @staticmethod
     def ode(t, x, u):
 
-        g = 9.81  # gravity
         d = 2.0  # dissipation
-        u1, u2 = u  # torque
-        x1, x2, x3 = x
+        h = 0.03
+        u1, u2 = u  # a, w
+        x1, x2, x3, x4 = x # x, y, theta, v
+        f = h*x4
+        b = f*np.cos(u1) + d - np.sqrt(d**2 - f**2*np.sin(u1)**2)
+        dx1dt = 1/h*np.cos(x3)*b
+        dx2dt = 1/h*np.sin(x3)*b
+        dx3dt = 1/h*np.arcsin(np.sin(u1)*f/d)
+        dx4dt = u2
 
-        dx1dt = np.cos(x3)*u1
-        dx2dt = np.sin(x3)*u1
-        dx3dt = np.tan(u2)*u1/d
-
-        return np.array([dx1dt, dx2dt, dx3dt])
+        return np.array([dx1dt, dx2dt, dx3dt, dx4dt])
 
     def terminate(self, x):
             return False
-#class AcroBot(StateSpaceModel):
+
+class Acrobot(StateSpaceModel):
+    def __init__(self, cost, x0):
+        self.ode = acrobotODE()
+        super(Acrobot, self).__init__(self.ode, cost, x0, uDim=1)
+        self.xIsAngle = [False, True, False, False]
+        self.o = observation(self.x, self.xIsAngle)
+        self.oDim = len(self.o)  # observation dimensions
+        self.o_ = self.o
+        self.uMax = 5*np.ones(1)
+
+
+    def terminate(self, x):
+        x1, x2, x3, x4 = x
+        if abs(x3) > 50 or abs(x4) > 50:
+            return True
+        else:
+            return False
+
+
+    def animation(self):
+        # mapping from theta and s to the x,y-plane (definition of the line points, that represent the pole)
+        def acrobot_plot(l0, l1, xt):
+            x_pole0 = -l0*np.sin(xt[:, 0])
+            y_pole0 = l0*np.cos(xt[:, 0])
+            x_pole1 = x_pole0 -l1*np.sin(xt[:, 0]+xt[:, 1])
+            y_pole1 = y_pole0 + l1*np.cos(xt[:, 0]+xt[:, 1])
+
+            return x_pole0, y_pole0, x_pole1, y_pole1,
+
+        # line and text
+        def animate(t):
+            thisx0 = [0, x_pole0[t]]
+            thisy0 = [0, y_pole0[t]]
+            thisx1 = [x_pole0[t], x_pole1[t]]
+            thisy1 = [y_pole0[t], y_pole1[t]]
+
+            pole0.set_data(thisx0, thisy0)
+            pole1.set_data(thisx1, thisy1)
+            time_text.set_text(time_template % self.tt[t])
+            return pole0, pole1, time_text,
+
+        x_pole0, y_pole0, x_pole1, y_pole1 = acrobot_plot(0.5, 0.5, self.history)
+        fig, ax = plt.subplots()
+        ax.set_aspect('equal')
+        plt.ylim((-1.1, 1.1))
+        plt.xlim((-1.1, 1.1))
+        plt.yticks([], [])
+        plt.xticks([], [])
+        plt.title('Acrobot')
+        time_template = 'time = %.1fs'
+        time_text = ax.text(0.05, 1.05, '', transform=ax.transAxes)
+        pole0, = ax.plot([], [], 'b-o', zorder=1, lw=3)
+        pole1, = ax.plot([], [], 'b-', zorder=1, lw=3)
+        # animation using matplotlibs animation library
+        ani = animation.FuncAnimation(fig, animate, np.arange(len(self.tt)), interval=self.tt[1] * 1000,
+                                      blit=True)
+        return ani
+
 #class Building(StateSpaceModel):
 #class Ball(StateSpaceModel):
-# #class DoubleCartPole
 #class TripleCartPole
