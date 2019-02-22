@@ -30,8 +30,8 @@ def modeling():
 
     # position vectors
     p0 = sp.Matrix([q0_t, 0])
-    p1 = sp.Matrix([q0_t - l1*sin(q1_t), l1*cos(q1_t)])
-    p2 = sp.Matrix([q0_t - l2*sin(q2_t), l2*cos(q2_t)])
+    p1 = sp.Matrix([q0_t - 0.5*l1*sin(q1_t),  0.5*l1*cos(q1_t)])
+    p2 = sp.Matrix([q0_t -  0.5*l2*sin(q2_t),  0.5*l2*cos(q2_t)])
 
     # velocity vectors
     dp0 = p0.diff(t)
@@ -55,9 +55,9 @@ def modeling():
     # Lagrange equations of the second kind
     # d/dt(dL/d(dq_i/dt)) - dL/dq_i = Q_i
 
-    Q0 = F - d0/2*dq0_t**2
-    Q1 =   - d1/2*dq1_t**2
-    Q2 =   - d2/2*dq2_t**2
+    Q0 = F - d0*dq0_t
+    Q1 =   - d1*dq1_t
+    Q2 =   - d2*dq2_t
 
     Eq0 = L.diff(dq0_t, t) - L.diff(q0_t) - Q0 # = 0
     Eq1 = L.diff(dq1_t, t) - L.diff(q1_t) - Q1 # = 0
@@ -121,6 +121,20 @@ def modeling():
         dx_func = sp.lambdify((x1, x2, x3, x4, x5, x6, u), dx_t_sym[:], modules="numpy")  # creating a callable python function
         dxdt = lambda t, x, u: np.array(dx_func(*x, *u))
     
+    return dxdt
+
+def load_existing():
+    try:
+        x1, x2, x3, x4, x5, x6, u = sp.symbols("x1, x2, x3, x4, x5, x6, u")
+        dx_t_sym = sp.Matrix([[0], [0], [0], [0], [0], [0]])
+        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), dx_t_sym, cfilepath="cartPoleDoubleParallel.c",
+                                      use_exisiting_so=True)
+        dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
+        assert (any(dxdt(0, [0, 0, 0, 1., 1., 1.], [0]) != [0., 0., 0., 0., 0., 0.]))
+        print('Model loaded')
+    except:
+        print('Model could not be loaded! Rerunning model creation!')
+        dxdt = modeling()
     return dxdt
 
 if __name__ == "__main__":
