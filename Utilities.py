@@ -21,6 +21,7 @@ def observation(x, xIsAngle):
         if xIsAngle[i]:
             obsv.append(np.cos(state))
             obsv.append(np.sin(state))
+            obsv.append(state)
         else:
             obsv.append(state)
 
@@ -75,7 +76,7 @@ def hessian3(f, xx, uu, eps=1e-3):
             H[i, j] = (f(xx, uu+eui+euj) - f(xx, uu-eui+euj) - f(xx, uu+eui-euj) + f(xx, uu-eui-euj))/(4*eps**2)
     return H
 
-def system_linearization(f, xx, uu, eps=1e-3):
+def system_linearization(f, xx, uu, eps=2**-17):
     # finite differences approximation of A = df/dx and B = df/du
     # http://www.iue.tuwien.ac.at/phd/heinzl/node27.html Eq. 2.52
     xDim = len(xx)
