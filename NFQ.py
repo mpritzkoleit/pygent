@@ -124,24 +124,6 @@ class QNetwork(Agent):
             qValues.append(self.qNetwork(torch.Tensor(x + [u])))
         return np.argmin(qValues)
 
-    def plot(self):
-        """ Plots the agents history
-
-        Returns:
-            fig (matplotlib.pyplot.figure)
-
-        """
-
-        fig, (ax) = plt.subplots(1, 1)
-        for i in range(len(self.u)):
-            ax.step(self.tt, self.history[:, i], label=r'$u_'+str(i+1)+'$')
-        ax.grid(True)
-        plt.xlabel('t in s')
-        plt.title('Controls')
-        ax.legend()
-
-        return fig
-
 class NFQ(Algorithm):
     """ Neural Fitted Q Iteration (NFQ) - Implementation based on PyTorch (https://pytorch.org)
 
