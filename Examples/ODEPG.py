@@ -27,7 +27,7 @@ class Lambda(nn.Module):
 
     def forward(self, t, y):
         x1, x2 = torch.split(y, 1, dim=1)
-        u1 = 5*self.controller(y)
+        u1 = 2*self.controller(y)
         dx1 = x2
         dx2 = u1 + self.g*torch.sin(x1) - self.b*x2
         return torch.cat((dx1, dx2)).t()
@@ -41,7 +41,7 @@ class Lambda2(nn.Module):
 
     def forward(self, t, y):
         x1, x2, x3, x4, x5, x6 = torch.split(y, 1, dim=1)
-        u1 = self.controller(y)
+        u1 = 2*self.controller(y)
         l1 = 0.5
         l2 = 0.7
         g = 9.81
@@ -56,23 +56,24 @@ class Lambda2(nn.Module):
 
 
 class Controller(nn.Module):
-    def __init__(self):
+    def __init__(self, uMax):
         super(Controller, self).__init__()
         self.layer1 = nn.Linear(2, 1)
+        self.uMax = uMax
 
     def forward(self, x):
-        return torch.tanh(self.layer1(x))
+        return self.uMax*torch.tanh(self.layer1(x))
 
 #ctr = Actor(2, 1)
-ctr = MLP([2, 50, 50, 1])
-#ctr = Controller()
+ctr = MLP([2, 20, 20, 1])
+#ctr = Controller(2)
 ode = Lambda(ctr)
 
-tf = 10.
+tf = 3.
 
 t = torch.linspace(0., tf, 100)
 def x0fun():
-    x20 = np.random.uniform(3.14, 3.14)
+    x20 = np.random.uniform(2.9, 3.2)
     x0 = torch.tensor([[float(x20), 0.]])
     return x0
 
@@ -85,15 +86,15 @@ xt_sample = odeint(ode, x0fun(), t, method='dopri5')
 
 optimizer = optim.Adam(ctr.parameters(), lr=1e-3)
 
-for itr in range(1000):
+for itr in range(100):
     optimizer.zero_grad()
     xt_sample = odeint(ode, x0fun(), t, method='dopri5')
-    loss = torch.mean(torch.abs(xt_sample[:,0,0])) #+ 0.1e-3*torch.mean(torch.abs(ctr(xt_sample)))
+    loss = torch.mean(torch.abs(xt_sample[:,0,:]*torch.Tensor([1., 0.01]))) #+ 0.01*torch.mean(torch.abs(ctr(xt_sample)))
     print('Iteration:', itr, ' Loss: ', loss.item())
     loss.backward()
-    for _ in range(10):
+    for _ in range(300):
         optimizer.step()
-    if itr % 10 == 0:
+    if itr % 1 == 0:
         fig, ax = plt.subplots(2,1)
         ax[0].plot(t.numpy(), xt_sample[:,0,:].detach().numpy())
         ax[1].plot(t.numpy(), ctr(xt_sample)[:,0,:].detach().numpy())

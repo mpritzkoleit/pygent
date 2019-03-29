@@ -39,6 +39,7 @@ class Environment(object):
         self.xDim = len(x0) # state dimension
         self.oDim = self.xDim # observation dimension
         self.uDim = uDim # inputs
+        self.xIsAngle = np.zeros([self.xDim], dtype=bool)
         self.history = np.array([x0])
         self.tt = [0]
         self.terminated = False
@@ -259,7 +260,7 @@ class Pendulum(StateSpaceModel):
         x1, x2 = x
 
         dx1dt = x2
-        dx2dt = u1 + g * np.sin(x1) - b * x2
+        dx2dt = u1 + g*np.sin(x1) - b*x2
 
         return np.array([dx1dt, dx2dt])
 
