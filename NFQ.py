@@ -3,14 +3,12 @@ from Agents import Agent
 from Data import DataSet
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-from abc import abstractmethod
 import matplotlib.pyplot as plt
 from NeuralNetworkModels import MLP
 from Algorithms import Algorithm
 import random
 from Environments import observation
+
 class QNetwork(Agent):
     """ Q-Network (Multi-Layer-Perceptron)
         Q(x,u) -> R
@@ -194,7 +192,6 @@ class NFQ(Algorithm):
         self.agent.train(self.D)
 
         self.episode += 1
-
         pass
 
     def run_learning(self, n):
@@ -209,7 +206,7 @@ class NFQ(Algorithm):
                 self.learning_curve()
                 # if self.meanCost[-1] < 0.01: # goal reached
                 #self.animation()
-
+        pass
 
     def plot(self):
         self.environment.plot()
@@ -217,12 +214,13 @@ class NFQ(Algorithm):
         self.agent.plot()
         plt.savefig('results/'+str(self.episode-1)+'_agent')
         plt.close('all')
+        pass
 
     def animation(self):
         ani = self.environment.animation(self.episode-1, self.meanCost[self.episode-1])
         ani.save('results/'+str(self.episode-1)+'_animation.mp4', fps=1/self.dt)
         plt.close('all')
-
+        pass
 
     def learning_curve(self):
         fig, (ax) = plt.subplots(1, 1)
@@ -232,3 +230,4 @@ class NFQ(Algorithm):
         plt.xlabel('Epsiode')
         plt.savefig('results/learning_curve')
         plt.close('all')
+        pass
