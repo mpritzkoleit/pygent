@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 def cost(x_, u_, x):
     x1, x2 = x_
     u1, = u_
-    c = 0.5*(10*x1**2 + .1*x2**2 + 1.*u1**2)
+    c = 0.5*(10*x1**2 + .001*x2**2 + 1*u1**2)
     return c
 
 def finalcost(x):
@@ -18,8 +18,8 @@ x0 = [np.pi, 0]
 
 pendulum = Pendulum(cost, x0)
 
-t = 5
-dt = 0.05
+t = 10
+dt = 0.01
 
 path = '../Results/iLQR/Pendulum/'
 

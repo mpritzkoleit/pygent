@@ -21,11 +21,11 @@ cartPole = CartPole(cost, x0)
 t = 6
 dt = 0.01
 
-path = '../Results/iLQR/CartPole/'
+path = '../Results/iLQR/CartPole2/'
 
 controller = iLQR(cartPole, t, dt, fcost=finalcost, path=path, constrained=True)
-#controller.run_optim()
-controller.run(x0)
+controller.run_optim()
+#controller.run(x0)
 controller.plot()
 plt.show()
 controller.animation()
