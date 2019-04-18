@@ -269,6 +269,7 @@ class ActorDeep(nn.Module):
         return action
 
 def fanin_init(layer):
+    # todo: move to utilities
     f = layer.in_features
     w_init = 1.0/np.sqrt(f)
     layer.weight = torch.nn.init.uniform_(layer.weight, a=-w_init, b=w_init)

@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from numba import jit
 import gym
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,11 +10,13 @@ from Models.CartPoleDoubleSerial import load_existing as cartPoleDoubleSerialODE
 from Models.CartPoleTriple import load_existing as cartPoleTripleODE
 from Models.CartPole import load_existing as cartPoleODE
 from Models.Acrobot import load_existing as acrobotODE
-from Utilities import  observation
-import torch
+from Utilities import observation
 
 class Environment(object):
-    """ Base class for an environment.
+    """ Environment base class.
+
+    Args:
+        x0 (array, list, callable):
 
     Attributes:
 
@@ -36,6 +37,7 @@ class Environment(object):
             self.x0 = x0
         self.x = x0  # current state
         self.x_ = x0 # previous state x[k-1]
+        # todo: x_ is next state x[k+1]
         self.xDim = len(x0) # state dimension
         self.oDim = self.xDim # observation dimension
         self.uDim = uDim # inputs
@@ -52,10 +54,7 @@ class Environment(object):
         """ Resets environment to state x0
 
         Args:
-            x0 (list): initial state
-
-        Returns:
-            None
+            x0 (array, list, callable): initial state
 
         """
         if callable(x0):
@@ -65,8 +64,7 @@ class Environment(object):
         self.x = x0
         self.tt = [0]
         self.terminated = False
-
-        return None
+        pass
 
     @abstractmethod
     def step(self, *args):
@@ -85,11 +83,11 @@ class Environment(object):
         # Plot state trajectories
         if len(self.x) > 1:
             for i in range(len(self.x)):
-                ax[i].step(self.tt, self.history[:, i], 'k',  lw=1)
+                ax[i].step(self.tt, self.history[:, i], 'b',  lw=1)
                 ax[i].set_ylabel(r'$x_'+str(i+1)+'$')
                 ax[i].grid(True)
         else:
-            ax.step(self.tt, self.history[:, 0], 'k',  lw=1)
+            ax.step(self.tt, self.history[:, 0], 'b',  lw=1)
             ax.grid(True)
             plt.ylabel(r'$x_1$')
         plt.xlabel(r't[s]')
@@ -101,7 +99,7 @@ class Environment(object):
         pass
 
 class OpenAIGym(Environment):
-    """Environment subclass that uses a state space model of the form dx/dt = f(x,u)
+    """ Environment subclass, that is a wrapper for an 'OpenAI gym' environment.
 
     Attributes:
         ode (function): ODE for simulation
@@ -123,7 +121,7 @@ class OpenAIGym(Environment):
 
         Args:
             dt (int, float): duration of step (not solver step size)
-            u (array): control/action
+            u (list, ndarray): control/action
 
         Returns:
             c (float): cost of state transition
@@ -134,7 +132,6 @@ class OpenAIGym(Environment):
 
         self.x_ = self.x  # shift state (x[k-1] = x[k])
         self.o_ = self.o
-        # system simulation
         x, r, terminate, info = self.env.step(u)
         c = -r # cost = - reward
         self.x = list(x)
@@ -154,11 +151,22 @@ class OpenAIGym(Environment):
 
 
 class StateSpaceModel(Environment):
-    """Environment subclass that uses a state space model of the form dx/dt = f(x,u)
+    """ Environment subclass that uses a state space model of the form dx/dt = f(x, u)
+    to represent the environments dynamics.
+
+    Args:
+        ode
+        cost
+        x0
+        uDim
 
     Attributes:
         ode (function): ODE for simulation
-        cost (function): ODE for simulation
+        cost (function): cost function (returns scalar)
+        xIsAngle (ndarray): 'True' if state is an angle, 'False' otherwise
+        o
+        o_
+        oDim
 
     """
 
@@ -187,10 +195,10 @@ class StateSpaceModel(Environment):
 
         # system simulation
         sol = solve_ivp(lambda t, x: self.ode(t, x, u), (0, dt), self.x_)
-
+        # todo: only output value of the last timestep
         y = list(sol.y[:, -1])  # extract simulation result
-        #self.x = self.mapAngles(y)
-        self.x = y
+        self.x = self.mapAngles(y)
+        self.x = y # todo: delete this line
         self.o = observation(self.x, self.xIsAngle)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
@@ -200,11 +208,20 @@ class StateSpaceModel(Environment):
         return c
 
     def terminate(self, x):
-        return False
+        """ Check if a 'terminal' state is reached.
+
+            Args:
+                x (ndarray, list): state
+
+            Returns:
+                terminated (bool): 'True' if 'x' is a terminal state. """
+
+        terminated = False
+        return terminated
 
 
     def fast_step(self, dt, u):
-        """ Simulates the environment for 1 step of time t.
+        """ Simulates the environment for 1 step of time t, using Euler forward integration.
 
         Args:
             dt (int, float): duration of step (not solver step size)
@@ -215,12 +232,12 @@ class StateSpaceModel(Environment):
 
         """
 
-        self.x_ = self.x  # shift state (x[k-1] = x[k])
+        self.x_ = self.x  # shift state (x[k-1] := x[k])
         self.o_ = self.o
-        # euler step
+        # Euler forward step
         y = self.x_ + dt*self.ode(None, self.x_, u)
         self.x = y
-        #self.x = self.mapAngles(y)
+        self.x = self.mapAngles(y)
         self.o = observation(self.x, self.xIsAngle)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
@@ -228,16 +245,16 @@ class StateSpaceModel(Environment):
         self.terminated = self.terminate(self.x_)
         return c
 
-    def mapAngles(self, y):
-        x = y
-        for i in range(len(y)):
+    def mapAngles(self, x):
+        """ Maps angles to the interval [-pi,pi]. """
+
+        for i in range(len(x)):
             if self.xIsAngle[i]:
                 # map theta to [-pi,pi]
                 if x[i] > np.pi:
-                    x[i] -= 2 * np.pi
+                    x[i] -= 2*np.pi
                 elif x[i] < -np.pi:
-                    x[i] += 2 * np.pi
-
+                    x[i] += 2*np.pi
         return x
 
 
@@ -372,7 +389,7 @@ class CartPoleDoubleSerial(StateSpaceModel):
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o) #observation dimensions
         self.o_ = self.o
-        self.uMax = 20*np.ones(1)
+        self.uMax = 40*np.ones(1)
 
     def terminate(self, x):
         x1, x2, x3, x4, x5, x6 = x

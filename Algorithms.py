@@ -1,14 +1,17 @@
 from abc import abstractmethod
 
 class Algorithm(object):
-    """ Learning Process
+    """ Algorithm base class.
 
     Attributes:
-        t (int, float): episode length
-        dt (int, float): step size
-        meanCost (int, float): mean cost of an episode
-        agent (Agent(object)): agent of the algorithm
         environment (Environment(object)): environment
+        agent (Agent(object)): agent of the algorithm
+        t (int, float): episode length in seconds
+        dt (int, float): step size in seconds
+        steps (int): episode length int(t/dt)
+        meanCost (list): mean cost per step of an episode
+        totalCost (list): total cost of an episode
+        episode (int): current episode
 
     """
 
@@ -24,8 +27,10 @@ class Algorithm(object):
 
     @abstractmethod
     def run_episode(self):
+        """ Abstract method. Run an episode/iteration"""
         return
 
     @abstractmethod
     def learning_curve(self):
+        """ Abstract method. Display learning progress."""
         return
