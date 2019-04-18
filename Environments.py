@@ -5,12 +5,14 @@ import numpy as np
 from matplotlib import animation
 import matplotlib.patches as patches
 from scipy.integrate import solve_ivp
-from Models.CartPoleDoubleParallel import load_existing as cartPoleDoubleParallelODE
-from Models.CartPoleDoubleSerial import load_existing as cartPoleDoubleSerialODE
-from Models.CartPoleTriple import load_existing as cartPoleTripleODE
-from Models.CartPole import load_existing as cartPoleODE
-from Models.Acrobot import load_existing as acrobotODE
-from Utilities import observation
+
+# from PyGent
+from modeling_scripts.cart_pole_double_parallel import load_existing as cart_pole_double_parallel_ode
+from modeling_scripts.cart_pole_double_serial import load_existing as cart_pole_double_serial_ode
+from modeling_scripts.cart_pole_triple import load_existing as cart_pole_triple_ode
+from modeling_scripts.cart_pole import load_existing as cart_pole_ode
+from modeling_scripts.acrobot import load_existing as acrobot_ode
+from helpers import observation
 
 class Environment(object):
     """ Environment base class.
@@ -149,7 +151,6 @@ class OpenAIGym(Environment):
         self.tt = [0]
         self.terminated = False
 
-
 class StateSpaceModel(Environment):
     """ Environment subclass that uses a state space model of the form dx/dt = f(x, u)
     to represent the environments dynamics.
@@ -257,7 +258,6 @@ class StateSpaceModel(Environment):
                     x[i] += 2*np.pi
         return x
 
-
 class Pendulum(StateSpaceModel):
 
     def __init__(self, cost, x0):
@@ -326,7 +326,7 @@ class Pendulum(StateSpaceModel):
 
 class CartPole(StateSpaceModel):
     def __init__(self, cost, x0):
-        self.ode = cartPoleODE()
+        self.ode = cart_pole_ode()
         super(CartPole, self).__init__(self.ode, cost, x0, uDim=1)
         self.xIsAngle = [False, True, False, False]
         self.o = observation(self.x, self.xIsAngle)
@@ -383,7 +383,7 @@ class CartPole(StateSpaceModel):
 
 class CartPoleDoubleSerial(StateSpaceModel):
     def __init__(self, cost, x0):
-        self.ode = cartPoleDoubleSerialODE()
+        self.ode = cart_pole_double_serial_ode()
         super(CartPoleDoubleSerial, self).__init__(self.ode, cost, x0, uDim=1)
         self.xIsAngle = [False, True, True, False, False, False]
         self.o = observation(self.x, self.xIsAngle)
@@ -443,7 +443,7 @@ class CartPoleDoubleSerial(StateSpaceModel):
 
 class CartPoleDoubleParallel(StateSpaceModel):
     def __init__(self, cost, x0):
-        self.ode = cartPoleDoubleParallelODE()
+        self.ode = cart_pole_double_parallel_ode()
         super(CartPoleDoubleParallel, self).__init__(self.ode, cost, x0, uDim=1)
         self.xIsAngle = [False, True, True, False, False, False]
         self.o = observation(self.x, self.xIsAngle)
@@ -503,7 +503,7 @@ class CartPoleDoubleParallel(StateSpaceModel):
 
 class CartPoleTriple(StateSpaceModel):
     def __init__(self, cost, x0):
-        self.ode = cartPoleTripleODE()
+        self.ode = cart_pole_triple_ode()
         super(CartPoleTriple, self).__init__(self.ode, cost, x0, uDim=1)
         self.xIsAngle = [False, True, True, True, False, False, False, False]
         self.o = observation(self.x, self.xIsAngle)
@@ -599,7 +599,7 @@ class Car(StateSpaceModel):
 
 class Acrobot(StateSpaceModel):
     def __init__(self, cost, x0):
-        self.ode = acrobotODE()
+        self.ode = acrobot_ode()
         super(Acrobot, self).__init__(self.ode, cost, x0, uDim=1)
         self.xIsAngle = [False, True, False, False]
         self.o = observation(self.x, self.xIsAngle)
@@ -656,5 +656,3 @@ class Acrobot(StateSpaceModel):
         return ani
 
 #class Building(StateSpaceModel):
-#class Ball(StateSpaceModel):
-#class TripleCartPole

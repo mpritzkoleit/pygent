@@ -1,9 +1,6 @@
 import numpy as np
 from abc import abstractmethod, abstractproperty
-# import scipy.integrate as sci
-from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
-import random
 
 class Agent(object):
     """ Base class for an agent. 
