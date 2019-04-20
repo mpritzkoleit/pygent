@@ -23,7 +23,16 @@ class iLQR(Algorithm):
 
     Implementation based on:
 
-    # MATLAB Yuval Tassa
+    https://de.mathworks.com/matlabcentral/fileexchange/52069-ilqg-ddp-trajectory-optimization
+
+    Papers:
+
+    1) Y. Tassa, T. Erez, E. Todorov: Synthesis and Stabilization of Complex Behaviours through
+    Online Trajectorry Optimization
+    Link: https://homes.cs.washington.edu/~todorov/papers/TassaIROS12.pdf
+
+    2) Y. Tassa, N. Monsard, E. Todorov: Control-Limited Differential Dynamic Programming
+    Link: https://homes.cs.washington.edu/~todorov/papers/TassaICRA14.pdf
 
     Attributes:
         n (int): number of episodes
@@ -110,7 +119,7 @@ class iLQR(Algorithm):
         """
 
         Args:
-            alpha:
+            alpha: line search parameter
 
         Returns:
 
@@ -123,7 +132,8 @@ class iLQR(Algorithm):
 
         cost = 0
         for i in range(self.steps):
-            u = self.KK[i] @ (self.environment.x - xx_[i]) + alpha * self.kk[i].T[0] + uu_[i]
+            u = self.KK[i] @ (self.environment.x - xx_[i]) + alpha*self.kk[i].T[0] + uu_[i] # eq. (7b)
+
             if self.constrained:
                 u = np.clip(u, -self.environment.uMax, self.environment.uMax)
             self.agent.control(self.dt, u)
@@ -133,7 +143,9 @@ class iLQR(Algorithm):
             else:
                 c = self.environment.step(self.dt, u)
             cost += c
+
         cost += self.fcost_fnc(self.environment.x)*self.dt
+
         xx = self.environment.history
         uu = self.agent.history[1:]
 
@@ -143,9 +155,10 @@ class iLQR(Algorithm):
         x = self.xx[-1]
         system_matrices = [self.linearization(x, u) for x, u in zip(self.xx[:-1], self.uu)]
         cost_matrices = [self.cost_lin(x, u) for x, u in zip(self.xx[:-1], self.uu)]
+
         # DARE in Vt, vt
-        vx = self.cfx(x) * self.dt
-        Vxx = self.Cfxx(x) * self.dt
+        vx = self.cfx(x)*self.dt
+        Vxx = self.Cfxx(x)*self.dt
 
         dV1 = np.zeros((1, 1))
         dV2 = np.zeros((1, 1))
@@ -163,26 +176,32 @@ class iLQR(Algorithm):
             u = self.uu[i]
 
             # expanded cost
-            Cxx, Cuu, Cxu, cx, cu = cost_matrices[i]  # self.cost_lin(x, u)
+            Cxx, Cuu, Cxu, cx, cu = cost_matrices[i]
 
             # expanded system dynamics
             Ad, Bd, ft = system_matrices[i]
-            # eq. 5a/b
-            qx = cx + np.matmul(Ad.T, vx)  # + np.matmul(Ad.T, np.matmul(Vt, ft))
-            qu = cu + np.matmul(Bd.T, vx)  # +np.matmul(Bd.T, np.matmul(Vt, ft))
 
-            # eq 5c-e
+            # eq. (5a,5b), paper 1)
+            qx = cx + np.matmul(Ad.T, vx)
+            qu = cu + np.matmul(Bd.T, vx)
+
+            # eq (5c-e), paper 1)
             Qxx = Cxx + np.matmul(Ad.T, np.matmul(Vxx, Ad))
             Quu = Cuu + np.matmul(Bd.T, np.matmul(Vxx, Bd))
             Qux = Cxu.T + np.matmul(Bd.T, np.matmul(Vxx, Ad))
 
-            VxxReg = Vxx + self.mu * np.eye(self.xDim) * (self.regType == 1)
-            QuxReg = Cxu.T + np.matmul(Bd.T, np.matmul(VxxReg, Ad))
-            QuuReg = Cuu + np.matmul(Bd.T, np.matmul(VxxReg, Bd)) + self.mu * np.eye(self.uDim) * (self.regType == 2)
+            VxxReg = Vxx + self.mu * np.eye(self.xDim)*(self.regType == 1)
 
-            if self.constrained:  # solve QP
+            # eq. (10a,10b), paper 1)
+            QuuReg = Cuu + np.matmul(Bd.T, np.matmul(VxxReg, Bd)) + self.mu * np.eye(self.uDim) * (self.regType == 2)
+            QuxReg = Cxu.T + np.matmul(Bd.T, np.matmul(VxxReg, Ad))
+
+            if self.constrained:  # solve QP, eq. (11), paper 2)
+                # convert matrices
                 QuuOpt = opt.matrix(QuuReg)
                 quOpt = opt.matrix(qu)
+
+                # inequality constraints Gx <= h, where x is the decision variable
                 G = np.kron(np.array([[1.], [-1.]]), np.eye(self.uDim))
                 h = np.array([self.lims - u, self.lims + u]).reshape((2 * self.uDim,))
                 GOpt = opt.matrix(G)
@@ -190,6 +209,7 @@ class iLQR(Algorithm):
                 sol = opt.solvers.qp(QuuOpt, quOpt, GOpt, hOpt)
                 kt = np.array(sol['x'])
                 clamped = np.zeros((self.uDim), dtype=bool)
+
                 # adapted from boxQP.m of iLQG package
                 uplims = np.isclose(kt.reshape(self.uDim, ), h[0:self.uDim], atol=1e-3)
                 lowlims = np.isclose(kt.reshape(self.uDim, ), h[self.uDim::], atol=1e-3)
@@ -199,9 +219,9 @@ class iLQR(Algorithm):
                 free_controls = np.logical_not(clamped)
                 Kt = np.zeros((self.uDim, self.xDim))
                 if any(free_controls):
-                    Kt[free_controls, :] = -np.linalg.solve(QuuReg, QuxReg)[free_controls,
-                                            :]  # -np.matmul(QuuInv, QuxReg)
-            else:
+                    Kt[free_controls, :] = -np.linalg.solve(QuuReg, QuxReg)[free_controls,:]
+
+            else: # analytic solution
                 try:
                     np.linalg.cholesky(QuuReg)
 
@@ -210,17 +230,18 @@ class iLQR(Algorithm):
                     success = False
                     break
 
-                kt = -np.linalg.solve(QuuReg, qu)  # -np.matmul(QuuInv, qu)#
-                Kt = -np.linalg.solve(QuuReg, QuxReg)  # -np.matmul(QuuInv, Qux)
+
+                kt = -np.linalg.solve(QuuReg, qu) # eq. (10c), paper 1)
+                Kt = -np.linalg.solve(QuuReg, QuxReg) # eq. (10b), paper 1)
+
 
             vx = qx + Kt.T@Quu@kt + Kt.T@qu + Qux.T@kt
             Vxx = Qxx + Kt.T@Quu@Kt + Kt.T@Qux + Qux.T@Kt
-            Vxx = 0.5 * (Vxx + Vxx.T)  # remain symmetry
+            Vxx = 0.5*(Vxx + Vxx.T)  # remain symmetry
 
-            # dV2 = 0.5 * np.matmul(kt.T, np.matmul(QuuReg, kt))
-            # dV1 = np.matmul(kt.T, qu)
-            dV2 = 0.5 * kt.T @ Quu @ kt
-            dV1 = kt.T @ qu
+            dV2 = 0.5*kt.T@Quu@kt
+            dV1 = kt.T@qu
+
             # save Kt, kt
             self.KK.insert(0, Kt)
             self.kk.insert(0, kt)
@@ -241,6 +262,7 @@ class iLQR(Algorithm):
 
 
     def run_optim(self):
+        """ Trajectory optimization. """
         start_time = time.time()
         self.mu = 1.0
         success_gradient = False
@@ -267,25 +289,29 @@ class iLQR(Algorithm):
                     success_gradient = True
 
                 # Line-search
+                # todo: add parallel linesearch
                 for a_index, alpha in enumerate(self.alphas):
                     print('Linesearch:', a_index, '/', len(self.alphas))
                     xx, uu, cost = self.forward_pass(alpha)
                     if np.any(xx > 1e8):
                         print('forward diverged.')
                         break
+                    # cost difference between iterations
                     dcost = self.cost - cost
+
+                    # expected cost reduction, paper 1)
                     expected = -alpha * (np.sum(V1) + alpha * np.sum(V2))
+
+                    # check if expected cost is > 0
                     if expected > 0.:
                         z = dcost / expected
                     else:
                         z = np.sign(dcost)
                         print('non-positive expected reduction')
-                    # print('z :', z)
+
                     if z > self.zmin:
                         success_fw = True
-                        # print('Forward successfull')
                         break
-                    # print('Forward not successfull')
             if success_fw:
                 print('Iter. ', _, '| Cost: %.7f' % self.cost, ' | red.: %.5f' % dcost, '| exp.: %.5f' % expected)
                 self.cost = np.copy(cost)
@@ -296,24 +322,25 @@ class iLQR(Algorithm):
                 self.decrease_mu()
 
                 if dcost < self.tolFun:
-                    print('converged: small improvement')
+                    print('Converged: small improvement')
                     break
                 if success_gradient:
-                    print('converged: small gradient')
+                    print('Converged: small gradient')
                     break
             else:
                 self.increase_mu()
                 print('Iter. ', _, '| Forward not successfull')
                 if self.mu > self.mu_max:
-                    print('converged: no improvement')
+                    print('Diverged: no improvement')
                     break
-        print('Iterations: %d | Final Cost-to-Go: %.2f | Runtime: %.2f min.' % (
-        _, self.cost, (time.time() - start_time) / 60))
-        self.save()
+
+        print('Iterations: %d | Final Cost-to-Go: %.2f | Runtime: %.2f min.' % (_, self.cost, (time.time() - start_time) / 60))
+        self.save() # save controller
         return self.xx, self.uu, self.cost
 
     def init_trajectory(self):
-        # random trajectory
+        """ Initial trajectory, with u=0. """
+
         for _ in range(self.steps):
             u = np.random.uniform(0., 0., self.uDim)
             u = self.agent.control(self.dt, u)
@@ -329,20 +356,18 @@ class iLQR(Algorithm):
         pass
 
     def linearization(self, x, u):
-
+        """  """
         A, B = system_linearization(lambda xx, uu: self.environment.ode(None, xx, uu), x, u)
 
         # Ad, Bd = c2d(A, B, self.dt)
-        Ad = A * self.dt + np.eye(self.xDim)
-        Bd = B * self.dt
-        # Ft = np.block([[self.Ad(x, u), self.Bd(x, u)]])
-        # Ft = np.block([[Ad, Bd]])
-        fd = np.zeros((self.xDim, 1))  # self.dt *0* np.expand_dims(self.environment.ode(None, x, u), 0).T
+        Ad = A*self.dt + np.eye(self.xDim)
+        Bd = B*self.dt
+        fd = np.zeros((self.xDim, 1))
         return Ad, Bd, fd
 
     def cost_init(self):
+
         # 2nd order taylor expansion of the cost function along a trajectory
-        # self.environment.
 
         xx = sp.symbols('x1:' + str(self.xDim + 1))
         uu = sp.symbols('u1:' + str(self.uDim + 1))
@@ -410,11 +435,13 @@ class iLQR(Algorithm):
         return Cxx, Cuu, Cxu, cx, cu
 
     def decrease_mu(self):
+        """ Decrease regularization parameter mu. Section F, paper 1)"""
         self.mu_d = min(self.mu_d / self.mu_d0, 1 / self.mu_d0)
         self.mu = self.mu * self.mu_d * (self.mu > self.mu_min)
         pass
 
     def increase_mu(self):
+        """ Increase regularization parameter mu. Section F, paper 1)"""
         self.mu_d = max(self.mu_d0, self.mu_d0 * self.mu_d)
         self.mu = max(self.mu_min, self.mu * self.mu_d)
         pass
@@ -447,7 +474,7 @@ class NMPC(iLQR):
     Args:
         horizon (int): optimization horizon. """
 
-    def __init__(self, environment, t, dt, horizon=100, maxIters=1, tolGrad=1e-4,
+    def __init__(self, environment, t, dt, horizon=100, maxIters=2, tolGrad=1e-4,
                  tolFun=1e-7, fastForward=True, path='../Results/iLQR/', constrained=False):
         self.sim_environment = copy.deepcopy(environment)
         self.sim_agent = FeedBack(None, self.sim_environment.uDim)
@@ -460,7 +487,6 @@ class NMPC(iLQR):
     def mpc_step(self):
         self.run_optim()
         u = self.sim_agent.control(self.dt, self.uu[0])
-        print('u', u)
         c = self.sim_environment.step(self.dt, u)
         u0 = self.agent.control(self.dt, np.zeros(self.uDim))
         self.environment.step(self.dt, u0)
