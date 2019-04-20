@@ -1,5 +1,5 @@
-from Environments import CartPole
-from iLQR import NMPC
+from environments import CartPole
+from algorithms.ilqr import NMPC
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -14,11 +14,11 @@ x0 = [0, np.pi, 0, 0]
 
 cartPole = CartPole(cost, x0)
 t = 3
-dt = 0.001
+dt = 0.005
 
 path = '../Results/NMPC/CartPole/'
 
-controller = NMPC(cartPole, t, dt, horizon=3000, path=path, constrained=False)
+controller = NMPC(cartPole, t, dt, horizon=100, path=path, constrained=False)
 controller.run_mpc()
 controller.plot()
 plt.show()
