@@ -53,7 +53,7 @@ class Agent(object):
 
         """
 
-        fig, ax = plt.subplots(len(self.u), 1, dpi=150)
+        fig, ax = plt.subplots(self.uDim, 1, dpi=150)
         # plot control trajectories
         if self.uDim > 1:
             for i, axes in enumerate(ax):
