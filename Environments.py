@@ -199,8 +199,7 @@ class StateSpaceModel(Environment):
         # todo: only output value of the last timestep
         y = list(sol.y[:, -1])  # extract simulation result
         self.x = self.mapAngles(y)
-        self.x = y # todo: delete this line
-        self.o = observation(self.x, self.xIsAngle)
+        self.o = self.observe(self.x)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         c = self.cost(self.x_, u, self.x)*dt
@@ -237,9 +236,8 @@ class StateSpaceModel(Environment):
         self.o_ = self.o
         # Euler forward step
         y = self.x_ + dt*self.ode(None, self.x_, u)
-        self.x = y
         self.x = self.mapAngles(y)
-        self.o = observation(self.x, self.xIsAngle)
+        self.o = self.observe(self.x)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         c = self.cost(self.x_, u, self.x)*dt
@@ -258,12 +256,16 @@ class StateSpaceModel(Environment):
                     x[i] += 2*np.pi
         return x
 
+    def observe(self, x):
+        obsv = observation(x, self.xIsAngle)
+        return obsv
+
 class Pendulum(StateSpaceModel):
 
     def __init__(self, cost, x0):
         super(Pendulum, self).__init__(self.ode, cost, x0, uDim=1)
         self.xIsAngle = [True, False]
-        self.o = observation(self.x, self.xIsAngle)
+        self.o = self.observe(self.x)
         self.o_ = self.o
         self.oDim = len(self.o)  # observation dimensions
         self.uMax = 2*np.ones(1)
@@ -372,7 +374,7 @@ class CartPole(StateSpaceModel):
         plt.title('CartPole')
         time_template = 'time = %.1fs'
         time_text = ax.text(0.05, 1.05, '', transform=ax.transAxes)
-        rail, = ax.plot([min(-2.8, 1.2 * min(x_cart)), max(2.8, 1.2 * max(x_cart))], [0, 0], 'ks-', zorder=0)
+        rail, = ax.plot([min(-1, 1.2 * min(x_cart)), max(1, 1.2 * max(x_cart))], [0, 0], 'ks-', zorder=0)
         pole, = ax.plot([], [], 'b-', zorder=1, lw=3)
         cart = patches.Rectangle((-0.1, -0.05), 0.2, 0.1, fc='b', zorder=1)
         ax.add_artist(cart)
