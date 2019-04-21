@@ -4,6 +4,8 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import os
 import pickle
+import inspect
+from shutil import copyfile
 
 # pygent
 from agents import Agent
@@ -61,6 +63,9 @@ class DDPG(Algorithm):
             os.makedirs(path + 'animations/')
         if not os.path.isdir(path + 'data/'):
             os.makedirs(path + 'data/')
+        copyfile(inspect.stack()[-1][1], path + 'exec_script.py')
+        self.expCost = []
+        self.episode_steps = []
 
     def run_episode(self):
         """ Run a training episode. If terminal state is reached, episode stops."""
@@ -68,20 +73,22 @@ class DDPG(Algorithm):
         print('Started episode ', self.episode)
         tt = np.arange(0, self.t, self.dt)
         cost = []  # list of incremental costs
+        disc_cost = [] # discounted cost
 
         # reset environment/agent to initial state, delete history
         self.environment.reset(self.environment.x0)
         self.agent.reset()
 
-        for _ in tt:
+        for i, t in enumerate(tt):
             # agent computes control/action
-            if self.episode % self.evalPolicyInterval == 0 and self.R.data.__len__() >= self.warm_up:
-                u = self.agent.take_action(self.dt, self.environment.o)
+            if self.R.data.__len__() >= self.warm_up:
+                u = self.agent.take_noisy_action(self.dt, self.environment.o)
             else:
-                u = self.agent.take_random_action(self.dt, self.environment.o)
+                u = self.agent.take_random_action(self.dt)
             # simulation of environment
-            c = self.environment.step(self.dt, u) * self.costScale
+            c = self.environment.step(self.dt, u)*self.costScale
             cost.append(c)
+            disc_cost.append(c*self.agent.gamma**i)
 
             # store transition in data set (x_, u, x, c)
             transition = ({'x_': self.environment.o_, 'u': self.agent.u, 'x': self.environment.o, 'c': [c]})
@@ -90,7 +97,7 @@ class DDPG(Algorithm):
             self.R.force_add_sample(transition)
 
             # training of the policy network (agent)
-            if self.R.data.__len__() > self.warm_up:
+            if self.R.data.__len__() >= self.warm_up:
                 self.agent.training(self.R)
 
             # check if environment terminated
@@ -100,8 +107,11 @@ class DDPG(Algorithm):
 
         # store the mean of the incremental cost
         self.meanCost.append(np.mean(cost))
-        self.totalCost.append(np.sum(cost))
-        # todo: add expected cost
+        self.totalCost.append(np.sum(disc_cost))
+        # todo: create a function in environments, that returns x0, o0
+        x = self.environment.observe(self.environment.history[0, :])
+        self.expCost.append(self.agent.expCost(x))
+        self.episode_steps.append(i)
         self.episode += 1
         pass
 
@@ -116,7 +126,7 @@ class DDPG(Algorithm):
         self.environment.reset(x0)
         self.agent.reset()
 
-        for _ in tt:
+        for i, t in enumerate(tt):
             # agent computes control/action
             u = self.agent.take_action(self.dt, self.environment.o)
 
@@ -128,11 +138,6 @@ class DDPG(Algorithm):
             if self.environment.terminated:
                 print('Environment terminated!')
                 break
-
-        # store the mean of the incremental cost
-        self.meanCost.append(np.mean(cost))
-        self.totalCost.append(np.sum(cost))
-        self.episode += 1
         pass
 
     def run_learning(self, n):
@@ -167,8 +172,13 @@ class DDPG(Algorithm):
         self.R.save(self.path + 'data/dataSet.p')
 
         # save learning curve data
-        pickle.dump(self.meanCost, open(self.path + 'data/meanCost.p', 'wb'))
-        pickle.dump(self.totalCost, open(self.path + 'data/totalCost.p', 'wb'))
+        learning_curve_dict = {'totalCost': self.totalCost, 'meanCost':self.meanCost, 'expCost': self.expCost}
+        #pickle.dump(self.meanCost, open(self.path + 'data/meanCost.p', 'wb'))
+        #pickle.dump(self.totalCost, open(self.path + 'data/totalCost.p', 'wb'))
+        #pickle.dump(self.expCost, open(self.path + 'data/expCost.p', 'wb'))
+
+        pickle.dump(learning_curve_dict, open(self.path + 'data/learning_curve.p', 'wb'))
+        print('Network parameters, data set and learning curve saved.')
         pass
 
     def load(self):
@@ -181,25 +191,33 @@ class DDPG(Algorithm):
             self.agent.actor2.load_state_dict(checkpoint['actor'])
             self.agent.critic1.load_state_dict(checkpoint['critic'])
             self.agent.critic2.load_state_dict(checkpoint['critic'])
+            print('Loaded neural network parameters!')
         else:
-            print('Checkpoint file not found!')
+            print('Could not load neural network parameters!')
 
         # load data set
         if os.path.isfile(self.path + 'data/dataSet.p'):
             self.R.load(self.path + 'data/dataSet.p')
+            print('Loaded data set!')
         else:
-            print('No dataset found!')
+            print('No data set found!')
 
         # load learning curve
-        if os.path.isfile(self.path + 'data/meanCost.p'):
-            self.meanCost = pickle.load(open(self.path + 'data/meanCost.p', 'rb'))
+        if os.path.isfile(self.path + 'data/learning_curve.p'):
+            learning_curve_dict = pickle.load(open(self.path + 'data/learning_curve.p', 'rb'))
+            self.meanCost = learning_curve_dict['meanCost']
+            self.meanCost = learning_curve_dict['totalCost']
+            self.meanCost = learning_curve_dict['expCost']
+            self.episode_steps = learning_curve_dict['episode_steps']
+            if self.R.data.__len__() > np.sum(self.episode_steps):
+                self.episode_steps[0] += self.R.data.__len__()
+            else:
+                print('Data set smaller than learning curve. Probably corrupted.')
             self.episode = self.meanCost.__len__() + 1
+            print('Loaded learning curve data!')
         else:
             print('No learning curve data found!')
-        if os.path.isfile(self.path + 'data/totalCost.p'):
-            self.totalCost = pickle.load(open(self.path + 'data/totalCost.p', 'rb'))
-        else:
-            print('No learning curve data found!')
+        self.run_controller(self.environment.x0)
         pass
 
     def plot(self):
@@ -227,13 +245,18 @@ class DDPG(Algorithm):
         """ Plot of the learning curve. """
 
         fig, ax = plt.subplots(2, 1, dpi=150, sharex=True)
-        ax[0].step(np.arange(1, self.episode), self.meanCost, 'b', lw=1)
-        ax[0].set_ylabel(r'avg. cost/step')
+        #x = np.arange(1, self.episode)
+        x = np.linspace(1, self.R.data.__len__(), self.episode-1)
+        x = np.cumsum(self.episode_steps)
+
+        ax[0].step(x, self.meanCost, 'b', lw=1, label=r'$\frac{1}{N}\sum_{k=0}^N c_k$')
+        ax[0].legend(loc='upper left')
         ax[0].grid(True)
-        ax[1].step(np.arange(1, self.episode), self.totalCost, 'b', lw=1)
-        ax[1].set_ylabel(r'total cost')
+        ax[1].step(x, self.totalCost, 'b', lw=1, label=r'$\sum_{k=0}^N\gamma^k c_k$')
+        ax[1].step(x, self.expCost, 'r', lw=1, label=r'$\hat{V}(x_0)$')
         ax[1].grid(True)
-        plt.xlabel(r'Episode')
+        ax[1].legend(loc='upper left')
+        plt.xlabel(r'Number of Samples')
         plt.savefig(self.path + 'learning_curve.pdf')
         plt.savefig(self.path + 'learning_curve.pgf')
         # todo: save learning curve data
@@ -267,7 +290,7 @@ class ActorCriticDDPG(Agent):
 
     """
 
-    def __init__(self, xDim, uDim, uMax, dt, batch_size=128, gamma=0.99, tau=0.001, actor_lr=1e-4, critic_lr=1e-3):
+    def __init__(self, xDim, uDim, uMax, dt, batch_size=64, gamma=0.99, tau=0.001, actor_lr=1e-4, critic_lr=1e-3):
         super(ActorCriticDDPG, self).__init__(uDim)
         self.xDim = xDim
         self.uMax = uMax
@@ -390,7 +413,7 @@ class ActorCriticDDPG(Agent):
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
 
-    def take_random_action(self, dt, x):
+    def take_noisy_action(self, dt, x):
         """ Compute the noisy control/action of the policy network (actor).
 
             Args:
@@ -405,6 +428,22 @@ class ActorCriticDDPG(Agent):
         x = torch.Tensor([x])
         u = np.asarray(self.actor1(x).detach())[0] + self.noise.sample()*self.uMax.numpy()
         self.u = np.clip(u, -self.uMax.numpy(), self.uMax.numpy())
+        self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
+        self.tt.extend([self.tt[-1] + dt])  # increment simulation time
+        return self.u
+
+    def take_random_action(self, dt):
+        """ Compute a random control/action of the policy network (actor).
+
+            Args:
+                dt (float): stepsize
+                x (ndarray, list): state (input of policy network)
+
+            Returns:
+                u (ndarray): noisy control/action
+        """
+
+        self.u = np.random.uniform(-self.uMax, self.uMax, self.uDim)
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
@@ -432,3 +471,8 @@ class ActorCriticDDPG(Agent):
         qTargets = torch.squeeze(qTargets)
         return x_Inputs, uInputs, qTargets
 
+    def expCost(self, x):
+        """ Returns the current estimate for V(x). """
+        x = torch.Tensor([x])
+        V = self.critic1(x, self.actor1(x)).detach()
+        return V
