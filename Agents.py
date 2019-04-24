@@ -13,6 +13,7 @@ class Agent(object):
         self.tt = [0] # array with time stamps
         self.history = np.zeros([1, uDim]) # agents history (the control trajectory)
         self.uDim = uDim # dimension of control input
+        # todo: add dt as argument
 
     @abstractmethod
     def take_action(self, *args):
@@ -31,7 +32,7 @@ class Agent(object):
                     u (array): control/action
 
                 """
-
+        # todo: dt is optional
         self.u = u
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
@@ -94,6 +95,7 @@ class FeedBack(Agent):
 
         """
 
+        # todo: dt is optional
         self.u = self.mu(x)  # compute control/action signal
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time

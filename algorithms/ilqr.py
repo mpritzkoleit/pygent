@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import copy
+import inspect
+from shutil import copyfile
 import sympy as sp
 try:
     from sympy_to_c import sympy_to_c as sp2c
@@ -74,17 +76,20 @@ class iLQR(Algorithm):
             os.makedirs(path + 'animations/')
         if not os.path.isdir(path + 'data/'):
             os.makedirs(path + 'data/')
+        copyfile(inspect.stack()[-1][1], path + 'exec_script.py')
         self.fastForward = fastForward  # if True use Eulers Method instead of ODE solver
         agent = FeedBack(None, self.uDim)
         super(iLQR, self).__init__(environment, agent, t, dt)
         self.environment.xIsAngle = np.zeros(self.xDim, dtype=bool)
         self.cost = 0.
-        self.fcost_fnc = fcost  # final cost
         if fcost == None:
-            self.fcost_fnc = lambda x: self.cost_fnc(x, np.zeros((1, self.uDim)))
-
+            self.fcost_fnc = lambda x, mod: self.cost_fnc(x, np.zeros((1, self.uDim)), mod)
+        else:
+            if inspect.signature(fcost).parameters.__len__() == 1:
+                self.fcost_fnc = lambda x, mod: fcost(x)  # final cost
         self.cost_init()
         self.init_trajectory()
+        # todo: mu to eta
 
         # algorithm parameters
         self.max_iters = maxIters
@@ -101,7 +106,7 @@ class iLQR(Algorithm):
         self.lims = self.environment.uMax
         self.regType = 2.
 
-    def cost_fnc(self, x, u):
+    def cost_fnc(self, x, u, mod):
         """
 
         Args:
@@ -111,7 +116,7 @@ class iLQR(Algorithm):
         Returns:
 
         """
-        c = self.environment.cost(x, u, None)*self.dt
+        c = self.environment.cost(x, u, None, mod)*self.dt
         return c
 
 
@@ -144,7 +149,7 @@ class iLQR(Algorithm):
                 c = self.environment.step(self.dt, u)
             cost += c
 
-        cost += self.fcost_fnc(self.environment.x)*self.dt
+        cost += self.fcost_fnc(self.environment.x, np)*self.dt
 
         xx = self.environment.history
         uu = self.agent.history[1:]
@@ -196,6 +201,13 @@ class iLQR(Algorithm):
             QuuReg = Cuu + np.matmul(Bd.T, np.matmul(VxxReg, Bd)) + self.mu * np.eye(self.uDim) * (self.regType == 2)
             QuxReg = Cxu.T + np.matmul(Bd.T, np.matmul(VxxReg, Ad))
 
+            try:
+                np.linalg.cholesky(QuuReg)
+            except np.linalg.LinAlgError as e:
+                print('Quu not positive-definite')
+                success = False
+                break
+
             if self.constrained:  # solve QP, eq. (11), paper 2)
                 # convert matrices
                 QuuOpt = opt.matrix(QuuReg)
@@ -222,15 +234,6 @@ class iLQR(Algorithm):
                     Kt[free_controls, :] = -np.linalg.solve(QuuReg, QuxReg)[free_controls,:]
 
             else: # analytic solution
-                try:
-                    np.linalg.cholesky(QuuReg)
-
-                except np.linalg.LinAlgError as e:
-                    print('Quu not positive-semidefinite')
-                    success = False
-                    break
-
-
                 kt = -np.linalg.solve(QuuReg, qu) # eq. (10c), paper 1)
                 Kt = -np.linalg.solve(QuuReg, QuxReg) # eq. (10b), paper 1)
 
@@ -272,9 +275,6 @@ class iLQR(Algorithm):
             while not success_bw:
                 V1, V2, success_bw = self.backward_pass()
                 if not success_bw:
-                    # print('Backward successfull')
-                    print('diverged')
-                    # increase mu
                     self.increase_mu()
                     break
 
@@ -291,7 +291,7 @@ class iLQR(Algorithm):
                 # Line-search
                 # todo: add parallel linesearch
                 for a_index, alpha in enumerate(self.alphas):
-                    print('Linesearch:', a_index, '/', len(self.alphas))
+                    print('Linesearch:', a_index+1, '/', len(self.alphas))
                     xx, uu, cost = self.forward_pass(alpha)
                     if np.any(xx > 1e8):
                         print('forward diverged.')
@@ -350,13 +350,16 @@ class iLQR(Algorithm):
             else:
                 c = self.environment.step(self.dt, u)
             self.cost += c
-        self.cost += self.fcost_fnc(self.environment.x) * self.dt
+        self.cost += self.fcost_fnc(self.environment.x, np) * self.dt
         self.xx = self.environment.history
         self.uu = self.agent.history[1:]
         pass
 
     def linearization(self, x, u):
-        """  """
+        """ Computes the 1st order expansion of the system dynamics in discrete form.
+
+        Args:
+            """
         A, B = system_linearization(lambda xx, uu: self.environment.ode(None, xx, uu), x, u)
 
         # Ad, Bd = c2d(A, B, self.dt)
@@ -366,13 +369,13 @@ class iLQR(Algorithm):
         return Ad, Bd, fd
 
     def cost_init(self):
-
+        """ Computes second order expansion of the """
         # 2nd order taylor expansion of the cost function along a trajectory
 
         xx = sp.symbols('x1:' + str(self.xDim + 1))
         uu = sp.symbols('u1:' + str(self.uDim + 1))
 
-        c = self.cost_fnc(xx, uu)
+        c = self.cost_fnc(xx, uu, sp)
         cc = sp.Matrix([[c]])
         cx = cc.jacobian(xx)
         cu = cc.jacobian(uu)
@@ -381,13 +384,12 @@ class iLQR(Algorithm):
         Cxu = cx.jacobian(uu)
 
         # final cost
-        cf = self.fcost_fnc(xx)
+        cf = self.fcost_fnc(xx, sp)
         ccf = sp.Matrix([[cf]])
         cfx = ccf.jacobian(xx)
         Cfxx = cfx.jacobian(xx)
 
         try:
-            assert(False)
             cx_func = sp2c.convert_to_c((*xx, *uu), cx.T, cfilepath="cx.c", use_exisiting_so=False)
             self.cx = lambda x, u: cx_func(*x, *u)
             cu_func = sp2c.convert_to_c((*xx, *uu), cu.T, cfilepath="cu.c", use_exisiting_so=False)

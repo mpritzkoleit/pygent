@@ -5,6 +5,7 @@ import numpy as np
 from matplotlib import animation
 import matplotlib.patches as patches
 from scipy.integrate import solve_ivp
+import inspect
 
 # from PyGent
 from modeling_scripts.cart_pole_double_parallel import load_existing as cart_pole_double_parallel_ode
@@ -39,7 +40,6 @@ class Environment(object):
             self.x0 = x0
         self.x = x0  # current state
         self.x_ = x0 # previous state x[k-1]
-        # todo: x_ is next state x[k+1]
         self.xDim = len(x0) # state dimension
         self.oDim = self.xDim # observation dimension
         self.uDim = uDim # inputs
@@ -174,7 +174,20 @@ class StateSpaceModel(Environment):
     def __init__(self, ode, cost, x0, uDim):
         super(StateSpaceModel, self).__init__(x0, uDim)
         self.ode = ode
-        self.cost = cost
+        cost_args = inspect.signature(cost).parameters.__len__()
+        if cost_args == 1:
+            self.cost = lambda x_, u_, x, mod: cost(x_)
+        if cost_args == 2:
+            self.cost = lambda x_, u_, x, mod: cost(x_, u_)
+        elif cost_args == 3 and 'mod' in inspect.signature(cost).parameters:
+            self.cost = lambda x_, u_, x, mod: cost(x_, u_, mod)
+        elif cost_args == 3 and 'mod' not in inspect.signature(cost).parameters:
+            self.cost = lambda x_, u_, x, mod: cost(x_, u_, x)
+        elif cost_args == 4:
+            self.cost = cost
+        else:
+            print('Cost function must to be of the form c(x), c(x, u), c(x_, u_, x), c(x, u, mod) or c(x_, u_, x, mod), where mod is a placeholder for numpy/sympy.')
+            assert(True)
         self.xIsAngle = np.zeros([len(self.x_)], dtype=bool)
         self.o = self.x
         self.o_ = self.x_
@@ -202,7 +215,7 @@ class StateSpaceModel(Environment):
         self.o = self.observe(self.x)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
-        c = self.cost(self.x_, u, self.x)*dt
+        c = self.cost(self.x_, u, self.x, np)*dt
         self.terminated = self.terminate(self.x_)
 
         return c
@@ -240,7 +253,7 @@ class StateSpaceModel(Environment):
         self.o = self.observe(self.x)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
-        c = self.cost(self.x_, u, self.x)*dt
+        c = self.cost(self.x_, u, self.x, np)*dt
         self.terminated = self.terminate(self.x_)
         return c
 
@@ -369,7 +382,7 @@ class CartPole(StateSpaceModel):
         ax.set_aspect('equal')
         ax.set(xlabel=r'$x_1$')
         plt.ylim((-.6, .6))
-        plt.xlim((min(-1.2, 1.2 * min(x_cart)), max(1.2, 1.2 * max(x_cart))))
+        plt.xlim((min(-1.4, 1.2 * min(x_cart)), max(1.4, 1.2 * max(x_cart))))
         plt.yticks([], [])
         plt.title('CartPole')
         time_template = 'time = %.1fs'

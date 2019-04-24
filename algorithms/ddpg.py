@@ -40,7 +40,7 @@ class DDPG(Algorithm):
     """
 
     def __init__(self, environment, t, dt, plotInterval=50, nData=1e6, path='../Results/DDPG/', checkInterval=50,
-                 evalPolicyInterval=100, costScale=100, warm_up=5e4, a_lr=1e-4, c_lr=1e-3, tau=0.001, batch_size=64):
+                 evalPolicyInterval=100, costScale=None, warm_up=5e4, a_lr=1e-4, c_lr=1e-3, tau=0.001, batch_size=64):
         xDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax
@@ -53,7 +53,10 @@ class DDPG(Algorithm):
         self.evalPolicyInterval = evalPolicyInterval
         self.checkInterval = checkInterval  # checkpoint interval
         self.path = path
-        self.costScale = costScale
+        if costScale == None:
+            self.costScale = int(1/dt)
+        else:
+            self.costScale = costScale
         self.warm_up = warm_up
         if not os.path.isdir(path):
             os.makedirs(path)
@@ -66,6 +69,7 @@ class DDPG(Algorithm):
         copyfile(inspect.stack()[-1][1], path + 'exec_script.py')
         self.expCost = []
         self.episode_steps = []
+
 
     def run_episode(self):
         """ Run a training episode. If terminal state is reached, episode stops."""
@@ -172,10 +176,8 @@ class DDPG(Algorithm):
         self.R.save(self.path + 'data/dataSet.p')
 
         # save learning curve data
-        learning_curve_dict = {'totalCost': self.totalCost, 'meanCost':self.meanCost, 'expCost': self.expCost}
-        #pickle.dump(self.meanCost, open(self.path + 'data/meanCost.p', 'wb'))
-        #pickle.dump(self.totalCost, open(self.path + 'data/totalCost.p', 'wb'))
-        #pickle.dump(self.expCost, open(self.path + 'data/expCost.p', 'wb'))
+        learning_curve_dict = {'totalCost': self.totalCost, 'meanCost':self.meanCost,
+                               'expCost': self.expCost, 'episode_steps': self.episode_steps}
 
         pickle.dump(learning_curve_dict, open(self.path + 'data/learning_curve.p', 'wb'))
         print('Network parameters, data set and learning curve saved.')
@@ -206,13 +208,9 @@ class DDPG(Algorithm):
         if os.path.isfile(self.path + 'data/learning_curve.p'):
             learning_curve_dict = pickle.load(open(self.path + 'data/learning_curve.p', 'rb'))
             self.meanCost = learning_curve_dict['meanCost']
-            self.meanCost = learning_curve_dict['totalCost']
-            self.meanCost = learning_curve_dict['expCost']
+            self.totalCost = learning_curve_dict['totalCost']
+            self.expCost = learning_curve_dict['expCost']
             self.episode_steps = learning_curve_dict['episode_steps']
-            if self.R.data.__len__() > np.sum(self.episode_steps):
-                self.episode_steps[0] += self.R.data.__len__()
-            else:
-                print('Data set smaller than learning curve. Probably corrupted.')
             self.episode = self.meanCost.__len__() + 1
             print('Loaded learning curve data!')
         else:
