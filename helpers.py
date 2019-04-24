@@ -1,9 +1,7 @@
-from numba import jit
 import torch
 from torch.autograd import grad
 import numpy as np
 import scipy as sci
-import sympy as sp
 
 def nth_derivative(f, wrt, n):
     # from: https://stackoverflow.com/questions/50322833/higher-order-gradients-in-pytorch
