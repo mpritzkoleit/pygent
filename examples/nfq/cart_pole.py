@@ -2,7 +2,7 @@ from environments import CartPole
 from algorithms.nfq import NFQ
 import numpy as np
 
-def cost(x_, u, x):
+def cost(x):
     x1, x2, x3, x4 = x
     if abs(x1) > 0.25:
         c = 1

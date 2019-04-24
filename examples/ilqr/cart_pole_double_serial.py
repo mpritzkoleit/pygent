@@ -4,9 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def cost(x_, u_, x):
-    x1, x2, x3, x4, x5, x6 = x_
-    u1, = u_
+def cost(x, u):
+    x1, x2, x3, x4, x5, x6 = x
+    u1, = u
     c = 5*x1**2 + 10*x2**2 + 10*x3**2 + .1*u1**2
     #xtip = x1 - np.sin(x2) + np.sin(x3)
     #ytip = np.cos(x2) + np.cos(x3)

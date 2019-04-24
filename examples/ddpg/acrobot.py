@@ -3,9 +3,9 @@ from algorithms.ddpg import DDPG
 import numpy as np
 import time
 
-def cost(x_, u_, x):
-    x1, x2, x3, x4 = x_
-    u1, = u_
+def cost(x, u):
+    x1, x2, x3, x4 = x
+    u1, = u
     xtip = -np.sin(x1) - np.sin(x1 + x2)
     ytip = np.cos(x1) + np.cos(x1 + x2)
     ytip_ref = 2

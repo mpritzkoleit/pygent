@@ -2,9 +2,9 @@ from environments import Pendulum
 from algorithms.ddpg import DDPG
 import numpy as np
 import time
-def cost(x_, u_, x):
-    x1, x2 = x_
-    u1, = u_
+def cost(x, u):
+    x1, x2 = x
+    u1, = u
     c = (x1**2 + 1e-1*x2**2 + 1e-3*u1**2)
     return c
 

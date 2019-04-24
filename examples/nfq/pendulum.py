@@ -2,7 +2,7 @@ from environments import Pendulum
 from algorithms.nfq import NFQ
 import numpy as np
 import matplotlib.pyplot as plt
-def cost(x_, u, x):
+def cost(x):
     x1, x2 = x
     terminate = False
     if abs(x2) > 10:

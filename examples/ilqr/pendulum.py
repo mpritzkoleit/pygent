@@ -3,7 +3,7 @@ from algorithms.ilqr import iLQR
 import numpy as np
 import matplotlib.pyplot as plt
 
-def cost(x_, u_, x):
+def cost(x_, u_, mod):
     x1, x2 = x_
     u1, = u_
     c = 0.5*(10*x1**2 + .001*x2**2 + 1*u1**2)

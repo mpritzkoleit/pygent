@@ -3,10 +3,10 @@ from algorithms.ilqr import iLQR
 import numpy as np
 import matplotlib.pyplot as plt
 
-def cost(x_, u_, x):
-    x1, x2, x3, x4 = x_
-    u1, = u_
-    c = .5*(1*x1**2 + 2*x2**2 + 0.01*x3**2 + 0.01*x4**2 + 0.1*u1**2)
+def cost(x, u):
+    x1, x2, x3, x4 = x
+    u1, = u
+    c = .5*(1.*x1**2 + 2*x2**2 + .01*x3**2 + .01*x4**2) + 0.01*u1**2
     return c
 
 def finalcost(x):
@@ -21,11 +21,10 @@ cartPole = CartPole(cost, x0)
 t = 6
 dt = 0.01
 
-path = '../../../results/ilqr/cart_pole/'
+path = '../../../results/ilqr/cart_pole2/'
 
-controller = iLQR(cartPole, t, dt, fcost=finalcost, path=path, constrained=True)
+controller = iLQR(cartPole, t, dt, path=path, fcost=finalcost, constrained=True)
 controller.run_optim()
-#controller.run(x0)
 controller.plot()
 plt.show()
 controller.animation()
