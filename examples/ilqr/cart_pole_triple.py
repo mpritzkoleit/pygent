@@ -23,6 +23,7 @@ cartPole = CartPoleTriple(c_k, x0)
 t = 3.5
 dt = 0.005
 
+
 path = '../../../results/ilqr/cart_pole_triple/'
 controller = iLQR(cartPole, t, dt, constrained=True, fcost=None, path=path, maxIters=500)
 
