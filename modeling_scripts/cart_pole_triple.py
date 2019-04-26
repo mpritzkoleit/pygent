@@ -134,7 +134,7 @@ def modeling():
 
     # RHS as callable function
     try: # use c-code
-        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym, cfilepath="cartPoleTriple.c",
+        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym, cfilepath="c_files/cart_pole_triple.c",
                                       use_exisiting_so=False)
         dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
 
@@ -142,14 +142,14 @@ def modeling():
         print('C-function of systems ODE could not be created')
         dx_func = sp.lambdify((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym[:], modules="numpy")  # creating a callable python function
         dxdt = lambda t, x, u: np.array(dx_func(*x, *u))
-    
+
     return dxdt
 
 def load_existing():
     try:
         x1, x2, x3, x4, x5, x6, x7, x8, u = sp.symbols("x1, x2, x3, x4, x5, x6, x7, x8, u")
         dx_t_sym = sp.Matrix([[0], [0], [0], [0], [0], [0], [0], [0]])
-        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym, cfilepath="cartPoleTriple.c",
+        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym, cfilepath="c_files/cart_pole_triple.c",
                                       use_exisiting_so=True)
         dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
         assert(any(dxdt(0, [0, 0, 0, 0, 1., 1., 1., 1.], [0]) != [0., 0., 0., 0., 0., 0., 0., 0.]))

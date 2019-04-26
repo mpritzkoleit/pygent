@@ -6,7 +6,7 @@ import numpy as np
 def cost(x, u):
     x1, x2, x3, x4 = x
     u1, = u
-    c = (x1 - np.sin(x2))**2 + (1 - np.cos(x2))**2 + 0.1*x3**2
+    c = (x1 - np.sin(x2))**2 + (1 - np.cos(x2))**2 + 0.01*u1**2
 
     if abs(x1)>1:
         c+=100
@@ -21,10 +21,10 @@ cartPole = CartPole(cost, x0fun)
 t = 6
 dt = 0.01
 
-path = '../../../results/ddpg/cart_pole/experiment1/'
+path = '../../../results/ddpg/cart_pole/experiment6/'
 
 algorithm = DDPG(cartPole, t, dt, path=path, a_lr=1e-3, tau=0.005, batch_size=128)
 algorithm.load()
-algorithm.run_learning(4000)
+algorithm.run_learning(10000)
 algorithm.plot()
 algorithm.animation()

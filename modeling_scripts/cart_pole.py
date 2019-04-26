@@ -6,8 +6,7 @@ try:
     from sympy_to_c import sympy_to_c as sp2c
 except ImportError:
     print('sympy-to-c could not be imported!')
-import pickle
-#import dill
+
 def modeling():
     t = sp.Symbol('t') # time
     params = sp.symbols('m0, m1, J1, a1, l1, g, d0, d1') # system parameters
@@ -118,7 +117,7 @@ def modeling():
     print(dx_t_sym)
     # RHS as callable function
     try: # use c-code
-        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, u), dx_t_sym, cfilepath="cartPole.c",
+        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, u), dx_t_sym, cfilepath="c_files/cart_pole.c",
                                   use_exisiting_so=False)
 
         dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
@@ -127,15 +126,13 @@ def modeling():
         print('C-function of systems ODE could not be created, using sympy expression!')
         dx_func = sp.lambdify((x1, x2, x3, x4, u), dx_t_sym[:], modules="numpy")  # creating a callable python function
         dxdt = lambda t, x, u: np.array(dx_func(*x, *u))
-
-
     return dxdt
 
 def load_existing():
     try:
         x1, x2, x3, x4, u = sp.symbols("x1, x2, x3, x4, u")
         dx_t_sym = sp.Matrix([[0], [0], [0], [0]])
-        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, u), dx_t_sym, cfilepath="cartPole.c",
+        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, u), dx_t_sym, cfilepath="c_files/cart_pole.c",
                                       use_exisiting_so=True)
         dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
         assert(any(dxdt(0, [0, 0, 1., 1.], [0]) != [0., 0., 0., 0.]))

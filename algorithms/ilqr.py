@@ -30,7 +30,7 @@ class iLQR(Algorithm):
     Papers:
 
     1) Y. Tassa, T. Erez, E. Todorov: Synthesis and Stabilization of Complex Behaviours through
-    Online Trajectorry Optimization
+    Online Trajectory Optimization
     Link: https://homes.cs.washington.edu/~todorov/papers/TassaIROS12.pdf
 
     2) Y. Tassa, N. Monsard, E. Todorov: Control-Limited Differential Dynamic Programming
@@ -61,7 +61,7 @@ class iLQR(Algorithm):
             tolFun (float):
             fastForward (bool): if True, use Euler forward integration
             path (string): directory for saving time-varying controllers and trajectories
-            fcost (callable): Final cost function. c = fcost(x_N)
+            fcost (function): Final cost function. c = fcost(x_N)
             constrained (bool): if True, control input is constrained
         """
 
@@ -76,6 +76,8 @@ class iLQR(Algorithm):
             os.makedirs(path + 'animations/')
         if not os.path.isdir(path + 'data/'):
             os.makedirs(path + 'data/')
+        if not os.path.isdir(path + 'c_files/'):
+            os.makedirs(path + 'c_files/')
         copyfile(inspect.stack()[-1][1], path + 'exec_script.py')
         self.fastForward = fastForward  # if True use Eulers Method instead of ODE solver
         agent = FeedBack(None, self.uDim)
@@ -390,22 +392,23 @@ class iLQR(Algorithm):
         Cfxx = cfx.jacobian(xx)
 
         try:
-            cx_func = sp2c.convert_to_c((*xx, *uu), cx.T, cfilepath="cx.c", use_exisiting_so=False)
+            cx_func = sp2c.convert_to_c((*xx, *uu), cx.T, cfilepath=self.path + 'c_files/cx.c', use_exisiting_so=False)
             self.cx = lambda x, u: cx_func(*x, *u)
-            cu_func = sp2c.convert_to_c((*xx, *uu), cu.T, cfilepath="cu.c", use_exisiting_so=False)
+            cu_func = sp2c.convert_to_c((*xx, *uu), cu.T, cfilepath=self.path + 'c_files/cu.c', use_exisiting_so=False)
             self.cu = lambda x, u: cu_func(*x, *u)
-            Cxx_func = sp2c.convert_to_c((*xx, *uu), Cxx, cfilepath="Cxx.c", use_exisiting_so=False)
+            Cxx_func = sp2c.convert_to_c((*xx, *uu), Cxx, cfilepath=self.path + 'c_files/Cxx.c', use_exisiting_so=False)
             self.Cxx = lambda x, u: Cxx_func(*x, *u)
-            Cuu_func = sp2c.convert_to_c((*xx, *uu), Cuu, cfilepath="Cuu.c", use_exisiting_so=False)
+            Cuu_func = sp2c.convert_to_c((*xx, *uu), Cuu, cfilepath=self.path + 'c_files/Cuu.c', use_exisiting_so=False)
             self.Cuu = lambda x, u: Cuu_func(*x, *u)
-            Cxu_func = sp2c.convert_to_c((*xx, *uu), Cxu, cfilepath="Cxu.c", use_exisiting_so=False)
+            Cxu_func = sp2c.convert_to_c((*xx, *uu), Cxu, cfilepath=self.path + 'c_files/Cxu.c', use_exisiting_so=False)
             self.Cxu = lambda x, u: Cxu_func(*x, *u)
-            cfx_func = sp2c.convert_to_c((*xx,), cfx.T, cfilepath="cfx.c", use_exisiting_so=False)
+            cfx_func = sp2c.convert_to_c((*xx,), cfx.T, cfilepath=self.path + 'c_files/cfx.c', use_exisiting_so=False)
             self.cfx = lambda x: cfx_func(*x,)
-            Cfxx_func = sp2c.convert_to_c((*xx,), Cfxx, cfilepath="Cfxx.c", use_exisiting_so=False)
+            Cfxx_func = sp2c.convert_to_c((*xx,), Cfxx, cfilepath=self.path + 'c_files/Cfxx.c', use_exisiting_so=False)
             self.Cfxx = lambda x: Cfxx_func(*x,)
+            print('Using C functions for taylor expansion of the cost function!')
         except:
-            print('Could not use sympy-to-c cost functions!')
+            print('Could not use C functions for taylor expansion of the cost function!')
             self.cx = sp.lambdify((xx, uu), cx.T)
             self.cu = sp.lambdify((xx, uu), cu.T)
             self.Cxx = sp.lambdify((xx, uu), Cxx)
