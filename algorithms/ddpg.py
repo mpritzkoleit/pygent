@@ -95,7 +95,8 @@ class DDPG(Algorithm):
             disc_cost.append(c*self.agent.gamma**i)
 
             # store transition in data set (x_, u, x, c)
-            transition = ({'x_': self.environment.o_, 'u': self.agent.u, 'x': self.environment.o, 'c': [c]})
+            transition = ({'x_': self.environment.o_, 'u': self.agent.u, 'x': self.environment.o,
+                           'c': [c], 't': [self.environment.terminated]})
 
             # add sample to data set
             self.R.force_add_sample(transition)
@@ -169,8 +170,10 @@ class DDPG(Algorithm):
         """ Save neural network parameters and data set. """
 
         # save network parameters
-        torch.save({'actor': self.agent.actor1.state_dict(),
-                    'critic': self.agent.critic1.state_dict()}, self.path + 'data/checkpoint.pth')
+        torch.save({'actor1': self.agent.actor1.state_dict(),
+                    'actor2': self.agent.actor2.state_dict(),
+                    'critic1': self.agent.critic1.state_dict(),
+                    'critic2': self.agent.critic2.state_dict()}, self.path + 'data/checkpoint.pth')
 
         # save data set
         self.R.save(self.path + 'data/dataSet.p')
@@ -189,10 +192,10 @@ class DDPG(Algorithm):
         # load network parameters
         if os.path.isfile(self.path + 'data/checkpoint.pth'):
             checkpoint = torch.load(self.path + 'data/checkpoint.pth')
-            self.agent.actor1.load_state_dict(checkpoint['actor'])
-            self.agent.actor2.load_state_dict(checkpoint['actor'])
-            self.agent.critic1.load_state_dict(checkpoint['critic'])
-            self.agent.critic2.load_state_dict(checkpoint['critic'])
+            self.agent.actor1.load_state_dict(checkpoint['actor1'])
+            self.agent.actor2.load_state_dict(checkpoint['actor2'])
+            self.agent.critic1.load_state_dict(checkpoint['critic1'])
+            self.agent.critic2.load_state_dict(checkpoint['critic2'])
             print('Loaded neural network parameters!')
         else:
             print('Could not load neural network parameters!')
@@ -424,14 +427,14 @@ class ActorCriticDDPG(Agent):
 
         self.eval()
         x = torch.Tensor([x])
-        u = np.asarray(self.actor1(x).detach())[0] + self.noise.sample()*self.uMax.numpy()
+        u = np.asarray(self.actor1(x).detach())[0] + self.noise.sample()
         self.u = np.clip(u, -self.uMax.numpy(), self.uMax.numpy())
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
 
     def take_random_action(self, dt):
-        """ Compute a random control/action of the policy network (actor).
+        """ Compute a random control/action (actor).
 
             Args:
                 dt (float): stepsize
@@ -463,9 +466,9 @@ class ActorCriticDDPG(Agent):
         xInputs = torch.Tensor([sample['x'] for sample in batch])
         uInputs = torch.Tensor([sample['u'] for sample in batch])
         costs = torch.Tensor([sample['c'] for sample in batch])
-
+        terminated = torch.Tensor([sample['t'] for sample in batch])
         self.eval()  # evaluation mode (for batch normalization)
-        qTargets = costs + self.gamma * self.critic2(xInputs, self.actor2(xInputs)).detach()
+        qTargets = costs + (1. - terminated)*self.gamma*self.critic2(xInputs, self.actor2(xInputs)).detach()
         qTargets = torch.squeeze(qTargets)
         return x_Inputs, uInputs, qTargets
 
