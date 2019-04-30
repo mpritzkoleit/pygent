@@ -217,7 +217,6 @@ class StateSpaceModel(Environment):
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         c = self.cost(self.x_, u, self.x, np)*dt
         self.terminated = self.terminate(self.x_)
-
         return c
 
     def terminate(self, x):
