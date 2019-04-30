@@ -6,3 +6,11 @@ This is the software project of my diploma thesis at the Institute of Control Th
 The goal of the thesis is to investigate the state-of-the-art in reinforcement learning for continuous control of nonlinear dynamic systems
 
 As a reference method, I implemented iLQR, a trajectory optimization algorithm referenced in many RL papers, to solve such problems in a model based fashion.
+
+Installation:
+
+  clone or download the package
+  
+  run: python setup.py install  
+  
+For now please have a look at the 'examples' folder. 
