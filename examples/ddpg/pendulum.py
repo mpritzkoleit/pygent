@@ -19,7 +19,7 @@ pendulum = Pendulum(cost, x0fun)
 t = 10.0
 dt = 0.05
 
-path = '../../../results/ddpg/pendulum/experiment8/'
+path = '../../../results/ddpg/pendulum/experiment9/'
 algorithm = DDPG(pendulum, t, dt, path=path)
 start = time.time()
 algorithm.load()
