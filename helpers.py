@@ -19,7 +19,6 @@ def observation(x, xIsAngle):
         if xIsAngle[i]:
             obsv.append(np.cos(state))
             obsv.append(np.sin(state))
-            obsv.append(state)
         else:
             obsv.append(state)
 
@@ -130,7 +129,6 @@ class OUnoise(object):
 
     """
 
-    # Todo: move to Utilities.py
     def __init__(self, uDim, dt, mu=0, theta=0.15, sigma=0.2):
         self.uDim = uDim
         self.mu = mu
@@ -145,6 +143,22 @@ class OUnoise(object):
 
     def sample(self):
 
-        dx = self.theta*(self.mu - self.x)*self.dt + self.sigma*np.random.normal(0, self.dt, len(self.x))
+        dx = self.theta * (self.mu - self.x) * self.dt + self.sigma*np.sqrt(self.dt)*np.random.normal(size=self.uDim)
         self.x = self.x + dx
         return self.x
+
+
+def control_limiting_cost(u, alpha=0.3, mod=np):
+    c = alpha**2*(mod.cosh(u/alpha)-1.)
+    return c
+
+def smooth_abs_cost(x, alpha=1., mod=np):
+    c = mod.sqrt(x**2 + alpha**2) - alpha
+    return c
+
+def fanin_init(layer):
+    f = layer.in_features
+    w_init = 1.0/np.sqrt(f)
+    layer.weight = torch.nn.init.uniform_(layer.weight, a=-w_init, b=w_init)
+    layer.bias = torch.nn.init.uniform_(layer.bias, a=-w_init, b=w_init)
+    pass
