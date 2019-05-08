@@ -459,16 +459,25 @@ class iLQR(Algorithm):
     def plot(self):
         self.environment.plot()
         plt.savefig(self.path + 'plots/environment.pdf')
-        plt.savefig(self.path + 'plots/environment.pgf')
+        try:
+            plt.savefig(self.path + 'plots/environment.pgf')
+        except:
+            pass
         self.agent.plot()
         plt.savefig(self.path + 'plots/controller.pdf')
-        plt.savefig(self.path + 'plots/controller.pgf')
+        try:
+            plt.savefig(self.path + 'plots/controller.pgf')
+        except:
+            pass
         plt.close('all')
 
     def animation(self):
         ani = self.environment.animation()
         if ani != None:
-            ani.save(self.path + 'animations/animation.mp4', fps=1 / self.dt)
+            try:
+                ani.save(self.path + 'animations/animation.mp4', fps=1 / self.dt)
+            except:
+                ani.save(self.path + 'animations/animation.gif', fps=1 / self.dt)
         plt.close('all')
 
     def save(self):
@@ -519,10 +528,16 @@ class NMPC(iLQR):
     def plot(self):
         self.sim_environment.plot()
         plt.savefig(self.path + 'plots/environment.pdf')
-        plt.savefig(self.path + 'plots/environment.pgf')
+        try:
+            plt.savefig(self.path + 'plots/environment.pgf')
+        except:
+            pass
         self.sim_agent.plot()
         plt.savefig(self.path + 'plots/controller.pdf')
-        plt.savefig(self.path + 'plots/controller.pgf')
+        try:
+            plt.savefig(self.path + 'plots/controller.pgf')
+        except:
+            pass
         plt.close('all')
 
     def animation(self):

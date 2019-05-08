@@ -220,7 +220,10 @@ class NFQ(Algorithm):
 
     def animation(self):
         ani = self.environment.animation(self.episode-1, self.meanCost[self.episode-1])
-        ani.save('results/'+str(self.episode-1)+'_animation.mp4', fps=1/self.dt)
+        try:
+            ani.save('results/'+str(self.episode-1)+'_animation.mp4', fps=1/self.dt)
+        except:
+            ani.save('results/' + str(self.episode - 1) + '_animation.gif', fps=1 / self.dt)
         plt.close('all')
         pass
 
