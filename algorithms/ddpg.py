@@ -228,10 +228,16 @@ class DDPG(Algorithm):
 
         self.environment.plot()
         plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pdf')
-        plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pgf')
+        try:
+            plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pgf')
+        except:
+            pass
         self.agent.plot()
         plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pdf')
-        plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pgf')
+        try:
+            plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pgf')
+        except:
+            pass
         plt.close('all')
         pass
 
@@ -240,7 +246,10 @@ class DDPG(Algorithm):
 
         ani = self.environment.animation()
         if ani != None:
-            ani.save(self.path + 'animations/' + str(self.episode - 1) + '_animation.mp4', fps=1 / self.dt)
+            try:
+                ani.save(self.path + 'animations/' + str(self.episode - 1) + '_animation.mp4', fps=1 / self.dt)
+            except:
+                ani.save(self.path + 'animations/' + str(self.episode - 1) + '_animation.gif', fps=1 / self.dt)
         plt.close('all')
         pass
 
@@ -261,7 +270,10 @@ class DDPG(Algorithm):
         ax[1].legend(loc='upper left')
         plt.xlabel(r'Number of Samples')
         plt.savefig(self.path + 'learning_curve.pdf')
-        plt.savefig(self.path + 'learning_curve.pgf')
+        try:
+            plt.savefig(self.path + 'learning_curve.pgf')
+        except:
+            pass
         # todo: save learning curve data
         # todo: plot expected return
         plt.close('all')
