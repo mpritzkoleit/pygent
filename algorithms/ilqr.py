@@ -49,7 +49,7 @@ class iLQR(Algorithm):
     """
 
     def __init__(self, environment, t, dt, maxIters=500, tolGrad=1e-4,
-                 tolFun=1e-7, fastForward=False, path='../Results/iLQR/', fcost=None, constrained=False):
+                 tolFun=1e-7, fastForward=False, path='../Results/iLQR/', fcost=None, constrained=False, save_interval=10):
         """
 
         Args:
@@ -108,6 +108,7 @@ class iLQR(Algorithm):
         self.constrained = constrained
         self.lims = self.environment.uMax
         self.regType = 2.
+        self.save_interval = save_interval
 
     def cost_fnc(self, x, u, mod):
         """
@@ -331,6 +332,8 @@ class iLQR(Algorithm):
                 if success_gradient:
                     print('Converged: small gradient')
                     break
+                if _ % self.save_interval == 0:
+                    self.save()
             else:
                 self.increase_mu()
                 print('Iter. ', _, '| Forward not successfull')
