@@ -87,6 +87,8 @@ class DDPG(Algorithm):
             # agent computes control/action
             if self.R.data.__len__() >= self.warm_up:
                 u = self.agent.take_noisy_action(self.dt, self.environment.o)
+            elif self.evalPolicyInterval % self.episode == 0:
+                u = self.agent.take_action(self.dt, self.environment.o)
             else:
                 u = self.agent.take_random_action(self.dt)
             # simulation of environment
@@ -333,7 +335,7 @@ class ActorCriticDDPG(Agent):
 
             # definition of loss functions
             lossCritic = criterion(qOutputs, qTargets)
-            lossActor = self.critic1(x_Inputs,  muOutputs).mean()  # *-1 when using rewards instead of costs
+            lossActor = self.critic1(x_Inputs, muOutputs).mean()  # *-1 when using rewards instead of costs
 
             # train Q-network
             self.optimCritic.zero_grad()  # delete gradients
@@ -468,7 +470,7 @@ class ActorCriticDDPG(Agent):
         costs = torch.Tensor([sample['c'] for sample in batch])
         terminated = torch.Tensor([sample['t'] for sample in batch])
         self.eval()  # evaluation mode (for batch normalization)
-        qTargets = costs + (1. - terminated)*self.gamma*self.critic2(xInputs, self.actor2(xInputs)).detach()
+        qTargets = costs + self.gamma*((1 - terminated)*self.critic2(xInputs, self.actor2(xInputs))).detach()
         qTargets = torch.squeeze(qTargets)
         return x_Inputs, uInputs, qTargets
 

@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from helpers import fanin_init
+
 class MLP(nn.Module):
     """ Multilayer perceptron (MLP) with tanh/sigmoid activation functions implemented in PyTorch
 
@@ -26,17 +28,10 @@ class MLP(nn.Module):
             layer = getattr(self, 'layer'+str(i))
             x = torch.tanh(layer(x))
         layer = getattr(self, 'layer' + str(self.nLayers-2))
-        x = torch.tanh(layer(x)) #+ torch.sigmoid(layer(x))
-        # Todo: Warum torch.sigmoid(layer(x)) + torch.sigmpid(layer(x))?
+        x = torch.tanh(layer(x))
         return x
 
 class CriticBN(nn.Module):
-    """ Multilayer perceptron (MLP) with tanh/sigmoid activation functions implemented in PyTorch
-
-    Attributes:
-        netStructure (array): layer structure of MLP: [1, 5, 5, 1] (2 hidden layer with 5 neurons, 1 input, 1 output)
-
-    """
 
     def __init__(self, xDim, uDim):
         super(CriticBN, self).__init__()
@@ -64,17 +59,10 @@ class CriticBN(nn.Module):
         h2_in = torch.cat((h1, u), 1)
         h2 = self.layer2(h2_in)
         h2_out = F.relu(h2)
-        y = F.relu(self.layer3(h2_out))
+        y = self.layer3(h2_out)
         return y
 
 class Critic(nn.Module):
-    """ Multilayer perceptron (MLP) with tanh/sigmoid activation functions implemented in PyTorch
-
-    Attributes:
-        netStructure (array): layer structure of MLP: [1, 5, 5, 1] (2 hidden layer with 5 neurons, 1 input, 1 output)
-
-    """
-
     def __init__(self, xDim, uDim):
         super(Critic, self).__init__()
         self.xDim = xDim
@@ -97,17 +85,10 @@ class Critic(nn.Module):
         h2_in = torch.cat((h1, u), 1)
         h2 = self.layer2(h2_in)
         h2_out = F.relu(h2)
-        y = F.relu(self.layer3(h2_out))
+        y = self.layer3(h2_out)
         return y
 
 class ActorBN(nn.Module):
-    """ Multilayer perceptron (MLP) with tanh/sigmoid activation functions implemented in PyTorch
-
-    Attributes:
-        netStructure (array): layer structure of MLP: [1, 5, 5, 1] (2 hidden layer with 5 neurons, 1 input, 1 output)
-
-    """
-
     def __init__(self, xDim, uDim, uMax=1.0):
         super(ActorBN, self).__init__()
         self.xDim = xDim
@@ -140,13 +121,6 @@ class ActorBN(nn.Module):
         return y
 
 class Actor(nn.Module):
-    """ Multilayer perceptron (MLP) with tanh/sigmoid activation functions implemented in PyTorch
-
-    Attributes:
-        netStructure (array): layer structure of MLP: [1, 5, 5, 1] (2 hidden layer with 5 neurons, 1 input, 1 output)
-
-    """
-
     def __init__(self, xDim, uDim, uMax=1.0):
         super(Actor, self).__init__()
         self.xDim = xDim
@@ -170,127 +144,4 @@ class Actor(nn.Module):
         h3 = torch.tanh(self.layer3(h2))
         y = torch.mul(h3, self.uMax) # scale output
         return y
-
-
-class CriticDeep(nn.Module):
-
-    def __init__(self, state_dim, action_dim):
-        """
-        :param state_dim: Dimension of input state (int)
-        :param action_dim: Dimension of input action (int)
-        :return:
-        """
-        super(CriticDeep, self).__init__()
-        EPS = 3*1e-3
-
-        self.state_dim = state_dim
-        self.action_dim = action_dim
-
-        self.fcs1 = nn.Linear(state_dim,256)
-        fanin_init(self.fcs1)
-        self.fcs2 = nn.Linear(256,128)
-        fanin_init(self.fcs2)
-
-        self.fca1 = nn.Linear(action_dim,128)
-        fanin_init(self.fca1)
-
-        self.fc2 = nn.Linear(256,128)
-        fanin_init(self.fc2)
-
-        self.fc3 = nn.Linear(128,1)
-        self.fc3.weight.data.uniform_(-EPS,EPS)
-
-    def forward(self, state, action):
-        """
-        returns Value function Q(s,a) obtained from critic network
-        :param state: Input state (Torch Variable : [n,state_dim] )
-        :param action: Input Action (Torch Variable : [n,action_dim] )
-        :return: Value function : Q(S,a) (Torch Variable : [n,1] )
-        """
-        s1 = F.relu(self.fcs1(state))
-        s2 = F.relu(self.fcs2(s1))
-        a1 = F.relu(self.fca1(action))
-        x = torch.cat((s2,a1),dim=1)
-
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-
-        return x
-
-
-class ActorDeep(nn.Module):
-
-    def __init__(self, state_dim, action_dim, action_lim):
-        """
-        :param state_dim: Dimension of input state (int)
-        :param action_dim: Dimension of output action (int)
-        :param action_lim: Used to limit action in [-action_lim,action_lim]
-        :return:
-        """
-        super(ActorDeep, self).__init__()
-        EPS = 3 * 1e-3
-        self.state_dim = state_dim
-        self.action_dim = action_dim
-        self.action_lim = action_lim
-
-        self.fc1 = nn.Linear(state_dim,256)
-        fanin_init(self.fc1)
-
-        self.fc2 = nn.Linear(256,128)
-        fanin_init(self.fc2)
-
-        self.fc3 = nn.Linear(128,64)
-        fanin_init(self.fc3)
-
-        self.fc4 = nn.Linear(64,action_dim)
-        self.fc4.weight.data.uniform_(-EPS,EPS)
-
-    def forward(self, state):
-        """
-        returns policy function Pi(s) obtained from actor network
-        this function is a gaussian prob distribution for all actions
-        with mean lying in (-1,1) and sigma lying in (0,1)
-        The sampled action can , then later be rescaled
-        :param state: Input state (Torch Variable : [n,state_dim] )
-        :return: Output action (Torch Variable: [n,action_dim] )
-        """
-        x = F.relu(self.fc1(state))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        action = torch.tanh(self.fc4(x))
-
-        action = action #* self.action_lim
-
-        return action
-
-def fanin_init(layer):
-    # todo: move to utilities
-    f = layer.in_features
-    w_init = 1.0/np.sqrt(f)
-    layer.weight = torch.nn.init.uniform_(layer.weight, a=-w_init, b=w_init)
-    layer.bias = torch.nn.init.uniform_(layer.bias, a=-w_init, b=w_init)
-    pass
-
-class RBFController(nn.Module):
-
-    def __init__(self, xDim, uDim, n=50):
-        super(RBFController, self).__init__()
-        self.xDim = xDim
-        self.uDim = uDim
-        self.n = 50
-        self.mu = nn.Parameter(torch.Tensor(n, 1))
-        self.w = nn.Parameter(torch.Tensor(uDim, n))
-        self.lam = nn.Parameter(xDim, xDim)
-
-
-    def forward(self, x):
-        u = self.kernel(x)
-        return u
-
-    def kernel(self, x): #exp((x-mu).T*lamda.inv()*(x-mu) a.
-        torch.pow(x-self.mu).t() #torch.inverse(self.lam)
-
-
-
-
 
