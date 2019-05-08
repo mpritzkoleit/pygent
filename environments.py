@@ -97,8 +97,11 @@ class Environment(object):
         # Todo: save data in numpy arrays
         return fig, ax
 
-    def animation(self, episode, meanCost):
+    def animation(self):
         pass
+
+    def observe(self, x):
+        return x
 
 class OpenAIGym(Environment):
     """ Environment subclass, that is a wrapper for an 'OpenAI gym' environment.
@@ -114,6 +117,7 @@ class OpenAIGym(Environment):
         x0 = self.env.reset()
         uDim = self.env.action_space.shape[0]
         super(OpenAIGym, self).__init__(list(x0), uDim)
+        self.uMax = self.env.action_space.high[0]*np.ones(uDim)
         self.o_ = self.x_
         self.o = self.x
         self.render = render
@@ -141,7 +145,7 @@ class OpenAIGym(Environment):
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         self.terminated = terminate
-        return c
+        return c*dt
 
     def reset(self, x0):
         x0 = list(self.env.reset())
@@ -216,7 +220,7 @@ class StateSpaceModel(Environment):
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         c = self.cost(self.x_, u, self.x, np)*dt
-        self.terminated = self.terminate(self.x_)
+        self.terminated = self.terminate(self.x)
         return c
 
     def terminate(self, x):
@@ -253,7 +257,7 @@ class StateSpaceModel(Environment):
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         c = self.cost(self.x_, u, self.x, np)*dt
-        self.terminated = self.terminate(self.x_)
+        self.terminated = self.terminate(self.x)
         return c
 
     def mapAngles(self, x):
@@ -403,7 +407,7 @@ class CartPoleDoubleSerial(StateSpaceModel):
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o) #observation dimensions
         self.o_ = self.o
-        self.uMax = 40*np.ones(1)
+        self.uMax = 15*np.ones(1)
 
     def terminate(self, x):
         x1, x2, x3, x4, x5, x6 = x
@@ -670,3 +674,149 @@ class Acrobot(StateSpaceModel):
         return ani
 
 #class Building(StateSpaceModel):
+class CartPole(StateSpaceModel):
+    def __init__(self, cost, x0):
+        self.ode = cart_pole_ode()
+        super(CartPole, self).__init__(self.ode, cost, x0, uDim=1)
+        self.xIsAngle = [False, True, False, False]
+        self.o = observation(self.x, self.xIsAngle)
+        self.oDim = len(self.o)  # observation dimensions
+        self.o_ = self.o
+        self.uMax = 10*np.ones(1)
+
+
+    def terminate(self, x):
+        x1, x2, x3, x4 = x
+        if np.abs(x1) > 1.0:
+            return True
+        else:
+            return False
+
+
+    def animation(self):
+        # mapping from theta and s to the x,y-plane (definition of the line points, that represent the pole)
+        def cart_pole_plot(l, xt):
+            x_pole_end = -l * np.sin(xt[:, 1]) + xt[:, 0]
+            y_pole_end = l * np.cos(xt[:, 1])
+            x_cart = xt[:, 0]
+
+            return x_pole_end, y_pole_end, x_cart
+
+        # line and text
+        def animate(t):
+            thisx = [x_cart[t], x_pole_end[t]]
+            thisy = [0, y_pole_end[t]]
+
+            pole.set_data(thisx, thisy)
+            cart.set_xy([x_cart[t] - 0.1, -0.05])
+            time_text.set_text(time_template % self.tt[t])
+            return pole, cart, time_text,
+
+        x_pole_end, y_pole_end, x_cart = cart_pole_plot(0.5, self.history)
+        fig, ax = plt.subplots(dpi=150)
+        ax.set_aspect('equal')
+        ax.set(xlabel=r'$x_1$')
+        plt.ylim((-.6, .6))
+        plt.xlim((min(-1.4, 1.2 * min(x_cart)), max(1.4, 1.2 * max(x_cart))))
+        plt.yticks([], [])
+        plt.title('CartPole')
+        time_template = 'time = %.1fs'
+        time_text = ax.text(0.05, 1.05, '', transform=ax.transAxes)
+        rail, = ax.plot([min(-1, 1.2 * min(x_cart)), max(1, 1.2 * max(x_cart))], [0, 0], 'ks-', zorder=0)
+        pole, = ax.plot([], [], 'b-', zorder=1, lw=3)
+        cart = patches.Rectangle((-0.1, -0.05), 0.2, 0.1, fc='b', zorder=1)
+        ax.add_artist(cart)
+        # animation using matplotlibs animation library
+        ani = animation.FuncAnimation(fig, animate, np.arange(len(self.tt)), interval=self.tt[1] * 1000,
+                                      blit=True)
+        return ani
+
+class MarBot(StateSpaceModel):
+    def __init__(self, cost, x0):
+        super(MarBot, self).__init__(self.ode, cost, x0, uDim=1)
+        self.xIsAngle = [False, True, False, False]
+        self.o = observation(self.x, self.xIsAngle)
+        self.oDim = len(self.o)  # observation dimensions
+        self.o_ = self.o
+        self.uMax = 5*np.ones(1)
+
+    @staticmethod
+    def ode(t, x, u):
+        u1 = u[0]
+        x1, x2, x3, x4 = x
+
+        # parameters
+        b = 0.2  # m
+        c = 0.3  # m
+        r = 0.05  # m
+        m_w = 0.5  # kg
+        m_p = 3.0  # kg
+        J_w = 0.5 * m_w * r ** 2  # kg*m2
+        J_p = 1 / 12 * m_p * (b ** 2 + c ** 2)  # kg*m2
+        g = 9.81  # m/s2
+
+        q_dot = np.array([x3, x4])
+
+        # motion dynamics in matrix form
+        M = np.array([[2 * m_w + 2 * J_w / (r ** 2) + m_p, m_p * c * np.cos(x2)],
+                      [m_p * c * np.cos(x2), J_p + m_p * c ** 2]])
+        C = np.array([[0, -m_p * c * np.sin(x2) * x4], [0, 0]])
+        G = np.array([0, -m_p * c * g * np.sin(x2)])
+        F = np.array([2 / r * u1, 0])
+
+        dqdt = np.dot(np.linalg.inv(M), (F - np.dot(C, q_dot) - G))
+        dxdt = [x3, x4, dqdt[0], dqdt[1]]
+        return dxdt
+
+    def terminate(self, x):
+        x1, x2, x3, x4 = x
+        if np.abs(x1) > 1.5 or np.abs(x2)>0.5*np.pi:
+            return True
+        else:
+            return False
+
+    def animation(self):
+        def init():
+            line.set_data([], [])
+            # torque.set_data([], [])
+            wheel.center = (0, 0)
+            ax.add_patch(wheel)
+            time_text.set_text('')
+            return line, time_text, wheel  # , torque
+
+        # line and text
+        def animate(t):
+            # animation function
+            thisx = [x_cart[t], x_tip[t] + x_cart[t]]
+            thisy = [0.08, y_tip[t] + 0.08]
+            # line.set_color('k')
+            # wheel.set_color('k')
+            line.set_data(thisx, thisy)
+            # torque.set_data([self.history[t] / max(abs(self.history)), 0], [-0.05, -0.05])
+            wheel.center = (thisx[0], 0.08)
+            time_text.set_text(time_template % self.tt[t])
+            return line, time_text, wheel  # ,torque
+
+        # mapping from theta and s to the x,y-plane
+        def cart_pole_plot(l, x):
+            x_tip = l * np.sin(x[:, 1])
+            x_cart = x[:, 0]
+            y_tip = l * np.cos(x[:, 1])
+            return x_tip, y_tip, x_cart
+
+        # animation
+        [x_tip, y_tip, x_cart] = cart_pole_plot(.5, self.history)
+        fig, (ax) = plt.subplots(1, 1)
+        ax.set_aspect('equal')
+        ax.set_xlim([-2.1, 2.1])
+        ax.set_ylim([-0.2, 1])
+        plt.yticks([], [])
+        rail, = ax.plot([-1.7, 1.7], [0, 0], 'ks-')
+        torque, = ax.plot([], [], '-', color='r', lw=4)
+        line, = ax.plot([], [], 'o-', color='k')
+        wheel = plt.Circle((0, 1), 0.08, color='k', fill=False, lw=2)
+        time_template = 'time = %.1fs'
+        time_text = ax.text(0.05, 0.9, '', transform=ax.transAxes)
+        ani = animation.FuncAnimation(fig, animate, np.arange(len(self.tt)),
+                                      interval=self.tt[1] * 1000, blit=False, init_func=init)
+        return ani
