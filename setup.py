@@ -7,7 +7,8 @@ with open("requirements.txt") as requirements_file:
 setup(
     name='PyGent',
     version='0.1',
-    packages=['', 'algorithms', 'modeling_scripts'],
+    packages=['', 'algorithms', 'modeling_scripts','modeling_scripts/c_files'],
+    package_data={'modeling_scripts/c_files': ['*.so']},
     url='https//github.com/mpritzkoleit/pygent',
     author='Max Pritzkoleit',
     author_email='Max.Pritzkoleit@tu-dresden.de',
