@@ -8,6 +8,9 @@ except ImportError:
     print('sympy-to-c could not be imported!')
 import pickle
 
+'''
+https://www.acin.tuwien.ac.at/file/publications/cds/pre_post_print/glueck2013.pdf
+'''
 def modeling():
     t = sp.Symbol('t') # time
     params = sp.symbols('m0, m1, m2, m3, J1, J2, J3, a1, a2, a3, l1, l2, l3, g, d0, d1, d2, d3') # system parameters

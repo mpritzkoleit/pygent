@@ -10,14 +10,24 @@ except ImportError:
 def modeling():
     t = sp.Symbol('t') # time
     params = sp.symbols('m0, m1, J1, a1, l1, g, d0, d1') # system parameters
-    m0, m1, J1, a1, l1, g, d0, d1 = params # J = 1/3*m1*l1**2
-    params_values = [(m0, 1.0), (m1, 0.1), (J1, 0.033), (a1, 0.5),
-                     (l1, 0.5), (g, 9.81), (d0, 5*1e-4), (d1, 2*1e-6)]
-    params_values = [(m0, 1.0), (m1, 0.876), (J1, 0.013), (a1, 0.269),
-                     (l1, 0.323), (g, 9.81), (d0, 5*1e-4), (d1, 0.215)]
+    m0, m1, J1, a1, l1, g, d0, d1 = params # J = 4/3*m1*l1**2
+    '''
+    http://www.derongliu.org/adp/adp-cdrom/Barto1983.pdf:
+    params_values = [(m0, 1.0), (m1, 0.1), (J1, 0.133), (a1, 0.5),
+                     (l1, 1), (g, 9.81), (d0, 5*1e-4), (d1, 2*1e-6)]
+
+    
+    https://github.com/TUD-RST/pytutorials/blob/master/03-Jupyter-Notebook-And-SymPy/sim/01_notebook.ipynb:
     params_values = [(m0, 3.34), (m1, 0.3583), (J1, 0.0379999),
                      (l1, 0.5), (a1, 0.43), (g, 9.81), (d0, 0.1), (d1, 0.006588)]
 
+    
+    https://www.acin.tuwien.ac.at/file/publications/cds/pre_post_print/glueck2013.pdf
+    params_values = [(m0, 3.34), (m1, 0.876), (J1, 0.013), (a1, 0.215), (l1, 0.323), (g, 9.81),
+                  (d0, 0.1), (d1, 0.215)]
+    '''
+    params_values = [(m0, 3.34), (m1, 0.3583), (J1, 0.0379999),
+                     (l1, 0.5), (a1, 0.43), (g, 9.81), (d0, 0.1), (d1, 0.006588)]
     # force
     F = sp.Symbol('F')
 
