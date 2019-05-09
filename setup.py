@@ -1,13 +1,11 @@
 from setuptools import setup
 
-
-with open("requirements.txt") as requirements_file:
-    requirements = requirements_file.read()
-
 setup(
     name='PyGent',
     version='0.1',
     packages=['', 'algorithms', 'modeling_scripts','modeling_scripts/c_files'],
+    install_requires=['torch', 'gym'],
+    requires=['sympy_to_c (>=0.1.2)'],
     package_data={'modeling_scripts/c_files': ['*.so']},
     url='https//github.com/mpritzkoleit/pygent',
     author='Max Pritzkoleit',
