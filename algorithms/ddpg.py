@@ -40,13 +40,14 @@ class DDPG(Algorithm):
     """
 
     def __init__(self, environment, t, dt, plotInterval=50, nData=1e6, path='../Results/DDPG/', checkInterval=50,
-                 evalPolicyInterval=100, costScale=None, warm_up=5e4, a_lr=1e-4, c_lr=1e-3, tau=0.001, batch_size=64):
+                 evalPolicyInterval=100, costScale=None, warm_up=5e4, actor_lr=1e-4, critic_lr=1e-3, tau=0.001, batch_size=64,
+                 noise_scale=False, terminalQ=True):
         xDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax
         self.batch_size = batch_size
-        agent = ActorCriticDDPG(xDim, uDim, torch.Tensor(uMax), dt, batch_size=self.batch_size, actor_lr=a_lr,
-                            critic_lr=c_lr, tau=tau)
+        agent = ActorCriticDDPG(xDim, uDim, torch.Tensor(uMax), dt, batch_size=self.batch_size, actor_lr=actor_lr,
+                            critic_lr=critic_lr, tau=tau, noise_scale=noise_scale)
         super(DDPG, self).__init__(environment, agent, t, dt)
         self.R = DataSet(nData)
         self.plotInterval = plotInterval  # inter
@@ -54,7 +55,7 @@ class DDPG(Algorithm):
         self.checkInterval = checkInterval  # checkpoint interval
         self.path = path
         if costScale == None:
-            self.costScale = int(1/dt)
+            self.costScale = 1/dt
         else:
             self.costScale = costScale
         self.warm_up = warm_up
@@ -69,7 +70,7 @@ class DDPG(Algorithm):
         copyfile(inspect.stack()[-1][1], path + 'exec_script.py')
         self.expCost = []
         self.episode_steps = []
-
+        self.terminalQ = terminalQ
 
     def run_episode(self):
         """ Run a training episode. If terminal state is reached, episode stops."""
@@ -95,10 +96,10 @@ class DDPG(Algorithm):
             c = self.environment.step(self.dt, u)*self.costScale
             cost.append(c)
             disc_cost.append(c*self.agent.gamma**i)
-
+            
             # store transition in data set (x_, u, x, c)
             transition = ({'x_': self.environment.o_, 'u': self.agent.u, 'x': self.environment.o,
-                           'c': [c], 't': [self.environment.terminated]})
+                           'c': [c], 't': [self.environment.terminated*self.terminalQ]})
 
             # add sample to data set
             self.R.force_add_sample(transition)
@@ -305,7 +306,8 @@ class ActorCriticDDPG(Agent):
 
     """
 
-    def __init__(self, xDim, uDim, uMax, dt, batch_size=64, gamma=0.99, tau=0.001, actor_lr=1e-4, critic_lr=1e-3):
+    def __init__(self, xDim, uDim, uMax, dt, batch_size=64, gamma=0.99, tau=0.001, actor_lr=1e-4, critic_lr=1e-3,
+                noise_scale=False):
         super(ActorCriticDDPG, self).__init__(uDim)
         self.xDim = xDim
         self.uMax = uMax
@@ -321,6 +323,7 @@ class ActorCriticDDPG(Agent):
         self.optimActor = torch.optim.Adam(self.actor1.parameters(), lr=actor_lr)
         self.noise = OUnoise(uDim, dt)  # exploration noise
         self.batch_size = batch_size
+        self.noise_scale = noise_scale
 
     def training(self, dataSet):
         """ Training of the Q-network and policy network.
@@ -441,7 +444,8 @@ class ActorCriticDDPG(Agent):
 
         self.eval()
         x = torch.Tensor([x])
-        u = np.asarray(self.actor1(x).detach())[0] + self.noise.sample()
+        noise = self.noise.sample()
+        u = np.asarray(self.actor1(x).detach())[0] + (1 - self.noise_scale)*noise + self.noise_scale*self.uMax.numpy()*noise
         self.u = np.clip(u, -self.uMax.numpy(), self.uMax.numpy())
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
@@ -482,7 +486,8 @@ class ActorCriticDDPG(Agent):
         costs = torch.Tensor([sample['c'] for sample in batch])
         terminated = torch.Tensor([sample['t'] for sample in batch])
         self.eval()  # evaluation mode (for batch normalization)
-        qTargets = costs + self.gamma*((1 - terminated)*self.critic2(xInputs, self.actor2(xInputs))).detach()
+        nextQ = self.critic2(xInputs, self.actor2(xInputs)).detach()
+        qTargets = costs + self.gamma*(1 - terminated)*nextQ
         qTargets = torch.squeeze(qTargets)
         return x_Inputs, uInputs, qTargets
 
