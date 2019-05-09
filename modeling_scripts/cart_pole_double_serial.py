@@ -7,13 +7,15 @@ try:
 except ImportError:
     print('sympy-to-c could not be imported!')
 import pickle
-
+'''
+https://www.acin.tuwien.ac.at/file/publications/cds/pre_post_print/glueck2013.pdf
+'''
 def modeling():
     t = sp.Symbol('t') # time
     params = sp.symbols('m0, m1, m2, J1, J2, a1, a2, l1, l2, g, d0, d1, d2') # system parameters
     m0, m1, m2, J1, J2, a1, a2, l1, l2, g, d0, d1, d2 = params
     params_values = [(m0, 3.34), (m1, 0.876), (m2,  0.938), (J1, 0.013), (J2, 0.024),
-                     (a1, 0.269), (a2, 0.226), (l1, 0.323), (l2, 0.419), (g, 9.81),
+                     (a1, 0.215), (a2, 0.269), (l1, 0.323), (l2, 0.419), (g, 9.81),
                      (d0, 0.1), (d1, 0.215), (d2, 0.002)]
     # force
     F = sp.Symbol('F')
