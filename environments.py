@@ -619,7 +619,7 @@ class Acrobot(StateSpaceModel):
     def __init__(self, cost, x0):
         self.ode = acrobot_ode()
         super(Acrobot, self).__init__(self.ode, cost, x0, uDim=1)
-        self.xIsAngle = [False, True, False, False]
+        self.xIsAngle = [True, True, False, False]
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o)  # observation dimensions
         self.o_ = self.o
