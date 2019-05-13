@@ -18,9 +18,10 @@ def finalcost(x):
 
 x0 = [0, np.pi, np.pi, 0, 0, 0]
 
-cartPole = CartPoleDoubleSerial(cost, x0)
 t = 3.5
 dt = 0.005
+
+cartPole = CartPoleDoubleSerial(cost, x0, dt)
 
 path = '../../../results/ilqr/cart_pole_double_serial/'
 controller = iLQR(cartPole, t, dt, constrained=True, fcost=finalcost, path=path)

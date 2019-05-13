@@ -19,10 +19,10 @@ def c_N(x):
 
 x0 = [0, np.pi, np.pi, np.pi, 0, 0, 0, 0]
 
-cartPole = CartPoleTriple(c_k, x0)
 t = 3.5
 dt = 0.005
 
+cartPole = CartPoleTriple(c_k, x0, dt)
 
 path = '../../../results/ilqr/cart_pole_triple/'
 controller = iLQR(cartPole, t, dt, constrained=True, fcost=c_N, path=path, maxIters=500)

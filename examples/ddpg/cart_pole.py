@@ -13,10 +13,11 @@ def x0fun():
     x0 = [np.random.uniform(-0.1, 0.1), np.random.uniform(0.9*np.pi, 1.1*np.pi), 0, 0]
     return x0
 
-cartPole = CartPole(cost, x0fun)
 t = 10
 dt = 0.02
 
+cartPole = CartPole(cost, x0fun, dt)
+"""
 path = '../../../results/ddpg/experiment50/'
 
 algorithm = DDPG(cartPole, t, dt, path=path, warm_up=10000)
@@ -27,3 +28,4 @@ x0 = [0.0, np.pi, 0, 0]
 algorithm.run_controller(x0)
 algorithm.plot()
 algorithm.animation()
+"""

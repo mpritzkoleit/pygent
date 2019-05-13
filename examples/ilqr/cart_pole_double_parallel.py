@@ -18,9 +18,10 @@ def finalcost(x):
 
 x0 = [0, np.pi, np.pi, 0, 0, 0]
 
-cartPole = CartPoleDoubleParallel(cost, x0)
 t = 8
 dt = 0.01
+
+cartPole = CartPoleDoubleParallel(cost, x0, dt)
 
 path = '../../../results/ilqr/cart_pole_doube_parallel/'
 controller = iLQR(cartPole, t, dt, constrained=True, fcost=finalcost, path=path)

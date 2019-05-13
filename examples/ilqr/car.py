@@ -16,10 +16,10 @@ def finalcost(x):
 
 x0 = [1., 1., 3./2.*np.pi, 0.]
 
-car = Car(cost, x0)
-
 t = 15
 dt = 0.03
+
+car = Car(cost, x0, dt)
 
 controller = iLQR(car, t, dt, fcost=finalcost, fastForward=True, constrained=True)
 #controller.run_optim()

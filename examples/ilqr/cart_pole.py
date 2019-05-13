@@ -1,4 +1,4 @@
-from environments import CartPole
+from environments import CartPole, Environment
 from algorithms.ilqr import iLQR
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,14 +17,14 @@ def finalcost(x):
 
 x0 = [0, np.pi, 0, 0]
 
-cartPole = CartPole(cost, x0)
 t = 6
 dt = 0.01
+cartPole = CartPole(cost, x0, dt)
 
 path = '../../../results/ilqr/cart_pole/'
 
 controller = iLQR(cartPole, t, dt, fcost=finalcost, path=path, constrained=True)
-#controller.run_optim()
+controller.run_optim()
 controller.run(x0)
 controller.plot()
 plt.show()
