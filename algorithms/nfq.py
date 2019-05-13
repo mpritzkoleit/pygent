@@ -172,7 +172,7 @@ class NFQ(Algorithm):
             else:
                 u = self.agent.take_random_action(self.dt)
             # simulation of environment
-            c = self.environment.step(self.dt, u)
+            c = self.environment.step(u, self.dt)
             if c == 1.0:
                 self.environment.terminated = True
             elif c == 0.0:

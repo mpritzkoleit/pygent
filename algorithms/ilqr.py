@@ -148,9 +148,9 @@ class iLQR(Algorithm):
             self.agent.control(self.dt, u)
 
             if self.fastForward:
-                c = self.environment.fast_step(self.dt, u)
+                c = self.environment.fast_step(u, self.dt)
             else:
-                c = self.environment.step(self.dt, u)
+                c = self.environment.step(u, self.dt)
             cost += c
 
         cost += self.fcost_fnc(self.environment.x, np)*self.dt
@@ -353,9 +353,9 @@ class iLQR(Algorithm):
             u = self.agent.control(self.dt, u)
             # necessary to store control in agents history
             if self.fastForward:
-                c = self.environment.fast_step(self.dt, u)
+                c = self.environment.fast_step(u, self.dt)
             else:
-                c = self.environment.step(self.dt, u)
+                c = self.environment.step(u, self.dt)
             self.cost += c
         self.cost += self.fcost_fnc(self.environment.x, np) * self.dt
         self.xx = self.environment.history
@@ -509,9 +509,9 @@ class NMPC(iLQR):
         if self.constrained:
             u = np.clip(u, -self.environment.uMax, self.environment.uMax)
         u = self.sim_agent.control(self.dt, u)
-        c = self.sim_environment.step(self.dt, u)
+        c = self.sim_environment.step(u, self.dt)
         u0 = self.agent.control(self.dt, np.zeros(self.uDim))
-        self.environment.step(self.dt, u0)
+        self.environment.step(u0, self.dt)
         self.xx = self.environment.history[1:]
         self.uu = self.agent.history[2:]
         self.environment.history = self.xx
@@ -573,7 +573,7 @@ class NMPC2(Algorithm):
         # compute u
         u = self.compute_u()
         # apply u
-        c = self.environment.step(self.dt, u)
+        c = self.environment.step(u, self.dt)
         # shift planner x_k := x_k+1
         self.shift_planner()
         return c
