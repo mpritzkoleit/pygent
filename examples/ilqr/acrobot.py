@@ -17,9 +17,10 @@ def finalcost(x):
 
 x0 = [np.pi, 0., 0., 0.]
 
-acrobot = Acrobot(cost, x0)
 t = 6
 dt = 0.03
+
+acrobot = Acrobot(cost, x0, dt)
 
 path = '../../../results/ilqr/acrobot/'
 

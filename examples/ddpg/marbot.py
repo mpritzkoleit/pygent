@@ -3,7 +3,7 @@ from algorithms.ddpg import DDPG
 import numpy as np
 
 
-def c_k(x, u, x_):
+def cost(x, u, x_):
     x1, x2, x3, x4 = x_
     u1, = u
     c = 8.7*x1**2 + 8.7*x2**2 + 10e-5*x3**2 + 10e-5*x4**2 + 4.7*u1**2
@@ -13,9 +13,10 @@ def x0fun():
     x0 = [np.random.uniform(-1, 1), np.random.uniform(-1., 1.), 0, 0]
     return x0
 
-robot = MarBot(cost, x0fun)
 t = 10
 dt = 0.02
+
+robot = MarBot(cost, x0fun, dt)
 
 path = '../../../results/ddpg/marbot/experiment1/'
 

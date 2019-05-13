@@ -13,11 +13,10 @@ def x0fun():
     x0 = [np.random.uniform(-np.pi, np.pi), np.random.uniform(-1.,1.)]
     return x0
 
-
-pendulum = Pendulum(cost, x0fun)
-
 t = 10.0
 dt = 0.05
+
+pendulum = Pendulum(cost, x0fun, dt)
 
 path = '../../../results/ddpg/pendulum/experiment9/'
 algorithm = DDPG(pendulum, t, dt, path=path)

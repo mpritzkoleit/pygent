@@ -16,10 +16,10 @@ def c_N(x):
 
 x0 = [np.pi, 0]
 
-pendulum = Pendulum(c_k, x0)
-
 t = 10
 dt = 0.01
+
+pendulum = Pendulum(c_k, x0, dt)
 
 path = '../../../results/ilqr/pendulum/'
 

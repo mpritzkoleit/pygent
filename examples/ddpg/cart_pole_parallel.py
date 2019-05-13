@@ -16,9 +16,10 @@ def x0fun():
           np.random.uniform(0.98 * np.pi, 1.02 * np.pi), 0, 0, 0]
     return x0
 
-cartPole = CartPoleDoubleParallel(cost, x0fun)
 t = 15
 dt = 0.03
+
+cartPole = CartPoleDoubleParallel(cost, x0fun, dt)
 
 path = '../../../results/ddpg/cart_pole_double_parallel/'
 

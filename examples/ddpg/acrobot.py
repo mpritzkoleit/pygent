@@ -19,11 +19,10 @@ def x0fun():
     x0 = [np.random.uniform(0.9*np.pi, 1.1*np.pi), np.random.uniform(-.1, .1), 0, 0]
     return x0
 
-
-pendulum = Acrobot(cost, x0fun)
-
 t = 10.0
 dt = 0.03
+
+pendulum = Acrobot(cost, x0fun, dt)
 
 path = '../../../results/ddpg/acrobot/experiment1/'
 algorithm = DDPG(pendulum, t, dt, path=path)
