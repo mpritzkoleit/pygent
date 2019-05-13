@@ -31,7 +31,7 @@ class Environment(object):
 
     """
 
-    def __init__(self, x0, uDim):
+    def __init__(self, x0, uDim, dt):
         if callable(x0):
             self.x0 = x0  # initial state
             x0 = x0()
@@ -48,6 +48,7 @@ class Environment(object):
         self.tt = [0]
         self.terminated = False
         self.uMax = np.ones(uDim)
+        self.dt = dt
 
     def get_state(self):
         return self.x
@@ -116,13 +117,13 @@ class OpenAIGym(Environment):
         self.env = gym.make(id)
         x0 = self.env.reset()
         uDim = self.env.action_space.shape[0]
-        super(OpenAIGym, self).__init__(list(x0), uDim)
+        super(OpenAIGym, self).__init__(list(x0), uDim, self.env.dt)
         self.uMax = self.env.action_space.high[0]*np.ones(uDim)
         self.o_ = self.x_
         self.o = self.x
         self.render = render
 
-    def step(self, dt, u):
+    def step(self, *args):
         """ Simulates the environment for 1 step of time t.
 
         Args:
@@ -133,6 +134,14 @@ class OpenAIGym(Environment):
             c (float): cost of state transition
 
         """
+
+        if args.__len__()==2:
+            u = args[0]
+            dt = args[1]
+        elif args.__len__() == 1:
+            u = args[0]
+            dt = self.dt
+
         if self.render:
             self.env.render()
 
@@ -175,8 +184,8 @@ class StateSpaceModel(Environment):
 
     """
 
-    def __init__(self, ode, cost, x0, uDim):
-        super(StateSpaceModel, self).__init__(x0, uDim)
+    def __init__(self, ode, cost, x0, uDim, dt, terminal_cost=0.):
+        super(StateSpaceModel, self).__init__(x0, uDim, dt)
         self.ode = ode
         cost_args = inspect.signature(cost).parameters.__len__()
         if cost_args == 1:
@@ -196,8 +205,9 @@ class StateSpaceModel(Environment):
         self.o = self.x
         self.o_ = self.x_
         self.oDim = len(self.o)  # observation dimensions
+        self.terminal_cost = terminal_cost
 
-    def step(self, dt, u):
+    def step(self, *args):
         """ Simulates the environment for 1 step of time t.
 
         Args:
@@ -210,6 +220,12 @@ class StateSpaceModel(Environment):
         """
         self.x_ = self.x  # shift state (x[k-1] = x[k])
         self.o_ = self.o
+        if args.__len__()==2:
+            u = args[0]
+            dt = args[1]
+        elif args.__len__() == 1:
+            u = args[0]
+            dt = self.dt
 
         # system simulation
         sol = solve_ivp(lambda t, x: self.ode(t, x, u), (0, dt), self.x_)
@@ -219,8 +235,8 @@ class StateSpaceModel(Environment):
         self.o = self.observe(self.x)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
-        c = self.cost(self.x_, u, self.x, np)*dt
         self.terminated = self.terminate(self.x)
+        c = (self.cost(self.x_, u, self.x, np) + self.terminal_cost*self.terminated)*dt
         return c
 
     def terminate(self, x):
@@ -236,7 +252,7 @@ class StateSpaceModel(Environment):
         return terminated
 
 
-    def fast_step(self, dt, u):
+    def fast_step(self, *args):
         """ Simulates the environment for 1 step of time t, using Euler forward integration.
 
         Args:
@@ -248,16 +264,24 @@ class StateSpaceModel(Environment):
 
         """
 
+        if args.__len__()==2:
+            u = args[0]
+            dt = args[1]
+        elif args.__len__() == 1:
+            u = args[0]
+            dt = self.dt
+
         self.x_ = self.x  # shift state (x[k-1] := x[k])
         self.o_ = self.o
+
         # Euler forward step
         y = self.x_ + dt*self.ode(None, self.x_, u)
         self.x = self.mapAngles(y)
         self.o = self.observe(self.x)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
-        c = self.cost(self.x_, u, self.x, np)*dt
         self.terminated = self.terminate(self.x)
+        c = (self.cost(self.x_, u, self.x, np) + self.terminal_cost*self.terminated)*dt
         return c
 
     def mapAngles(self, x):
@@ -278,8 +302,8 @@ class StateSpaceModel(Environment):
 
 class Pendulum(StateSpaceModel):
 
-    def __init__(self, cost, x0):
-        super(Pendulum, self).__init__(self.ode, cost, x0, uDim=1)
+    def __init__(self, cost, x0, dt):
+        super(Pendulum, self).__init__(self.ode, cost, x0, 1, dt)
         self.xIsAngle = [True, False]
         self.o = self.observe(self.x)
         self.o_ = self.o
@@ -343,9 +367,9 @@ class Pendulum(StateSpaceModel):
         return ani
 
 class CartPole(StateSpaceModel):
-    def __init__(self, cost, x0):
+    def __init__(self, cost, x0, dt):
         self.ode = cart_pole_ode()
-        super(CartPole, self).__init__(self.ode, cost, x0, uDim=1)
+        super(CartPole, self).__init__(self.ode, cost, x0, 1, dt)
         self.xIsAngle = [False, True, False, False]
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o)  # observation dimensions
@@ -400,9 +424,9 @@ class CartPole(StateSpaceModel):
         return ani
 
 class CartPoleDoubleSerial(StateSpaceModel):
-    def __init__(self, cost, x0):
+    def __init__(self, cost, x0, dt):
         self.ode = cart_pole_double_serial_ode()
-        super(CartPoleDoubleSerial, self).__init__(self.ode, cost, x0, uDim=1)
+        super(CartPoleDoubleSerial, self).__init__(self.ode, cost, x0, 1, dt)
         self.xIsAngle = [False, True, True, False, False, False]
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o) #observation dimensions
@@ -460,9 +484,9 @@ class CartPoleDoubleSerial(StateSpaceModel):
             return ani
 
 class CartPoleDoubleParallel(StateSpaceModel):
-    def __init__(self, cost, x0):
+    def __init__(self, cost, x0, dt):
         self.ode = cart_pole_double_parallel_ode()
-        super(CartPoleDoubleParallel, self).__init__(self.ode, cost, x0, uDim=1)
+        super(CartPoleDoubleParallel, self).__init__(self.ode, cost, x0, 1, dt)
         self.xIsAngle = [False, True, True, False, False, False]
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o) #observation dimensions
@@ -520,9 +544,9 @@ class CartPoleDoubleParallel(StateSpaceModel):
             return ani
 
 class CartPoleTriple(StateSpaceModel):
-    def __init__(self, cost, x0):
+    def __init__(self, cost, x0, dt):
         self.ode = cart_pole_triple_ode()
-        super(CartPoleTriple, self).__init__(self.ode, cost, x0, uDim=1)
+        super(CartPoleTriple, self).__init__(self.ode, cost, x0, 1, dt)
         self.xIsAngle = [False, True, True, True, False, False, False, False]
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o) #observation dimensions
@@ -587,9 +611,8 @@ class CartPoleTriple(StateSpaceModel):
 
 class Car(StateSpaceModel):
     # Todo: from iLQG paper
-
-    def __init__(self, cost, x0):
-        super(Car, self).__init__(self.ode, cost, x0, uDim=2)
+    def __init__(self, cost, x0, dt):
+        super(Car, self).__init__(self.ode, cost, x0, 2, dt)
         self.xIsAngle = [False, False, True, False]
         self.o = observation(self.x, self.xIsAngle)
         self.o_ = self.o
@@ -616,9 +639,9 @@ class Car(StateSpaceModel):
             return False
 
 class Acrobot(StateSpaceModel):
-    def __init__(self, cost, x0):
+    def __init__(self, cost, x0, dt):
         self.ode = acrobot_ode()
-        super(Acrobot, self).__init__(self.ode, cost, x0, uDim=1)
+        super(Acrobot, self).__init__(self.ode, cost, x0, 1, dt)
         self.xIsAngle = [True, True, False, False]
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o)  # observation dimensions
@@ -674,66 +697,10 @@ class Acrobot(StateSpaceModel):
         return ani
 
 #class Building(StateSpaceModel):
-class CartPole(StateSpaceModel):
-    def __init__(self, cost, x0):
-        self.ode = cart_pole_ode()
-        super(CartPole, self).__init__(self.ode, cost, x0, uDim=1)
-        self.xIsAngle = [False, True, False, False]
-        self.o = observation(self.x, self.xIsAngle)
-        self.oDim = len(self.o)  # observation dimensions
-        self.o_ = self.o
-        self.uMax = 10*np.ones(1)
-
-
-    def terminate(self, x):
-        x1, x2, x3, x4 = x
-        if np.abs(x1) > 1.0:
-            return True
-        else:
-            return False
-
-
-    def animation(self):
-        # mapping from theta and s to the x,y-plane (definition of the line points, that represent the pole)
-        def cart_pole_plot(l, xt):
-            x_pole_end = -l * np.sin(xt[:, 1]) + xt[:, 0]
-            y_pole_end = l * np.cos(xt[:, 1])
-            x_cart = xt[:, 0]
-
-            return x_pole_end, y_pole_end, x_cart
-
-        # line and text
-        def animate(t):
-            thisx = [x_cart[t], x_pole_end[t]]
-            thisy = [0, y_pole_end[t]]
-
-            pole.set_data(thisx, thisy)
-            cart.set_xy([x_cart[t] - 0.1, -0.05])
-            time_text.set_text(time_template % self.tt[t])
-            return pole, cart, time_text,
-
-        x_pole_end, y_pole_end, x_cart = cart_pole_plot(0.5, self.history)
-        fig, ax = plt.subplots(dpi=150)
-        ax.set_aspect('equal')
-        ax.set(xlabel=r'$x_1$')
-        plt.ylim((-.6, .6))
-        plt.xlim((min(-1.4, 1.2 * min(x_cart)), max(1.4, 1.2 * max(x_cart))))
-        plt.yticks([], [])
-        plt.title('CartPole')
-        time_template = 'time = %.1fs'
-        time_text = ax.text(0.05, 1.05, '', transform=ax.transAxes)
-        rail, = ax.plot([min(-1, 1.2 * min(x_cart)), max(1, 1.2 * max(x_cart))], [0, 0], 'ks-', zorder=0)
-        pole, = ax.plot([], [], 'b-', zorder=1, lw=3)
-        cart = patches.Rectangle((-0.1, -0.05), 0.2, 0.1, fc='b', zorder=1)
-        ax.add_artist(cart)
-        # animation using matplotlibs animation library
-        ani = animation.FuncAnimation(fig, animate, np.arange(len(self.tt)), interval=self.tt[1] * 1000,
-                                      blit=True)
-        return ani
 
 class MarBot(StateSpaceModel):
-    def __init__(self, cost, x0):
-        super(MarBot, self).__init__(self.ode, cost, x0, uDim=1)
+    def __init__(self, cost, x0, dt):
+        super(MarBot, self).__init__(self.ode, cost, x0, 1, dt)
         self.xIsAngle = [False, True, False, False]
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o)  # observation dimensions

@@ -93,7 +93,7 @@ class DDPG(Algorithm):
             else:
                 u = self.agent.take_random_action(self.dt)
             # simulation of environment
-            c = self.environment.step(self.dt, u)*self.costScale
+            c = self.environment.step(u, self.dt)*self.costScale
             cost.append(c)
             disc_cost.append(c*self.agent.gamma**i)
             
@@ -139,7 +139,7 @@ class DDPG(Algorithm):
             u = self.agent.take_action(self.dt, self.environment.o)
 
             # simulation of environment
-            c = self.environment.step(self.dt, u)
+            c = self.environment.step(u, self.dt)
             cost.append(c)
 
             # check if environment terminated
