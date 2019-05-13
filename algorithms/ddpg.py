@@ -41,13 +41,13 @@ class DDPG(Algorithm):
 
     def __init__(self, environment, t, dt, plotInterval=50, nData=1e6, path='../Results/DDPG/', checkInterval=50,
                  evalPolicyInterval=100, costScale=None, warm_up=5e4, actor_lr=1e-4, critic_lr=1e-3, tau=0.001, batch_size=64,
-                 noise_scale=False, terminalQ=True):
+                 noise_scale=False, terminalQ=True, gamma=0.99):
         xDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax
         self.batch_size = batch_size
         agent = ActorCriticDDPG(xDim, uDim, torch.Tensor(uMax), dt, batch_size=self.batch_size, actor_lr=actor_lr,
-                            critic_lr=critic_lr, tau=tau, noise_scale=noise_scale)
+                            critic_lr=critic_lr, tau=tau, noise_scale=noise_scale, gamma=gamma)
         super(DDPG, self).__init__(environment, agent, t, dt)
         self.R = DataSet(nData)
         self.plotInterval = plotInterval  # inter
