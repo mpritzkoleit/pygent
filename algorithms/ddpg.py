@@ -41,7 +41,7 @@ class DDPG(Algorithm):
 
     def __init__(self, environment, t, dt, plotInterval=50, nData=1e6, path='../Results/DDPG/', checkInterval=50,
                  evalPolicyInterval=100, costScale=None, warm_up=5e4, actor_lr=1e-4, critic_lr=1e-3, tau=0.001, batch_size=64,
-                 noise_scale=False, terminalQ=True, gamma=0.99):
+                 noise_scale=False, gamma=0.99):
         xDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax
@@ -70,7 +70,6 @@ class DDPG(Algorithm):
         copyfile(inspect.stack()[-1][1], path + 'exec_script.py')
         self.expCost = []
         self.episode_steps = []
-        self.terminalQ = terminalQ
 
     def run_episode(self):
         """ Run a training episode. If terminal state is reached, episode stops."""
@@ -99,7 +98,7 @@ class DDPG(Algorithm):
             
             # store transition in data set (x_, u, x, c)
             transition = ({'x_': self.environment.o_, 'u': self.agent.u, 'x': self.environment.o,
-                           'c': [c], 't': [self.environment.terminated*self.terminalQ]})
+                           'c': [c], 't': [self.environment.terminated]})
 
             # add sample to data set
             self.R.force_add_sample(transition)
