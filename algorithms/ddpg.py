@@ -257,26 +257,30 @@ class DDPG(Algorithm):
     def learning_curve(self):
         """ Plot of the learning curve. """
 
-        fig, ax = plt.subplots(2, 1, dpi=150, sharex=True)
+        fig, ax = plt.subplots(2, 1, dpi=150, sharex=True, figsize=(5.56, 3.44))
+
         #x = np.arange(1, self.episode)
         x = np.linspace(1, self.R.data.__len__(), self.episode-1)
         x = np.cumsum(self.episode_steps)
 
         ax[0].step(x, self.meanCost, 'b', lw=1, label=r'$\frac{1}{N}\sum_{k=0}^N c_k$')
-        ax[0].legend(loc='upper left')
+        ax[0].legend(loc='center', bbox_to_anchor=(1.15, .5), ncol=1, shadow=True)
         ax[0].grid(True)
+        ax[0].ticklabel_format(axis='both', style='sci', scilimits=(-3,4), useMathText=True)
         ax[1].step(x, self.totalCost, 'b', lw=1, label=r'$\sum_{k=0}^N\gamma^k c_k$')
         ax[1].step(x, self.expCost, 'r', lw=1, label=r'$\hat{V}(x_0)$')
         ax[1].grid(True)
-        ax[1].legend(loc='upper left')
-        plt.xlabel(r'Number of Samples')
+        ax[1].legend(loc='center', bbox_to_anchor=(1.15, .5), ncol=1, shadow=True)
+        ax[1].ticklabel_format(axis='both', style='sci',scilimits=(-3,5), useMathText=True)
+        plt.rc('font', family='serif')
+        plt.xlabel('Samples', usetex=True)
+        plt.tight_layout()
         plt.savefig(self.path + 'learning_curve.pdf')
         try:
             plt.savefig(self.path + 'learning_curve.pgf')
         except:
             pass
         # todo: save learning curve data
-        # todo: plot expected return
         plt.close('all')
         pass
 
