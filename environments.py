@@ -435,7 +435,7 @@ class CartPoleDoubleSerial(StateSpaceModel):
 
     def terminate(self, x):
         x1, x2, x3, x4, x5, x6 = x
-        if abs(x1) > 1 or abs(x5) > 25 or abs(x6) > 25:
+        if abs(x1) > 1.5 or abs(x5) > 25 or abs(x6) > 25:
             return True
         else:
             return False
@@ -495,7 +495,7 @@ class CartPoleDoubleParallel(StateSpaceModel):
 
     def terminate(self, x):
         x1, x2, x3, x4, x5, x6 = x
-        if abs(x1) > 1 or abs(x5) > 25 or abs(x6) > 25:
+        if abs(x1) > 1.5 or abs(x5) > 25 or abs(x6) > 25:
             return True
         else:
             return False
@@ -555,7 +555,7 @@ class CartPoleTriple(StateSpaceModel):
 
     def terminate(self, x):
         x1, x2, x3, x4, x5, x6, x7, x8 = x
-        if abs(x1) > 0.7:
+        if abs(x1) > 1.5:
             return True
         else:
             return False
