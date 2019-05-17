@@ -5,12 +5,17 @@ import numpy as np
 def c_k(x, u):
     x1, x2, x3, x4 = x
     u1, = u
-    c = .5 * (1 * x1 ** 2 + 2 * x2 ** 2 + 0.01 * x3 ** 2 + 0.01 * x4 ** 2 + 0.1 * u1 ** 2)
+    c = .5 * (5*x1**2 + 2 * x2 ** 2 + 0.01 * x3 ** 2 + 0.01 * x4 ** 2 + 0.01 * u1 ** 2)
     return c
 
-x0 = [0, np.pi, 0, 0]
+def c_N(x):
+    x1, x2, x3, x4 = x
+    c = .5*(50.*x1**2 + 20*x2**2 + 1*x3**2 + 1*x4**2)
+    return c
 
-t = 0.25
+x0 = [0, 0.1, 0, 0]
+
+t = 5
 dt = 0.01
 
 cartPole = CartPole(c_k, x0, dt)

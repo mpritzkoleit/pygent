@@ -17,13 +17,13 @@ def finalcost(x):
 
 x0 = [0, np.pi, 0, 0]
 
-t = 6
+t = 3
 dt = 0.01
 cartPole = CartPole(cost, x0, dt)
 
 path = '../../../results/ilqr/cart_pole/'
 
-controller = iLQR(cartPole, t, dt, fcost=finalcost, path=path, constrained=True)
+controller = iLQR(cartPole, t, dt, path=path, constrained=True)
 controller.run_optim()
 controller.run(x0)
 controller.plot()
