@@ -21,16 +21,17 @@ from nn_models import NNDynamics
 class MBRL(Algorithm):
 
     def __init__(self, environment, t, dt, plotInterval=1, nData=1e6, path='../results/mbrl/', checkInterval=50,
-                 evalPolicyInterval=100, warm_up=0, dyn_lr=1e-3, batch_size=512, fcost=None):
+                 evalPolicyInterval=100, warm_up=0, dyn_lr=1e-3, batch_size=512, fcost=None, horizon=None):
         xDim = environment.xDim
         uDim = environment.uDim
         uMax = environment.uMax
+        if horizon == None:
+            horizon = t
         self.nn_dynamics = NNDynamics(xDim, uDim) # neural network dynamics
         self.optim = torch.optim.Adam(self.nn_dynamics.parameters(), lr=dyn_lr)
         nn_environment = StateSpaceModel(self.ode, environment.cost, environment.x0, uDim, dt)
         nn_environment.uMax = uMax
-        traj_optimizer = iLQR(copy.deepcopy(environment), 3, dt, path=path, fcost=fcost, constrained=True, fastForward=False)
-        agent = MBRLAgent(uDim, traj_optimizer)
+        agent = MPCAgent(uDim, copy.copy(environment), horizon, dt, path)
         super(MBRL, self).__init__(environment, agent, t, dt)
         self.R = DataSet(nData)
         self.plotInterval = plotInterval  # inter
@@ -106,7 +107,6 @@ class MBRL(Algorithm):
         # store the mean of the incremental cost
         self.meanCost.append(np.mean(cost))
         self.totalCost.append(np.sum(disc_cost))
-        # todo: create a function in environments, that returns x0, o0
         x = self.environment.observe(self.environment.history[0, :])
         self.episode_steps.append(i)
         self.episode += 1
@@ -292,20 +292,17 @@ class MBRL(Algorithm):
         x_Inputs = torch.Tensor([sample['x_'] for sample in batch])
         xInputs = torch.Tensor([sample['x'] for sample in batch])
         uInputs = torch.Tensor([sample['u'] for sample in batch])
-        #costs = torch.Tensor([sample['c'] for sample in batch])
-        #terminated = torch.Tensor([sample['t'] for sample in batch])
-        #self.eval()  # evaluation mode (for batch normalization)
         fOutputs = self.nn_dynamics(x_Inputs, uInputs)
         return x_Inputs, xInputs, fOutputs
 
 
 
-class MBRLAgent(Agent):
-    def __init__(self, uDim, traj_optimizer):
-        super(MBRLAgent, self).__init__(uDim)
-        self.traj_optimizer = traj_optimizer
+class MPCAgent(Agent):
+    def __init__(self, uDim, environment, horizon, dt, path, init_iterations=40, fcost=None, constrained=True, fastForward=False):
+        super(MPCAgent, self).__init__(uDim)
+        self.traj_optimizer = iLQR(environment, horizon, dt, path=path, fcost=fcost, constrained=constrained,fastForward=fastForward)
         self.uMax = self.traj_optimizer.environment.uMax
-        self.traj_optimizer.max_iters = 40
+        self.traj_optimizer.max_iters = init_iterations
         self.traj_optimizer.run_optim()
         self.traj_optimizer.max_iters = 1
 
@@ -320,35 +317,27 @@ class MBRLAgent(Agent):
                 u (ndarray): control/action
         """
 
-        #self.eval()
-        self.traj_optimizer.environment.reset(x)
-        #self.traj_optimizer.run(x)
-        #self.traj_optimizer.agent.reset()
-        #self.traj_optimizer.cost = 1000
-        #self.traj_optimizer.run(x)
-        self.shift_planner()
+        self.traj_optimizer.environment.x0 = x
         self.traj_optimizer.run_optim()
-        #self.u = self.traj_optimizer.agent.history[1]
-        #self.shift_planner()
+
         kk = self.traj_optimizer.kk[0].T[0]
-        #KK = self.traj_optimizer.KK[0]
         uu = self.traj_optimizer.uu[0]
-        #xx = self.traj_optimizer.xx[0]
         alpha = self.traj_optimizer.current_alpha
-        self.u = alpha*kk + uu
+        self.u = uu + alpha*kk
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
+        self.shift_planner()
         return self.u
 
     def shift_planner(self):
-        self.traj_optimizer.kk[0:-2] = self.traj_optimizer.kk[1:-1]
-        self.traj_optimizer.KK[0:-2] = self.traj_optimizer.KK[1:-1]
-        self.traj_optimizer.uu[0:-2] = self.traj_optimizer.uu[1:-1]
-        self.traj_optimizer.xx[0:-2] = self.traj_optimizer.xx[1:-1]
-        self.traj_optimizer.kk[-1] = 0*self.traj_optimizer.kk[-1]
-        self.traj_optimizer.KK[-1] = 0*self.traj_optimizer.KK[-1]
-        self.traj_optimizer.uu[-1] = 0*self.traj_optimizer.uu[-1]
-        #self.traj_optimizer.cost = self.traj_optimizer.cost*1.1
+        self.traj_optimizer.uu[0:-1] = self.traj_optimizer.uu[1:]
+        self.traj_optimizer.xx[0:-1] = self.traj_optimizer.xx[1:]
+        self.traj_optimizer.kk[-1] = self.traj_optimizer.kk[-1]*0
+        self.traj_optimizer.KK[-1] = self.traj_optimizer.KK[-1]*0
+        u = self.traj_optimizer.uu[-1]
+        self.traj_optimizer.environment.step(u)
+        self.traj_optimizer.xx[-1] = self.traj_optimizer.environment.x
+        self.traj_optimizer.environment.reset(self.traj_optimizer.xx[0])
         pass
 
     def take_random_action(self, dt):

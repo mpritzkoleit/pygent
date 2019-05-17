@@ -263,6 +263,11 @@ class iLQR(Algorithm):
 
     def run(self, x0):
         self.environment.reset(x0)
+        self.xx, self.uu, self.cost = self.forward_pass(1.)
+        pass
+
+    def run_disk(self, x0):
+        self.environment.reset(x0)
         self.KK = np.load(self.path + 'data/K_.npy')
         self.kk = np.load(self.path + 'data/k.npy')
         self.uu = np.load(self.path + 'data/uu.npy')
@@ -328,7 +333,7 @@ class iLQR(Algorithm):
                             break
             if success_fw:
                 #todo: cost instead of self.cost in print?
-                print('Iter. ', _, '| Cost: %.7f' % self.cost, ' | red.: %.5f' % dcost, '| exp.: %.5f' % expected)
+                print('Iter. ', _, '| Cost: %.7f' % cost, ' | red.: %.5f' % dcost, '| exp.: %.5f' % expected)
                 best_idx = np.argmin(cost_list)
                 self.cost = np.copy(cost_list[best_idx])
                 self.xx = np.copy(x_list[best_idx])
@@ -496,144 +501,3 @@ class iLQR(Algorithm):
         np.save(self.path + 'data/k', self.kk)
         np.save(self.path + 'data/uu', self.uu)
         np.save(self.path + 'data/xx', self.xx)
-
-
-class NMPC(iLQR):
-    """ Nonlinear model predictive control (NMPC) algorithm based on iLQR.
-
-    Args:
-        horizon (int): optimization horizon. """
-
-    def __init__(self, environment, t, dt, horizon=.6, maxIters=2, tolGrad=1e-4,
-                 tolFun=1e-7, fastForward=True, path='../Results/iLQR/', constrained=False):
-        self.sim_environment = copy.deepcopy(environment)
-        self.sim_agent = FeedBack(None, self.sim_environment.uDim)
-        self.horizon = horizon
-        self.tsim = t
-        self.sim_steps = int(t/dt)
-        super(NMPC, self).__init__(environment=environment, t=horizon, dt=dt, maxIters=maxIters, tolGrad=tolGrad,
-                 tolFun=tolFun, fastForward=fastForward, path=path, fcost=None, constrained=constrained)
-
-    def mpc_step(self):
-        self.run_optim()
-        u = self.kk[0].T[0] + self.uu[0]
-        if self.constrained:
-            u = np.clip(u, -self.environment.uMax, self.environment.uMax)
-        u = self.sim_agent.control(self.dt, u)
-        c = self.sim_environment.step(u, self.dt)
-        u0 = self.agent.control(self.dt, np.zeros(self.uDim))
-        self.environment.step(u0, self.dt)
-        self.xx = self.environment.history[1:]
-        self.uu = self.agent.history[2:]
-        self.environment.history = self.xx
-        self.agent.history = self.uu
-        self.environment.x0 = self.xx[0]
-        return c
-
-    def run_mpc(self):
-        cost = 0
-        for _ in range(self.sim_steps):
-            print('NMPC step:', _, '/', self.sim_steps)
-            cost += self.mpc_step()
-
-    def plot(self):
-        self.sim_environment.plot()
-        plt.savefig(self.path + 'plots/environment.pdf')
-        try:
-            plt.savefig(self.path + 'plots/environment.pgf')
-        except:
-            pass
-        self.sim_agent.plot()
-        plt.savefig(self.path + 'plots/controller.pdf')
-        try:
-            plt.savefig(self.path + 'plots/controller.pgf')
-        except:
-            pass
-        plt.close('all')
-
-    def animation(self):
-        ani = self.sim_environment.animation()
-        if ani != None:
-            ani.save(self.path + 'animations/animation.mp4', fps=1 / self.dt)
-        plt.close('all')
-
-class NMPC2(Algorithm):
-    """ Nonlinear model predictive control (NMPC) algorithm based on iLQR.
-
-    Args:
-        horizon (float): optimization horizon. """
-
-    def __init__(self, environment, t, dt, horizon=.6, maxIters=1, fastForward=True,
-                 path='../Results/iLQR/', constrained=False):
-        super(NMPC2, self).__init__(environment, Agent(environment.uDim), t, dt)
-        self.planner = iLQR(copy.deepcopy(environment), horizon, dt, path=path, constrained=constrained,
-                            maxIters=maxIters, fastForward=fastForward)
-        self.horizon = horizon
-        self.tsim = t
-        self.sim_steps = int(t/dt)
-        self.constrained = constrained
-        self.path = path
-        self.kk = []
-        self.KK = []
-        self.planner.max_iters = 50
-        self.planner.run_optim()
-        self.planner.max_iters = maxIters
-
-    def mpc_step(self):
-        self.planner.run_optim()
-        # compute u
-        u = self.compute_u()
-        # apply u
-        c = self.environment.step(u, self.dt)
-        # shift planner x_k := x_k+1
-        self.shift_planner()
-        return c
-
-    def compute_u(self):
-        K = self.planner.KK[0]
-        k = self.planner.kk[0].T[0]
-        alpha = self.planner.current_alpha
-        x_ = self.planner.xx[0]
-        u_ = self.planner.uu[0]
-        u = K@(self.environment.x - x_) + alpha*k + u_  # eq. (7b)
-        if self.constrained:
-            u = np.clip(u, -self.environment.uMax, self.environment.uMax)
-        self.agent.control(self.dt, u)
-        return u
-
-    def shift_planner(self):
-        # apply u = 0
-        # delete time step k=0
-        # foward pass
-        self.planner.environment.reset(self.environment.x)
-        self.planner.xx, self.planner.uu, self.planner.cost = self.planner.forward_pass(self.planner.current_alpha)
-        #u0 = np.zeros(self.agent.uDim)
-        #self.planner.environment.step(self.dt, u0)
-        #self.planner.agent.control(self.dt, u0)
-        #self.planner.environment.history = self.planner.environment.history[1:]
-        #self.planner.environment.x0 = self.environment.x
-        #self.planner.agent.history = self.planner.agent.history[1:]
-        #self.planner.xx = self.planner.environment.history
-        #self.planner.uu = self.planner.agent.history[1:]
-        pass
-
-    def run_mpc(self):
-        cost = 0
-        for _ in range(self.sim_steps):
-            print('NMPC step:', _, '/', self.sim_steps)
-            cost += self.mpc_step()
-
-    def plot(self):
-        self.environment.plot()
-        plt.savefig(self.path + 'plots/environment.pdf')
-        plt.savefig(self.path + 'plots/environment.pgf')
-        self.agent.plot()
-        plt.savefig(self.path + 'plots/controller.pdf')
-        plt.savefig(self.path + 'plots/controller.pgf')
-        plt.close('all')
-
-    def animation(self):
-        ani = self.environment.animation()
-        if ani != None:
-            ani.save(self.path + 'animations/animation.mp4', fps=1 / self.dt)
-        plt.close('all')
