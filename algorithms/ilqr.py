@@ -47,7 +47,6 @@ class iLQR(Algorithm):
         nData: maximum length of data set
 
     """
-
     def __init__(self, environment, t, dt, maxIters=500, tolGrad=1e-4,
                  tolFun=1e-7, fastForward=False, path='../Results/iLQR/', fcost=None, constrained=False, save_interval=10):
         """
@@ -109,6 +108,10 @@ class iLQR(Algorithm):
         self.lims = self.environment.uMax
         self.regType = 2.
         self.save_interval = save_interval
+        self.parallel = False
+
+        self.KK = []
+        self.kk = []
 
     def cost_fnc(self, x, u, mod):
         """
@@ -294,10 +297,16 @@ class iLQR(Algorithm):
 
                 # Line-search
                 # todo: add parallel linesearch
+                x_list = []
+                u_list = []
+                cost_list = []
                 for a_index, alpha in enumerate(self.alphas):
                     self.current_alpha = alpha
-                    print('Linesearch:', a_index+1, '/', len(self.alphas))
+                    #print('Linesearch:', a_index+1, '/', len(self.alphas))
                     xx, uu, cost = self.forward_pass(alpha)
+                    x_list.append(xx)
+                    u_list.append(uu)
+                    cost_list.append(cost)
                     if np.any(xx > 1e8):
                         print('forward diverged.')
                         break
@@ -313,15 +322,17 @@ class iLQR(Algorithm):
                     else:
                         z = np.sign(dcost)
                         print('non-positive expected reduction')
-
                     if z > self.zmin:
                         success_fw = True
-                        break
+                        if not self.parallel:
+                            break
             if success_fw:
+                #todo: cost instead of self.cost in print?
                 print('Iter. ', _, '| Cost: %.7f' % self.cost, ' | red.: %.5f' % dcost, '| exp.: %.5f' % expected)
-                self.cost = np.copy(cost)
-                self.xx = np.copy(xx)
-                self.uu = np.copy(uu)
+                best_idx = np.argmin(cost_list)
+                self.cost = np.copy(cost_list[best_idx])
+                self.xx = np.copy(x_list[best_idx])
+                self.uu = np.copy(u_list[best_idx])
 
                 # decrease mu
                 self.decrease_mu()
