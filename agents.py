@@ -1,4 +1,5 @@
 import numpy as np
+np.random.seed(0)
 from abc import abstractmethod, abstractproperty
 import matplotlib.pyplot as plt
 

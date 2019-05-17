@@ -1,6 +1,8 @@
 import torch
+torch.manual_seed(0)
 from torch.autograd import grad
 import numpy as np
+np.random.seed(0)
 import scipy as sci
 
 def nth_derivative(f, wrt, n):

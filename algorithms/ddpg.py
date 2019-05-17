@@ -1,5 +1,7 @@
 import numpy as np
+np.random.seed(0)
 import torch
+torch.manual_seed(0)
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import os

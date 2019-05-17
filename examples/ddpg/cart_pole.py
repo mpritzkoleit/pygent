@@ -17,10 +17,10 @@ t = 10
 dt = 0.02
 
 cartPole = CartPole(cost, x0fun, dt)
-"""
-path = '../../../results/ddpg/experiment50/'
 
-algorithm = DDPG(cartPole, t, dt, path=path, warm_up=10000)
+path = '../../../results/ddpg/experiment55/'
+
+algorithm = DDPG(cartPole, t, dt, path=path, warm_up=100, plotInterval=1)
 algorithm.load()
 algorithm.run_learning(2000)
 
@@ -28,4 +28,3 @@ x0 = [0.0, np.pi, 0, 0]
 algorithm.run_controller(x0)
 algorithm.plot()
 algorithm.animation()
-"""

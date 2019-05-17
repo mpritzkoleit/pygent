@@ -1,5 +1,5 @@
-from numba import jit
 import numpy as np
+np.random.seed(999)
 import matplotlib.pyplot as plt
 import time
 import copy

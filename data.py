@@ -1,4 +1,5 @@
 import random
+random.seed(0) #, the number of the beast!
 import pickle
 
 class DataSet(object):
