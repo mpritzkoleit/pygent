@@ -379,7 +379,7 @@ class CartPole(StateSpaceModel):
 
     def terminate(self, x):
         x1, x2, x3, x4 = x
-        if np.abs(x1) > 1.0:
+        if np.abs(x1) > 1.5:
             return True
         else:
             return False

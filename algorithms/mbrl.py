@@ -19,7 +19,7 @@ from nn_models import NNDynamics
 class MBRL(Algorithm):
 
     def __init__(self, environment, t, dt, plotInterval=1, nData=1e6, path='../results/mbrl/', checkInterval=50,
-                 evalPolicyInterval=100, warm_up=0, dyn_lr=1e-3, batch_size=512):
+                 evalPolicyInterval=100, warm_up=0, dyn_lr=1e-3, batch_size=512, fcost=None):
         xDim = environment.xDim
         uDim = environment.uDim
         uMax = environment.uMax
@@ -27,7 +27,7 @@ class MBRL(Algorithm):
         self.optim = torch.optim.Adam(self.nn_dynamics.parameters(), lr=dyn_lr)
         nn_environment = StateSpaceModel(self.ode, environment.cost, environment.x0, uDim, dt)
         nn_environment.uMax = uMax
-        traj_optimizer = iLQR(copy.deepcopy(environment), 3., dt, path=path, constrained=True, fastForward=False)
+        traj_optimizer = iLQR(copy.deepcopy(environment), 3, dt, path=path, fcost=fcost, constrained=True, fastForward=False)
         agent = MBRLAgent(uDim, traj_optimizer)
         super(MBRL, self).__init__(environment, agent, t, dt)
         self.R = DataSet(nData)
@@ -37,7 +37,7 @@ class MBRL(Algorithm):
         self.path = path
         self.warm_up = warm_up
         self.batch_size = batch_size
-        
+
         if not os.path.isdir(path):
             os.makedirs(path)
         if not os.path.isdir(path + 'plots/'):
@@ -84,7 +84,7 @@ class MBRL(Algorithm):
             c = self.environment.step(u, self.dt)
             cost.append(c)
             disc_cost.append(c)
-            
+
             # store transition in data set (x_, u, x, c)
             transition = ({'x_': self.environment.x_, 'u': self.agent.u, 'x': self.environment.x,
                            'c': [c], 't': [self.environment.terminated]})
@@ -97,9 +97,9 @@ class MBRL(Algorithm):
                 #self.train_dynamics(self.R)
             print(i, len(tt))
             # check if environment terminated
-            if self.environment.terminated:
-                print('Environment terminated!')
-                break
+            #if self.environment.terminated:
+                #print('Environment terminated!')
+                #break
 
         # store the mean of the incremental cost
         self.meanCost.append(np.mean(cost))
@@ -303,8 +303,9 @@ class MBRLAgent(Agent):
         super(MBRLAgent, self).__init__(uDim)
         self.traj_optimizer = traj_optimizer
         self.uMax = self.traj_optimizer.environment.uMax
-        self.traj_optimizer.max_iters = 100
+        self.traj_optimizer.max_iters = 40
         self.traj_optimizer.run_optim()
+        self.traj_optimizer.max_iters = 1
 
     def take_action(self, dt, x, idx):
         """ Compute the control/action of the policy network (actor).
@@ -322,11 +323,11 @@ class MBRLAgent(Agent):
         #self.traj_optimizer.run(x)
         #self.traj_optimizer.agent.reset()
         #self.traj_optimizer.cost = 1000
-        self.traj_optimizer.max_iters = 1
-        #self.shift_planner()
+        #self.traj_optimizer.run(x)
+        self.shift_planner()
         self.traj_optimizer.run_optim()
         #self.u = self.traj_optimizer.agent.history[1]
-        self.shift_planner()
+        #self.shift_planner()
         kk = self.traj_optimizer.kk[0].T[0]
         #KK = self.traj_optimizer.KK[0]
         uu = self.traj_optimizer.uu[0]
@@ -342,6 +343,10 @@ class MBRLAgent(Agent):
         self.traj_optimizer.KK[0:-2] = self.traj_optimizer.KK[1:-1]
         self.traj_optimizer.uu[0:-2] = self.traj_optimizer.uu[1:-1]
         self.traj_optimizer.xx[0:-2] = self.traj_optimizer.xx[1:-1]
+        self.traj_optimizer.kk[-1] = 0*self.traj_optimizer.kk[-1]
+        self.traj_optimizer.KK[-1] = 0*self.traj_optimizer.KK[-1]
+        self.traj_optimizer.uu[-1] = 0*self.traj_optimizer.uu[-1]
+        #self.traj_optimizer.cost = self.traj_optimizer.cost*1.1
         pass
 
     def take_random_action(self, dt):
