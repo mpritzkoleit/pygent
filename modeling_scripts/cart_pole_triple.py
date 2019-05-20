@@ -67,9 +67,9 @@ def modeling():
     # d/dt(dL/d(dq_i/dt)) - dL/dq_i = Q_i
 
     Q0 = F - d0*dq0_t
-    Q1 =   - d1*dq1_t - d2*(dq2_t - dq1_t)
-    Q2 =     d2*(dq2_t - dq1_t) - d3*(dq3_t - dq2_t)
-    Q3 =     d3*(dq3_t - dq2_t)
+    Q1 =   - d1*dq1_t + d2*(dq2_t - dq1_t)
+    Q2 =   - d2*(dq2_t - dq1_t) + d3*(dq3_t - dq2_t)
+    Q3 =   - d3*(dq3_t - dq2_t)
 
     Eq0 = L.diff(dq0_t, t) - L.diff(q0_t) - Q0 # = 0
     Eq1 = L.diff(dq1_t, t) - L.diff(q1_t) - Q1 # = 0

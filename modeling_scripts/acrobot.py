@@ -33,7 +33,7 @@ def modeling():
     dp1 = p1.diff(t)
 
     # kinetic energy T
-    T0 = (m0*(dp1.T*dp1)[0] + J0*dq0_t**2)/2
+    T0 = (m0*(dp0.T*dp0)[0] + J0*dq0_t**2)/2
     T1 = (m1*(dp1.T*dp1)[0] + J1*(dq0_t+dq1_t)**2)/2
 
     T = T0 + T1
