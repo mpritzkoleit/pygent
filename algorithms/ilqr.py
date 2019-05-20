@@ -501,3 +501,4 @@ class iLQR(Algorithm):
         np.save(self.path + 'data/k', self.kk)
         np.save(self.path + 'data/uu', self.uu)
         np.save(self.path + 'data/xx', self.xx)
+        self.plot()
