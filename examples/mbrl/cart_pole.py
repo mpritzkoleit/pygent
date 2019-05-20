@@ -15,10 +15,14 @@ def c_N(x):
 
 x0 = [0.1, 0, 0, 0]
 
-t = 2.
-dt = 0.02
+def x0fun():
+    x0 = [np.random.uniform(-0.1, 0.1), np.random.uniform(0.9*np.pi, 1.1*np.pi), 0, 0]
+    return x0
 
-cartPole = CartPole(c_k, x0, dt)
+t = 3.
+dt = 0.03
+
+cartPole = CartPole(c_k, x0fun, dt)
 
 path = '../../../results/mbrl/cart_pole/'
 
