@@ -48,7 +48,7 @@ class DDPG(Algorithm):
         uDim = environment.uDim
         uMax = environment.uMax
         self.batch_size = batch_size
-        agent = ActorCriticDDPG(xDim, uDim, torch.Tensor(uMax), dt, batch_size=self.batch_size, actor_lr=actor_lr,
+        agent = ActorCriticDDPG(xDim, uDim, torch.Tensor(uMax).cuda(), dt, batch_size=self.batch_size, actor_lr=actor_lr,
                             critic_lr=critic_lr, tau=tau, noise_scale=noise_scale, gamma=gamma)
         super(DDPG, self).__init__(environment, agent, t, dt)
         self.R = DataSet(nData)
@@ -509,6 +509,8 @@ class ActorCriticDDPG(Agent):
     def expCost(self, x):
         """ Returns the current estimate for V(x). """
         x = torch.Tensor([x])
+        if torch.cuda.is_available():
+            x = x.cuda()
         V = self.critic1(x, self.actor1(x)).detach()
         return V
 
