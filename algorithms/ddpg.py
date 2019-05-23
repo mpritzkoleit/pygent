@@ -326,6 +326,8 @@ class ActorCriticDDPG(Agent):
         self.tau = tau  # blend factor
         self.optimCritic = torch.optim.Adam(self.critic1.parameters(), lr=critic_lr, weight_decay=1e-2)
         self.optimActor = torch.optim.Adam(self.actor1.parameters(), lr=actor_lr)
+        if torch.cuda.is_available():
+            self.enable_cuda()
         self.noise = OUnoise(uDim, dt)  # exploration noise
         self.batch_size = batch_size
         self.noise_scale = noise_scale
@@ -501,3 +503,11 @@ class ActorCriticDDPG(Agent):
         x = torch.Tensor([x])
         V = self.critic1(x, self.actor1(x)).detach()
         return V
+
+    def enable_cuda(self):
+        """ Enable CUDA - training on GPU."""
+        self.actor1.cuda()
+        self.actor2.cuda()
+        self.critic1.cuda()
+        self.critic2.cuda()
+        pass
