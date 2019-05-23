@@ -434,7 +434,7 @@ class ActorCriticDDPG(Agent):
         self.eval()
         x = torch.Tensor([x])
         if torch.cuda.is_available():
-            x.cuda()
+            x = x.cuda()
         self.u = np.asarray(self.actor1(x).detach())[0]
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
@@ -454,7 +454,7 @@ class ActorCriticDDPG(Agent):
         self.eval()
         x = torch.Tensor([x])
         if torch.cuda.is_available():
-            x.cuda()
+            x = x.cuda()
         noise = self.noise.sample()
         u = np.asarray(self.actor1(x).detach())[0] + (1 - self.noise_scale)*noise + self.noise_scale*self.uMax.numpy()*noise
         self.u = np.clip(u, -self.uMax.numpy(), self.uMax.numpy())
@@ -501,9 +501,9 @@ class ActorCriticDDPG(Agent):
         qTargets = costs + self.gamma*(1 - terminated)*nextQ
         qTargets = torch.squeeze(qTargets)
         if torch.cuda.is_available():
-            x_Inputs.cuda()
-            uInputs.cuda()
-            qTargets.cuda()
+            x_Inputs = x_Inputs.cuda()
+            uInputs = uInputs.cuda()
+            qTargets = qTargets.cuda()
         return x_Inputs, uInputs, qTargets
 
     def expCost(self, x):
