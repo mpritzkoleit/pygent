@@ -16,7 +16,8 @@ def x0fun():
 t = 10
 dt = 0.03
 
-cartPole = CartPole(cost, x0fun, dt, terminal_cost=200)
+cartPole = CartPole(cost, x0fun, dt)
+cartPole.terminal_cost = 200
 
 path = '../../../results/ddpg/experiment1/'
 
