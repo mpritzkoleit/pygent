@@ -451,6 +451,8 @@ class ActorCriticDDPG(Agent):
 
         self.eval()
         x = torch.Tensor([x])
+        if torch.cuda.is_available():
+            x.cuda()
         noise = self.noise.sample()
         u = np.asarray(self.actor1(x).detach())[0] + (1 - self.noise_scale)*noise + self.noise_scale*self.uMax.numpy()*noise
         self.u = np.clip(u, -self.uMax.numpy(), self.uMax.numpy())
