@@ -274,7 +274,7 @@ class DDPG(Algorithm):
         ax[1].legend(loc='center', bbox_to_anchor=(1.15, .5), ncol=1, shadow=True)
         ax[1].ticklabel_format(axis='both', style='sci',scilimits=(-3,5), useMathText=True)
         plt.rc('font', family='serif')
-        plt.xlabel('Samples', usetex=True)
+        plt.xlabel('Samples')
         plt.tight_layout()
         plt.savefig(self.path + 'learning_curve.pdf')
         try:
