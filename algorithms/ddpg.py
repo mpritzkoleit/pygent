@@ -496,6 +496,10 @@ class ActorCriticDDPG(Agent):
         nextQ = self.critic2(xInputs, self.actor2(xInputs)).detach()
         qTargets = costs + self.gamma*(1 - terminated)*nextQ
         qTargets = torch.squeeze(qTargets)
+        if torch.cuda.is_available():
+            x_Inputs.cuda()
+            uInputs.cuda()
+            qTargets.cuda()
         return x_Inputs, uInputs, qTargets
 
     def expCost(self, x):
