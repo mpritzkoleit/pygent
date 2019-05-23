@@ -433,6 +433,8 @@ class ActorCriticDDPG(Agent):
 
         self.eval()
         x = torch.Tensor([x])
+        if torch.cuda.is_available():
+            x.cuda()
         self.u = np.asarray(self.actor1(x).detach())[0]
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
