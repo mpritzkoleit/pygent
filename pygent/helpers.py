@@ -1,3 +1,5 @@
+__name__ == "pygent.helpers"
+
 import torch
 torch.manual_seed(0)
 from torch.autograd import grad

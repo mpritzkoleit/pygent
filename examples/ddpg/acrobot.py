@@ -1,5 +1,5 @@
-from environments import Acrobot
-from algorithms.ddpg import DDPG
+from pygent.environments import Acrobot
+from pygent.algorithms.ddpg import DDPG
 import numpy as np
 import time
 

@@ -10,11 +10,11 @@ import inspect
 from shutil import copyfile
 
 # pygent
-from agents import Agent
-from data import DataSet
-from algorithms.core import Algorithm
-from nn_models import Actor, Critic
-from helpers import OUnoise
+from pygent.agents import Agent
+from pygent.data import DataSet
+from pygent.algorithms.core import Algorithm
+from pygent.nn_models import Actor, Critic
+from pygent.helpers import OUnoise
 
 
 class DDPG(Algorithm):
@@ -48,7 +48,7 @@ class DDPG(Algorithm):
         uDim = environment.uDim
         uMax = environment.uMax
         self.batch_size = batch_size
-        agent = ActorCriticDDPG(xDim, uDim, uMax, dt, batch_size=self.batch_size, actor_lr=actor_lr,
+        agent = ActorCriticDDPG(xDim, uDim, torch.Tensor(uMax), dt, batch_size=self.batch_size, actor_lr=actor_lr,
                             critic_lr=critic_lr, tau=tau, noise_scale=noise_scale, gamma=gamma)
         super(DDPG, self).__init__(environment, agent, t, dt)
         self.R = DataSet(nData)
@@ -149,15 +149,15 @@ class DDPG(Algorithm):
                 break
         pass
 
-    def run_learning(self,steps,n=1e5):
+    def run_learning(self, steps, n=int(1e5)):
         """ Learning process.
 
             Args:
                 steps (int): number of steps
                 n (int): number of episodes
         """
-        while steps > self.R.data.__len__():
-            for k in range(1, n + 1):
+        for k in range(1, n + 1):
+            while steps > self.R.data.__len__():
                 self.run_episode()
                 # plot environment after episode finished
                 print('Samples: ', self.R.data.__len__())
@@ -436,7 +436,7 @@ class ActorCriticDDPG(Agent):
         x = torch.Tensor([x])
         if torch.cuda.is_available():
             x = x.cuda()
-        self.u = np.asarray(self.actor1(x).detach())[0].cpu()
+        self.u = np.asarray(self.actor1(x).detach().cpu())[0]
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
@@ -457,8 +457,8 @@ class ActorCriticDDPG(Agent):
         if torch.cuda.is_available():
             x = x.cuda()
         noise = self.noise.sample()
-        u = np.asarray(self.actor1(x).detach())[0] + (1 - self.noise_scale)*noise + self.noise_scale*self.uMax.numpy()*noise
-        self.u = np.clip(u.cpu(), -self.uMax.cpu().numpy(), self.uMax.cpu().numpy())
+        u = np.asarray(self.actor1(x).detach().cpu())[0] + (1 - self.noise_scale)*noise + self.noise_scale*self.uMax.cpu().numpy()*noise
+        self.u = np.clip(u, -self.uMax.cpu().numpy(), self.uMax.cpu().numpy())
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u

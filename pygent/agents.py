@@ -1,3 +1,7 @@
+__name__ == "pygent.data"
+
+# todo: add agent and feedback to init
+
 import numpy as np
 np.random.seed(0)
 from abc import abstractmethod, abstractproperty

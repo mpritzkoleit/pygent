@@ -1,5 +1,5 @@
-from environments import CartPoleDoubleParallel
-from algorithms.ddpg import DDPG
+from pygent.environments import CartPoleDoubleParallel
+from pygent.algorithms.ddpg import DDPG
 import numpy as np
 
 def cost(x, u):

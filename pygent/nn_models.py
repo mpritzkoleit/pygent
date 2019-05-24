@@ -1,9 +1,11 @@
+__name__ == "pygent.nnmodels"
+
 import torch
 torch.manual_seed(0)
 import torch.nn as nn
 import torch.nn.functional as F
 
-from helpers import fanin_init
+from pygent.helpers import fanin_init
 
 class MLP(nn.Module):
     """ Multilayer perceptron (MLP) with tanh/sigmoid activation functions implemented in PyTorch

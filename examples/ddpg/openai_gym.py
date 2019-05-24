@@ -1,5 +1,5 @@
-from environments import OpenAIGym
-from algorithms.ddpg import DDPG
+from pygent.environments import OpenAIGym
+from pygent.algorithms.ddpg import DDPG
 
 #id = 'Pendulum-v0'
 id = 'MountainCarContinuous-v0'

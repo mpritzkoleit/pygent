@@ -8,11 +8,11 @@ import random
 random.seed(0)
 
 # pygent
-from agents import Agent
-from data import DataSet
-from nn_models import MLP
-from algorithms.core import Algorithm
-from environments import observation
+from pygent.agents import Agent
+from pygent.data import DataSet
+from pygent.nn_models import MLP
+from pygent.algorithms.core import Algorithm
+from pygent.environments import observation
 
 class QNetwork(Agent):
     """ Q-Network (Multi-Layer-Perceptron)

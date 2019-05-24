@@ -1,5 +1,5 @@
-from environments import Acrobot
-from algorithms.ilqr import iLQR
+from pygent.environments import Acrobot
+from pygent.algorithms.ilqr import iLQR
 import numpy as np
 import matplotlib.pyplot as plt
 

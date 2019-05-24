@@ -11,12 +11,12 @@ from shutil import copyfile
 import copy
 
 # pygent
-from agents import Agent
-from data import DataSet
-from environments import StateSpaceModel
-from algorithms.core import Algorithm
-from algorithms.ilqr import iLQR
-from nn_models import NNDynamics
+from pygent.agents import Agent
+from pygent.data import DataSet
+from pygent.environments import StateSpaceModel
+from pygent.algorithms.core import Algorithm
+from pygent.algorithms.ilqr import iLQR
+from pygent.nn_models import NNDynamics
 
 class MBRL(Algorithm):
 

@@ -1,3 +1,5 @@
+__name__ == "pygent.environments"
+
 from abc import abstractmethod
 import gym
 import matplotlib.pyplot as plt
@@ -8,12 +10,12 @@ from scipy.integrate import solve_ivp
 import inspect
 
 # from PyGent
-from modeling_scripts.cart_pole_double_parallel import load_existing as cart_pole_double_parallel_ode
-from modeling_scripts.cart_pole_double_serial import load_existing as cart_pole_double_serial_ode
-from modeling_scripts.cart_pole_triple import load_existing as cart_pole_triple_ode
-from modeling_scripts.cart_pole import load_existing as cart_pole_ode
-from modeling_scripts.acrobot import load_existing as acrobot_ode
-from helpers import observation
+from pygent.modeling_scripts.cart_pole_double_parallel import load_existing as cart_pole_double_parallel_ode
+from pygent.modeling_scripts.cart_pole_double_serial import load_existing as cart_pole_double_serial_ode
+from pygent.modeling_scripts.cart_pole_triple import load_existing as cart_pole_triple_ode
+from pygent.modeling_scripts.cart_pole import load_existing as cart_pole_ode
+from pygent.modeling_scripts.acrobot import load_existing as acrobot_ode
+from pygent.helpers import observation
 
 class Environment(object):
     """ Environment base class.

@@ -15,9 +15,9 @@ import cvxopt as opt
 opt.solvers.options['show_progress'] = False
 
 # pygent
-from helpers import c2d, system_linearization
-from agents import FeedBack, Agent
-from algorithms.core import Algorithm
+from pygent.helpers import c2d, system_linearization
+from pygent.agents import FeedBack, Agent
+from pygent.algorithms.core import Algorithm
 
 
 class iLQR(Algorithm):

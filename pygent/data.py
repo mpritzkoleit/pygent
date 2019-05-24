@@ -1,3 +1,7 @@
+__name__ == "pygent.data"
+
+# todo: add dataset to init
+
 import random
 random.seed(0) #, the number of the beast!
 import pickle

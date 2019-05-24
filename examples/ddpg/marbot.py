@@ -1,5 +1,5 @@
-from environments import MarBot
-from algorithms.ddpg import DDPG
+from pygent.environments import MarBot
+from pygent.algorithms.ddpg import DDPG
 import numpy as np
 
 

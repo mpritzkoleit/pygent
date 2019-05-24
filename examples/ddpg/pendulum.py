@@ -1,5 +1,5 @@
-from environments import Pendulum
-from algorithms.ddpg import DDPG
+from pygent.environments import Pendulum
+from pygent.algorithms.ddpg import DDPG
 import numpy as np
 import time
 def cost(x, u):
