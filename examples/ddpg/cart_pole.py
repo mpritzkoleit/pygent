@@ -6,7 +6,7 @@ import numpy as np
 def cost(x_, u, x):
     x1, x2, x3, x4 = x
     u1, = u
-    c = x1**2 + x2**2 + 0.01*x3**2 + 0.01*x4**2 + 0.05*u1**2
+    c = x1**2 + x2**2 + 0.01*x3**2 + 0.01*x4**2 + 0.02*u1**2
     return c
 
 def x0fun():
