@@ -149,25 +149,26 @@ class DDPG(Algorithm):
                 break
         pass
 
-    def run_learning(self, n):
+    def run_learning(self,steps,n=1e5):
         """ Learning process.
 
             Args:
+                steps (int): number of steps
                 n (int): number of episodes
         """
-
-        for k in range(1, n + 1):
-            self.run_episode()
-            # plot environment after episode finished
-            print('Samples: ', self.R.data.__len__())
-            if k % 10 == 0:
-                self.learning_curve()
-            if k % self.checkInterval == 0:
-                self.save()
-                # if self.meanCost[-1] < 0.01: # goal reached
-            if k % self.plotInterval == 0:
-                self.plot()
-                self.animation()
+        while steps > self.R.data.__len__():
+            for k in range(1, n + 1):
+                self.run_episode()
+                # plot environment after episode finished
+                print('Samples: ', self.R.data.__len__())
+                if k % 10 == 0:
+                    self.learning_curve()
+                if k % self.checkInterval == 0:
+                    self.save()
+                    # if self.meanCost[-1] < 0.01: # goal reached
+                if k % self.plotInterval == 0:
+                    self.plot()
+                    self.animation()
         pass
 
     def save(self):
