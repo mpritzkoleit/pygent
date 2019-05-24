@@ -316,7 +316,7 @@ class ActorCriticDDPG(Agent):
                 noise_scale=False):
         super(ActorCriticDDPG, self).__init__(uDim)
         self.xDim = xDim
-        if torch.cuda.is_available:
+        if torch.cuda.is_available():
             self.uMax = uMax.cuda()
         else:
             self.uMax = uMax
