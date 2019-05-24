@@ -320,8 +320,8 @@ class ActorCriticDDPG(Agent):
             self.uMax = uMax.cuda()
         else:
             self.uMax = uMax
-        self.actor1 = Actor(xDim, uDim, uMax)
-        self.actor2 = Actor(xDim, uDim, uMax)
+        self.actor1 = Actor(xDim, uDim, self.uMax)
+        self.actor2 = Actor(xDim, uDim, self.uMax)
         self.blend_hard(self.actor1, self.actor2)  # equate parameters of actor networks
         self.critic1 = Critic(xDim, uDim)
         self.critic2 = Critic(xDim, uDim)
