@@ -316,7 +316,10 @@ class ActorCriticDDPG(Agent):
                 noise_scale=False):
         super(ActorCriticDDPG, self).__init__(uDim)
         self.xDim = xDim
-        self.uMax = uMax
+        if torch.cuda.is_available:
+            self.uMax = uMax.cuda()
+        else:
+            self.uMax = uMax
         self.actor1 = Actor(xDim, uDim, uMax)
         self.actor2 = Actor(xDim, uDim, uMax)
         self.blend_hard(self.actor1, self.actor2)  # equate parameters of actor networks
