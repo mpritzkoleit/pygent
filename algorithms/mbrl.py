@@ -26,7 +26,7 @@ class MBRL(Algorithm):
         uDim = environment.uDim
         uMax = environment.uMax
         if horizon == None:
-            horizon = t
+            horizon = 40*dt
         self.nn_dynamics = NNDynamics(xDim, uDim) # neural network dynamics
         self.optim = torch.optim.Adam(self.nn_dynamics.parameters(), lr=dyn_lr)
         nn_environment = StateSpaceModel(self.ode, environment.cost, environment.x0, uDim, dt)
@@ -34,6 +34,7 @@ class MBRL(Algorithm):
         agent = MPCAgent(uDim, nn_environment, horizon, dt, path)
         super(MBRL, self).__init__(environment, agent, t, dt)
         self.R = DataSet(nData)
+        self.R_RL = DataSet(nData)
         self.plotInterval = plotInterval  # inter
         self.evalPolicyInterval = evalPolicyInterval
         self.checkInterval = checkInterval  # checkpoint interval
@@ -80,10 +81,17 @@ class MBRL(Algorithm):
             self.agent.traj_optimizer.environment.reset(self.environment.x)
             self.agent.init_optim()
 
+        # training of the policy network (agent)
+        if self.R.data.__len__() >= self.warm_up:
+            for i in range(20):
+                self.train_dynamics(self.R)
+                for i in range(9):
+                    self.train_dynamics(self.R_RL)
+
         for i, t in enumerate(tt):
             # agent computes control/action
             if self.R.data.__len__() >= self.warm_up:
-                u = self.agent.take_action_plan(self.dt, self.environment.x, i)
+                u = self.agent.take_action(self.dt, self.environment.x, i)
             else:
                 u = self.agent.take_random_action(self.dt)
             # simulation of environment
@@ -96,11 +104,11 @@ class MBRL(Algorithm):
                            'c': [c], 't': [self.environment.terminated]})
 
             # add sample to data set
-            self.R.force_add_sample(transition)
+            if self.R.data.__len__() < self.warm_up:
+                self.R.force_add_sample(transition)
+            else:
+                self.R_RL.force_add_sample(transition)
 
-            # training of the policy network (agent)
-            if self.R.data.__len__() >= self.batch_size:
-                self.train_dynamics(self.R)
             # check if environment terminated
             if self.environment.terminated:
                 print('Environment terminated!')
@@ -304,8 +312,8 @@ class MPCAgent(Agent):
         self.traj_optimizer = iLQR(environment, horizon, dt, path=path, fcost=fcost, constrained=constrained,fastForward=fastForward)
         self.uMax = self.traj_optimizer.environment.uMax
         self.init_iterations = init_iterations
-        self.init_optim()
-        self.traj_optimizer.plot()
+        #self.init_optim()
+        #self.traj_optimizer.plot()
 
     def init_optim(self):
         self.traj_optimizer.max_iters = self.init_iterations
@@ -335,6 +343,27 @@ class MPCAgent(Agent):
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         self.shift_planner()
+        return self.u
+
+    def take_action(self, dt, x, idx):
+        """ Compute the control/action of the policy network (actor).
+
+            Args:
+                dt (float): stepsize
+                x (ndarray, list): state (input of policy network)
+
+            Returns:
+                u (ndarray): control/action
+        """
+
+        self.traj_optimizer.environment.x0 = x
+        self.traj_optimizer.run_optim()
+        kk = self.traj_optimizer.kk[0].T[0]
+        uu = self.traj_optimizer.uu[0]
+        alpha = self.traj_optimizer.current_alpha
+        self.u = uu + alpha*kk
+        self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
+        self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
 
     def take_action_plan(self, dt, x, idx):
