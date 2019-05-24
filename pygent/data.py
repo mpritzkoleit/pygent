@@ -4,6 +4,8 @@ __name__ == "pygent.data"
 
 import random
 random.seed(0) #, the number of the beast!
+import numpy as np 
+np.random.seed(0)
 import pickle
 
 class DataSet(object):
@@ -74,7 +76,7 @@ class DataSet(object):
             Returns:
                 sample
             """
-        sample = random.choice(self.data)
+        sample = np.random.choice(self.data)
 
         return sample
 
@@ -88,7 +90,8 @@ class DataSet(object):
                 minibatch (list): batch of 'n' samples
             """
 
-        minibatch = random.sample(self.data, min(n, len(self.data)))
+        #minibatch = random.sample(self.data, min(n, len(self.data)))
+        minibatch = np.random.choice(self.data, min(n, len(self.data)))
         return minibatch
 
     def save(self, path):
