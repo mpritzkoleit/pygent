@@ -48,7 +48,7 @@ class DDPG(Algorithm):
         uDim = environment.uDim
         uMax = environment.uMax
         self.batch_size = batch_size
-        agent = ActorCriticDDPG(xDim, uDim, torch.Tensor(uMax), dt, batch_size=self.batch_size, actor_lr=actor_lr,
+        agent = ActorCriticDDPG(xDim, uDim, uMax, dt, batch_size=self.batch_size, actor_lr=actor_lr,
                             critic_lr=critic_lr, tau=tau, noise_scale=noise_scale, gamma=gamma)
         super(DDPG, self).__init__(environment, agent, t, dt)
         self.R = DataSet(nData)
@@ -274,7 +274,7 @@ class DDPG(Algorithm):
         ax[1].legend(loc='center', bbox_to_anchor=(1.15, .5), ncol=1, shadow=True)
         ax[1].ticklabel_format(axis='both', style='sci',scilimits=(-3,5), useMathText=True)
         plt.rc('font', family='serif')
-        plt.xlabel('Samples', usetex=True)
+        plt.xlabel('Samples')
         plt.tight_layout()
         plt.savefig(self.path + 'learning_curve.pdf')
         try:
@@ -326,6 +326,8 @@ class ActorCriticDDPG(Agent):
         self.tau = tau  # blend factor
         self.optimCritic = torch.optim.Adam(self.critic1.parameters(), lr=critic_lr, weight_decay=1e-2)
         self.optimActor = torch.optim.Adam(self.actor1.parameters(), lr=actor_lr)
+        if torch.cuda.is_available():
+            self.enable_cuda()
         self.noise = OUnoise(uDim, dt)  # exploration noise
         self.batch_size = batch_size
         self.noise_scale = noise_scale
@@ -431,6 +433,8 @@ class ActorCriticDDPG(Agent):
 
         self.eval()
         x = torch.Tensor([x])
+        if torch.cuda.is_available():
+            x = x.cuda()
         self.u = np.asarray(self.actor1(x).detach())[0]
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
@@ -449,6 +453,8 @@ class ActorCriticDDPG(Agent):
 
         self.eval()
         x = torch.Tensor([x])
+        if torch.cuda.is_available():
+            x = x.cuda()
         noise = self.noise.sample()
         u = np.asarray(self.actor1(x).detach())[0] + (1 - self.noise_scale)*noise + self.noise_scale*self.uMax.numpy()*noise
         self.u = np.clip(u, -self.uMax.numpy(), self.uMax.numpy())
@@ -494,10 +500,24 @@ class ActorCriticDDPG(Agent):
         nextQ = self.critic2(xInputs, self.actor2(xInputs)).detach()
         qTargets = costs + self.gamma*(1 - terminated)*nextQ
         qTargets = torch.squeeze(qTargets)
+        if torch.cuda.is_available():
+            x_Inputs = x_Inputs.cuda()
+            uInputs = uInputs.cuda()
+            qTargets = qTargets.cuda()
         return x_Inputs, uInputs, qTargets
 
     def expCost(self, x):
         """ Returns the current estimate for V(x). """
         x = torch.Tensor([x])
+        if torch.cuda.is_available():
+            x = x.cuda()
         V = self.critic1(x, self.actor1(x)).detach()
         return V
+
+    def enable_cuda(self):
+        """ Enable CUDA - training on GPU."""
+        self.actor1.cuda()
+        self.actor2.cuda()
+        self.critic1.cuda()
+        self.critic2.cuda()
+        pass
