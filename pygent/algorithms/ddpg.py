@@ -477,7 +477,7 @@ class ActorCriticDDPG(Agent):
                 u (ndarray): noisy control/action
         """
 
-        self.u = np.random.uniform(-self.uMax, self.uMax, self.uDim)
+        self.u = np.random.uniform(-self.uMax.cpu(), self.uMax.cpu(), self.uDim)
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
