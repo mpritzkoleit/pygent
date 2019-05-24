@@ -501,6 +501,8 @@ class ActorCriticDDPG(Agent):
         costs = torch.Tensor([sample['c'] for sample in batch])
         terminated = torch.Tensor([sample['t'] for sample in batch])
         self.eval()  # evaluation mode (for batch normalization)
+        if torch.cuda.is_available():
+            xInputs = xInputs.cuda()
         nextQ = self.critic2(xInputs, self.actor2(xInputs)).detach()
         qTargets = costs + self.gamma*(1 - terminated)*nextQ
         qTargets = torch.squeeze(qTargets)
