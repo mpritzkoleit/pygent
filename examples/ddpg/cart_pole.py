@@ -23,7 +23,7 @@ path = '../../../results/ddpg/experiment1/'
 
 algorithm = DDPG(cartPole, t, dt, path=path, warm_up=10000)
 algorithm.load()
-algorithm.run_learning(1000)
+algorithm.run_learning(1e6)
 
 x0 = [0.0, np.pi, 0, 0]
 algorithm.run_controller(x0)
