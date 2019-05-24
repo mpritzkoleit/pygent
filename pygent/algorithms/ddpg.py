@@ -157,7 +157,7 @@ class DDPG(Algorithm):
                 n (int): number of episodes
         """
         for k in range(1, n + 1):
-            while steps > self.R.data.__len__():
+            if steps > self.R.data.__len__():
                 self.run_episode()
                 # plot environment after episode finished
                 print('Samples: ', self.R.data.__len__())
@@ -169,6 +169,8 @@ class DDPG(Algorithm):
                 if k % self.plotInterval == 0:
                     self.plot()
                     self.animation()
+            else:
+                break
         pass
 
     def save(self):
