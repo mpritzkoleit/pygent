@@ -19,7 +19,7 @@ dt = 0.02
 cartPole = CartPole(cost, x0fun, dt)
 cartPole.terminal_cost = 200
 
-path = '../../../results/ddpg/experiment1/'
+path = '../../../results/cart_pole/ddpg/'
 
 algorithm = DDPG(cartPole, t, dt, path=path)
 algorithm.run_learning(1e6)

@@ -10,19 +10,19 @@ def cost(x, u, x_):
     return c
 
 def x0fun():
-    x0 = [np.random.uniform(-1, 1), np.random.uniform(-1., 1.), 0, 0]
+    x0 = [np.random.uniform(-0.001, 0.001), np.random.uniform(0.999*np.pi, 1.001*np.pi), 0, 0]
     return x0
 
-t = 10
-dt = 0.02
+t = 6
+dt = 0.03
 
 robot = MarBot(cost, x0fun, dt)
 
-path = '../../../results/ddpg/marbot/experiment1/'
+path = '../../../results/marbot/ddpg/'
 
-algorithm = DDPG(robot, t, dt, path=path, warm_up=10000)
+algorithm = DDPG(robot, t, dt, path=path, warm_up=64)
 algorithm.load()
-algorithm.run_learning(2000)
+algorithm.run_learning(1e6)
 
 
 x0 = [0., 0., 0.3, 0.]
