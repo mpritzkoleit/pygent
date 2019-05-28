@@ -188,7 +188,7 @@ class DDPG(Algorithm):
         # save learning curve data
         learning_curve_dict = {'totalCost': self.totalCost, 'meanCost':self.meanCost,
                                'expCost': self.expCost, 'episode_steps': self.episode_steps}
-
+        pickle.dump(learning_curve_dict, open(self.path + 'data/learning_curve.p', 'wb'))
         print('Network parameters, data set and learning curve saved.')
         pass
 
