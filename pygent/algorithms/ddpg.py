@@ -189,7 +189,6 @@ class DDPG(Algorithm):
         learning_curve_dict = {'totalCost': self.totalCost, 'meanCost':self.meanCost,
                                'expCost': self.expCost, 'episode_steps': self.episode_steps}
 
-        pickle.dump(learning_curve_dict, open(self.path + 'data/learning_curve.p', 'wb'))
         print('Network parameters, data set and learning curve saved.')
         pass
 
@@ -232,12 +231,14 @@ class DDPG(Algorithm):
         """ Plots the environment's and agent's history. """
 
         self.environment.plot()
+        self.environment.save_history(str(self.episode - 1) + '_environment', self.path + 'data/')
         plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pdf')
         try:
             plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pgf')
         except:
             pass
         self.agent.plot()
+        self.agent.save_history(str(self.episode - 1) + '_agent', self.path + 'data/')
         plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pdf')
         try:
             plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pgf')

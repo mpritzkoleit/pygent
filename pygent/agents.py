@@ -78,7 +78,7 @@ class Agent(object):
         return fig, ax
 
     def save_history(self, filename, path):
-        history_dict = {'tt': self.tt, 'xx': self.history}
+        history_dict = {'tt': self.tt, 'uu': self.history}
         pickle.dump(history_dict, open(path + filename +'.p', 'wb'))
         pass
 
