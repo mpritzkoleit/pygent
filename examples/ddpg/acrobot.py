@@ -22,13 +22,13 @@ def x0fun():
 t = 10.0
 dt = 0.03
 
-pendulum = Acrobot(cost, x0fun, dt)
+env = Acrobot(cost, x0fun, dt)
 
-path = '../../../results/ddpg/acrobot/experiment1/'
-algorithm = DDPG(pendulum, t, dt, path=path)
+path = '../../../results/acrobot/ddpg/'
+algorithm = DDPG(env, t, dt, path=path)
 start = time.time()
 algorithm.load()
-algorithm.run_learning(1500)
+algorithm.run_learning(1e6)
 #algorithm.run_controller(x0fun())
 end = time.time()
 print('Training duration: %.2f s' % (end - start))
