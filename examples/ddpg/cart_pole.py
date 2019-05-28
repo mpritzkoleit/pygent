@@ -22,10 +22,4 @@ cartPole.terminal_cost = 200
 path = '../../../results/ddpg/experiment1/'
 
 algorithm = DDPG(cartPole, t, dt, path=path)
-algorithm.load()
 algorithm.run_learning(1e6)
-
-x0 = [0.0, np.pi, 0, 0]
-algorithm.run_controller(x0)
-algorithm.plot()
-algorithm.animation()
