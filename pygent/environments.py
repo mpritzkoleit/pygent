@@ -713,7 +713,7 @@ class MarBot(StateSpaceModel):
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o)  # observation dimensions
         self.o_ = self.o
-        self.uMax = 5*np.ones(1)
+        self.uMax = 2*np.ones(1)
 
     @staticmethod
     def ode(t, x, u):
@@ -745,7 +745,7 @@ class MarBot(StateSpaceModel):
 
     def terminate(self, x):
         x1, x2, x3, x4 = x
-        if np.abs(x1) > 1.5 or np.abs(x2)>0.5*np.pi:
+        if np.abs(x1) > 1:
             return True
         else:
             return False
