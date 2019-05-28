@@ -8,6 +8,7 @@ from matplotlib import animation
 import matplotlib.patches as patches
 from scipy.integrate import solve_ivp
 import inspect
+import pickle
 
 # from PyGent
 from pygent.modeling_scripts.cart_pole_double_parallel import load_existing as cart_pole_double_parallel_ode
@@ -99,6 +100,11 @@ class Environment(object):
         plt.tight_layout()
         # Todo: save data in numpy arrays
         return fig, ax
+
+    def save_history(self, filename, path):
+        history_dict = {'tt': self.tt, 'xx': self.history}
+        pickle.dump(history_dict, open(path + filename +'.p', 'wb'))
+        pass
 
     def animation(self):
         pass

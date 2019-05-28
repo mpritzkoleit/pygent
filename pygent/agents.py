@@ -6,6 +6,7 @@ import numpy as np
 np.random.seed(0)
 from abc import abstractmethod, abstractproperty
 import matplotlib.pyplot as plt
+import pickle
 
 class Agent(object):
     """ Base class for an agent. 
@@ -75,6 +76,11 @@ class Agent(object):
         plt.tight_layout()
         # Todo: save data in numpy arrays
         return fig, ax
+
+    def save_history(self, filename, path):
+        history_dict = {'tt': self.tt, 'xx': self.history}
+        pickle.dump(history_dict, open(path + filename +'.p', 'wb'))
+        pass
 
 class FeedBack(Agent):
     """Agent subclass: a standard state feedback of the form u = mu(x)
