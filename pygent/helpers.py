@@ -139,7 +139,7 @@ class OUnoise(object):
         self.theta = theta
         self.sigma = sigma
         self.x = np.ones(self.uDim) * self.mu
-        self.dt = dt
+        self.dt = 1#dt
 
     def reset(self):
         """ Reset process state to mean value. """
