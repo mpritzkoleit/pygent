@@ -316,7 +316,7 @@ class ActorCriticDDPG(Agent):
     """
 
     def __init__(self, xDim, uDim, uMax, dt, batch_size=64, gamma=0.99, tau=0.001, actor_lr=1e-4, critic_lr=1e-3,
-                noise_scale=False):
+                noise_scale=True):
         super(ActorCriticDDPG, self).__init__(uDim)
         self.xDim = xDim
         if torch.cuda.is_available():
@@ -353,6 +353,7 @@ class ActorCriticDDPG(Agent):
         x_Inputs, uInputs, qTargets = self.training_data(dataSet)
 
         for epoch in range(1):  # loop over the dataset multiple times
+            running_loss = 0.0
             # output of the Q-network
             qOutputs = self.critic1(x_Inputs, uInputs)
             qOutputs = torch.squeeze(qOutputs)
@@ -463,8 +464,8 @@ class ActorCriticDDPG(Agent):
         if torch.cuda.is_available():
             x = x.cuda()
         noise = self.noise.sample()
-        u = np.asarray(self.actor1(x).detach().cpu())[0] + (1 - self.noise_scale)*noise + self.noise_scale*self.uMax.numpy()*noise
-        self.u = np.clip(u, -self.uMax.numpy(), self.uMax.numpy())
+        u = np.asarray(self.actor1(x).detach().cpu())[0] + (1 - self.noise_scale)*noise + self.noise_scale*self.uMax.cpu().numpy()*noise
+        self.u = np.clip(u, -self.uMax.cpu().numpy(), self.uMax.cpu().numpy())
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
@@ -509,7 +510,7 @@ class ActorCriticDDPG(Agent):
             costs = costs.cuda()
             terminated = terminated.cuda()
         nextQ = self.critic2(xInputs, self.actor2(xInputs)).detach()
-        qTargets = costs + self.gamma*(1 - terminated)*nextQ
+        qTargets = costs + self.gamma*(1 - terminated*False)*nextQ #this should actually be (1 - terminated), but somehow this way training is faster and more stable.
         qTargets = torch.squeeze(qTargets)
         if torch.cuda.is_available():
             x_Inputs = x_Inputs.cuda()
