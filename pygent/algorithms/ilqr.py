@@ -474,12 +474,14 @@ class iLQR(Algorithm):
 
     def plot(self):
         self.environment.plot()
+        self.environment.save_history(str(self.episode - 1) + '_environment', self.path + 'data/')
         plt.savefig(self.path + 'plots/environment.pdf')
         try:
             plt.savefig(self.path + 'plots/environment.pgf')
         except:
             pass
         self.agent.plot()
+        self.agent.save_history(str(self.episode - 1) + '_agent', self.path + 'data/')
         plt.savefig(self.path + 'plots/controller.pdf')
         try:
             plt.savefig(self.path + 'plots/controller.pgf')
