@@ -130,7 +130,7 @@ class DDPG(Algorithm):
         print('Started episode ', self.episode)
         tt = np.arange(0, self.t, self.dt)
         cost = []  # list of incremental costs
-        dic_cost = []  # list of incremental costs
+        disc_cost = []  # list of incremental costs
 
         # reset environment/agent to initial state, delete history
         self.environment.reset(x0)
@@ -226,14 +226,17 @@ class DDPG(Algorithm):
         self.run_controller(self.environment.x0)
         pass
 
-    def load_networks(self, path=None, filename=None)
+    def load_networks(self, path=None, filename=None):
         if path == None:
-            path = self.path +'data/
+            path = self.path + 'data/'
         if filename == None:
             filename = 'checkpoint.pth'
         # load network parameters
         if os.path.isfile(path + filename):
-            checkpoint = torch.load(path + filename)
+            if torch.cuda.is_available():
+                checkpoint = torch.load(path + filename)
+            else:
+                checkpoint = torch.load(path + filename, map_location='cpu')
             self.agent.actor1.load_state_dict(checkpoint['actor1'])
             self.agent.actor2.load_state_dict(checkpoint['actor2'])
             self.agent.critic1.load_state_dict(checkpoint['critic1'])
