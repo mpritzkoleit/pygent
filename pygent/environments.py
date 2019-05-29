@@ -316,13 +316,13 @@ class Pendulum(StateSpaceModel):
         self.o = self.observe(self.x)
         self.o_ = self.o
         self.oDim = len(self.o)  # observation dimensions
-        self.uMax = 2*np.ones(1)
+        self.uMax = 3*np.ones(1)
 
     @staticmethod
     def ode(t, x, u):
 
         g = 9.81  # gravity
-        b = 0.1  # dissipation
+        b = 0.02  # dissipation
         u1, = u  # torque
         x1, x2 = x
 
