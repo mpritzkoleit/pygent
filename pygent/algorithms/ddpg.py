@@ -181,6 +181,10 @@ class DDPG(Algorithm):
                     'actor2': self.agent.actor2.state_dict(),
                     'critic1': self.agent.critic1.state_dict(),
                     'critic2': self.agent.critic2.state_dict()}, self.path + 'data/checkpoint.pth')
+        torch.save({'actor1': self.agent.actor1.state_dict(),
+                    'actor2': self.agent.actor2.state_dict(),
+                    'critic1': self.agent.critic1.state_dict(),
+                    'critic2': self.agent.critic2.state_dict()}, self.path + 'data/checkpoint'+str(self.episode)+'.pth')
 
         # save data set
         self.R.save(self.path + 'data/dataSet.p')

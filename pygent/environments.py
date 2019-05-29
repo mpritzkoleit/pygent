@@ -316,7 +316,7 @@ class Pendulum(StateSpaceModel):
         self.o = self.observe(self.x)
         self.o_ = self.o
         self.oDim = len(self.o)  # observation dimensions
-        self.uMax = 3*np.ones(1)
+        self.uMax = 4*np.ones(1)
 
     @staticmethod
     def ode(t, x, u):
@@ -333,7 +333,7 @@ class Pendulum(StateSpaceModel):
 
     def terminate(self, x):
         x1, x2 = x
-        if abs(x2) > 25:
+        if abs(x2) > 10:
             return True
         else:
             return False
