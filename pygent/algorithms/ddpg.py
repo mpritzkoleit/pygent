@@ -130,6 +130,7 @@ class DDPG(Algorithm):
         print('Started episode ', self.episode)
         tt = np.arange(0, self.t, self.dt)
         cost = []  # list of incremental costs
+        dic_cost = []  # list of incremental costs
 
         # reset environment/agent to initial state, delete history
         self.environment.reset(x0)
@@ -142,12 +143,13 @@ class DDPG(Algorithm):
             # simulation of environment
             c = self.environment.step(u, self.dt)
             cost.append(c)
+            disc_cost.append(c*self.agent.gamma**i)
 
             # check if environment terminated
             if self.environment.terminated:
                 print('Environment terminated!')
                 break
-        pass
+        return cost, disc_cost
 
     def run_learning(self, steps, n=int(1e5)):
         """ Learning process.
@@ -184,7 +186,8 @@ class DDPG(Algorithm):
         torch.save({'actor1': self.agent.actor1.state_dict(),
                     'actor2': self.agent.actor2.state_dict(),
                     'critic1': self.agent.critic1.state_dict(),
-                    'critic2': self.agent.critic2.state_dict()}, self.path + 'data/checkpoint'+str(self.episode-1)+'.pth')
+                    'critic2': self.agent.critic2.state_dict()}, 
+                    self.path + 'data/checkpoint'+str(self.episode-1)+'.pth')
 
         # save data set
         self.R.save(self.path + 'data/dataSet.p')
@@ -200,18 +203,7 @@ class DDPG(Algorithm):
         """ Load neural network parameters and data set. """
 
         # load network parameters
-        if os.path.isfile(self.path + 'data/checkpoint.pth'):
-            if torch.cuda.is_available():
-                checkpoint = torch.load(self.path + 'data/checkpoint.pth')
-            else:
-                checkpoint = torch.load(self.path + 'data/checkpoint.pth', map_location='cpu')
-            self.agent.actor1.load_state_dict(checkpoint['actor1'])
-            self.agent.actor2.load_state_dict(checkpoint['actor2'])
-            self.agent.critic1.load_state_dict(checkpoint['critic1'])
-            self.agent.critic2.load_state_dict(checkpoint['critic2'])
-            print('Loaded neural network parameters!')
-        else:
-            print('Could not load neural network parameters!')
+        self.load_networks()
 
         # load data set
         if os.path.isfile(self.path + 'data/dataSet.p'):
@@ -232,6 +224,23 @@ class DDPG(Algorithm):
         else:
             print('No learning curve data found!')
         self.run_controller(self.environment.x0)
+        pass
+
+    def load_networks(self, path=None, filename=None)
+        if path == None:
+            path = self.path +'data/
+        if filename == None:
+            filename = 'checkpoint.pth'
+        # load network parameters
+        if os.path.isfile(path + filename):
+            checkpoint = torch.load(path + filename)
+            self.agent.actor1.load_state_dict(checkpoint['actor1'])
+            self.agent.actor2.load_state_dict(checkpoint['actor2'])
+            self.agent.critic1.load_state_dict(checkpoint['critic1'])
+            self.agent.critic2.load_state_dict(checkpoint['critic2'])
+            print('Loaded neural network parameters!')
+        else:
+            print('Could not load neural network parameters!')
         pass
 
     def plot(self):
