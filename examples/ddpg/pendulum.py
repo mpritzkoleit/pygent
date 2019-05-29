@@ -5,7 +5,7 @@ import time
 def cost(x, u):
     x1, x2 = x
     u1, = u
-    c = x1**2 + 1e-1*x2**2 + 1e-3*u1**2
+    c = x1**2 + 0.01*x2**2 + 0.01*u1**2
     return c
 
 

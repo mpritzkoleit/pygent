@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 def c_k(x, u):
     x1, x2 = x
     u1, = u
-    c = x1**2 + 1e-2*x2**2 + 1e-2*u1**2
+    c = x1**2 + 0.01*x2**2 + 0.01*u1**2
     return c
 
 x0 = [np.pi, 0]
