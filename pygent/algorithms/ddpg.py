@@ -43,7 +43,7 @@ class DDPG(Algorithm):
 
     def __init__(self, environment, t, dt, plotInterval=50, nData=1e6, path='../Results/DDPG/', checkInterval=50,
                  evalPolicyInterval=100, costScale=None, warm_up=1e4, actor_lr=1e-4, critic_lr=1e-3, tau=0.001, batch_size=64,
-                 noise_scale=False, gamma=0.99):
+                 noise_scale=True, gamma=0.99):
         xDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax
