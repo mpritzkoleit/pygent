@@ -201,7 +201,7 @@ class DDPG(Algorithm):
 
         # load network parameters
         if os.path.isfile(self.path + 'data/checkpoint.pth'):
-            if torch.cuda.is_available()
+            if torch.cuda.is_available():
                 checkpoint = torch.load(self.path + 'data/checkpoint.pth')
             else:
                 checkpoint = torch.load(self.path + 'data/checkpoint.pth', map_location='cpu')
