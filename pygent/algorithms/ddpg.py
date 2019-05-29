@@ -201,7 +201,10 @@ class DDPG(Algorithm):
 
         # load network parameters
         if os.path.isfile(self.path + 'data/checkpoint.pth'):
-            checkpoint = torch.load(self.path + 'data/checkpoint.pth')
+            if torch.cuda.is_available()
+                checkpoint = torch.load(self.path + 'data/checkpoint.pth')
+            else:
+                checkpoint = torch.load(self.path + 'data/checkpoint.pth', map_location='cpu')
             self.agent.actor1.load_state_dict(checkpoint['actor1'])
             self.agent.actor2.load_state_dict(checkpoint['actor2'])
             self.agent.critic1.load_state_dict(checkpoint['critic1'])
