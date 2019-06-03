@@ -43,7 +43,9 @@ class DDPG(Algorithm):
 
     def __init__(self, environment, t, dt, plotInterval=50, nData=1e6, path='../Results/DDPG/', checkInterval=50,
                  evalPolicyInterval=100, costScale=None, warm_up=1e4, actor_lr=1e-4, critic_lr=1e-3, tau=0.005, batch_size=100,
-                 noise_scale=True, gamma=0.99):
+                 noise_scale=True, gamma=0.99, seed=0):
+        torch.manual_seed(seed) # torch running on CUDA leads to different results, than running on CPU!
+        np.random.seed(seed)
         xDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax
@@ -234,7 +236,6 @@ class DDPG(Algorithm):
             seed_dict = pickle.load(open(self.path + 'data/seeds.p', 'rb'))
             np.random.set_state(seed_dict['np_seed'])
             torch.set_rng_state(seed_dict['torch_seed'])
-        self.run_controller(self.environment.x0)
         pass
 
     def load_networks(self, path=None, filename=None):
