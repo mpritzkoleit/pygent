@@ -139,7 +139,7 @@ class OUnoise(object):
         self.theta = theta
         self.sigma = sigma
         self.x = np.ones(self.uDim) * self.mu
-        self.dt = 1#dt
+        self.dt = dt
 
     def reset(self):
         """ Reset process state to mean value. """
@@ -150,6 +150,18 @@ class OUnoise(object):
         dx = self.theta * (self.mu - self.x) * self.dt + self.sigma*np.sqrt(self.dt)*np.random.normal(size=self.uDim)
         self.x = self.x + dx
         return self.x
+
+def mapAngles(xIsAngle, x, mod=np):
+        """ Maps angles to the interval [-pi,pi]. """
+
+        for i in range(len(x)):
+            if xIsAngle[i]:
+                # map theta to [-pi,pi]
+                if x[i] > mod.pi:
+                    x[i] -= 2*mod.pi
+                elif x[i] < -mod.pi:
+                    x[i] += 2*mod.pi
+        return x
 
 
 def control_limiting_cost(u, alpha=0.3, mod=np):
