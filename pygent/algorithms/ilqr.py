@@ -1,5 +1,5 @@
 import numpy as np
-np.random.seed(999)
+np.random.seed(0)
 import matplotlib.pyplot as plt
 import time
 import copy
@@ -18,6 +18,7 @@ opt.solvers.options['show_progress'] = False
 from pygent.helpers import c2d, system_linearization
 from pygent.agents import FeedBack, Agent
 from pygent.algorithms.core import Algorithm
+from pygent.helpers import mapAngles
 
 
 class iLQR(Algorithm):
@@ -79,9 +80,10 @@ class iLQR(Algorithm):
             os.makedirs(path + 'c_files/')
         copyfile(inspect.stack()[-1][1], path + 'exec_script.py')
         self.fastForward = fastForward  # if True use Eulers Method instead of ODE solver
-        agent = FeedBack(None, self.uDim)
+        agent = FeedBack(None, self.uDim) 
         super(iLQR, self).__init__(environment, agent, t, dt)
         self.environment.xIsAngle = np.zeros(self.xDim, dtype=bool)
+        self.xIsAngle = self.environment.xIsAngle
         self.cost = 0.
         if fcost == None:
             self.fcost_fnc = lambda x, mod: self.cost_fnc(x, np.zeros((1, self.uDim)), mod)
@@ -156,6 +158,7 @@ class iLQR(Algorithm):
                 c = self.environment.step(u, self.dt)
             cost += c
 
+        #cost += self.fcost_fnc(self.environment.x, np)*self.dt
         cost += self.fcost_fnc(self.environment.x, np)*self.dt
 
         xx = self.environment.history
@@ -365,7 +368,7 @@ class iLQR(Algorithm):
         """ Initial trajectory, with u=0. """
 
         for _ in range(self.steps):
-            u = np.random.uniform(0., 0., self.uDim)
+            u = np.random.uniform(0.001, 0.001, self.uDim)
             u = self.agent.control(self.dt, u)
             # necessary to store control in agents history
             if self.fastForward:
@@ -453,6 +456,7 @@ class iLQR(Algorithm):
         pass
 
     def cost_lin(self, x, u):
+        x = mapAngles(self.xIsAngle, x)
         Cxx = self.Cxx(x, u)
         Cuu = self.Cuu(x, u)
         Cxu = self.Cxu(x, u)
