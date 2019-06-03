@@ -2,11 +2,14 @@ from pygent.environments import Pendulum
 from pygent.algorithms.ilqr import iLQR
 import numpy as np
 import matplotlib.pyplot as plt
+from pygent.helpers import mapAngles
 
-def c_k(x, u):
+def c_k(x, u, mod): 
     x1, x2 = x
+    if mod == np:
+        x1, x2 = mapAngles([True, False],x)
     u1, = u
-    c = x1**2 + 0.01*x2**2 + 0.01*u1**2
+    c = x1**2 + 0.1*x2**2 + 0.05*u1**2
     return c
 
 x0 = [np.pi, 0]

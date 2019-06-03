@@ -3,6 +3,7 @@ from pygent.algorithms.ddpg import DDPG
 
 #id = 'Pendulum-v0'
 id = 'MountainCarContinuous-v0'
+
 pendulum = OpenAIGym(id, render=True)
 
 t = 10

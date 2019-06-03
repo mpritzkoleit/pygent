@@ -5,7 +5,7 @@ import time
 def cost(x, u):
     x1, x2 = x
     u1, = u
-    c = x1**2 + 0.01*x2**2 + 0.01*u1**2
+    c = x1**2 + 0.1*x2**2 + 0.05*u1**2
     return c
 
 
@@ -14,13 +14,13 @@ def x0fun():
     return x0
 
 t = 10.0
-dt = 0.05
+dt = 0.02
 
 pendulum = Pendulum(cost, x0fun, dt)
 
 path = '../../../results/pendulum/ddpg/'
 algorithm = DDPG(pendulum, t, dt, path=path)
 start = time.time()
-algorithm.run_learning(1e6)
+algorithm.run_learning(2e5)
 end = time.time()
 print('Training duration: %.2f s' % (end - start))
