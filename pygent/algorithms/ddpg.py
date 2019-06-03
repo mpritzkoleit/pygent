@@ -42,7 +42,7 @@ class DDPG(Algorithm):
     """
 
     def __init__(self, environment, t, dt, plotInterval=50, nData=1e6, path='../Results/DDPG/', checkInterval=50,
-                 evalPolicyInterval=100, costScale=None, warm_up=1e4, actor_lr=1e-4, critic_lr=1e-3, tau=0.001, batch_size=64,
+                 evalPolicyInterval=100, costScale=None, warm_up=1e4, actor_lr=1e-4, critic_lr=1e-3, tau=0.005, batch_size=100,
                  noise_scale=True, gamma=0.99):
         xDim = environment.oDim
         uDim = environment.uDim
@@ -57,7 +57,7 @@ class DDPG(Algorithm):
         self.checkInterval = checkInterval  # checkpoint interval
         self.path = path
         if costScale == None:
-            self.costScale = 1/dt
+            self.costScale = int(1/dt)
         else:
             self.costScale = costScale
         self.warm_up = warm_up
@@ -120,9 +120,9 @@ class DDPG(Algorithm):
         # todo: create a function in environments, that returns x0, o0
         x = self.environment.observe(self.environment.history[0, :])
         self.expCost.append(self.agent.expCost(x))
-        self.episode_steps.append(i)
+        self.episode_steps.append(i+1)
         self.episode += 1
-        pass
+        return np.sum(cost), i+1
 
     def run_controller(self, x0):
         """ Run an episode, where the policy network is evaluated. """
@@ -160,9 +160,9 @@ class DDPG(Algorithm):
         """
         for k in range(1, n + 1):
             if steps > self.R.data.__len__():
-                self.run_episode()
+                total_cost, episode_steps = self.run_episode()
                 # plot environment after episode finished
-                print('Samples: ', self.R.data.__len__())
+                print('Episode length: %d | Data set size: %d | Total cost: %.2f ' % (episode_steps, self.R.data.__len__(), total_cost))
                 if k % 10 == 0:
                     self.learning_curve()
                 if k % self.checkInterval == 0:
@@ -196,7 +196,13 @@ class DDPG(Algorithm):
         learning_curve_dict = {'totalCost': self.totalCost, 'meanCost':self.meanCost,
                                'expCost': self.expCost, 'episode_steps': self.episode_steps}
         pickle.dump(learning_curve_dict, open(self.path + 'data/learning_curve.p', 'wb'))
+        
+        # save seed values of random number generators
+        seed_dict = {'np_seed': np.random.get_state(), 'torch_seed': torch.get_rng_state()}
+        pickle.dump(seed_dict, open(self.path + 'data/seeds.p', 'wb'))
+
         print('Network parameters, data set and learning curve saved.')
+
         pass
 
     def load(self):
@@ -223,6 +229,11 @@ class DDPG(Algorithm):
             print('Loaded learning curve data!')
         else:
             print('No learning curve data found!')
+        # load seed values for random number generators
+        if os.path.isfile(self.path + 'data/seeds.p'):
+            seed_dict = pickle.load(open(self.path + 'data/seeds.p', 'rb'))
+            np.random.set_state(seed_dict['np_seed'])
+            torch.set_rng_state(seed_dict['torch_seed'])
         self.run_controller(self.environment.x0)
         pass
 
@@ -482,7 +493,8 @@ class ActorCriticDDPG(Agent):
         x = torch.Tensor([x])
         if torch.cuda.is_available():
             x = x.cuda()
-        noise = self.noise.sample()
+        #noise = self.noise.sample()
+        noise = np.random.normal(loc=0.0, scale=0.1, size=self.uDim)
         u = np.asarray(self.actor1(x).detach().cpu())[0] + (1 - self.noise_scale)*noise + self.noise_scale*self.uMax.cpu().numpy()*noise
         self.u = np.clip(u, -self.uMax.cpu().numpy(), self.uMax.cpu().numpy())
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
