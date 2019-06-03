@@ -16,7 +16,7 @@ from pygent.modeling_scripts.cart_pole_double_serial import load_existing as car
 from pygent.modeling_scripts.cart_pole_triple import load_existing as cart_pole_triple_ode
 from pygent.modeling_scripts.cart_pole import load_existing as cart_pole_ode
 from pygent.modeling_scripts.acrobot import load_existing as acrobot_ode
-from pygent.helpers import observation
+from pygent.helpers import observation, mapAngles
 
 class Environment(object):
     """ Environment base class.
@@ -239,7 +239,7 @@ class StateSpaceModel(Environment):
         sol = solve_ivp(lambda t, x: self.ode(t, x, u), (0, dt), self.x_)
         # todo: only output value of the last timestep
         y = list(sol.y[:, -1])  # extract simulation result
-        self.x = self.mapAngles(y)
+        self.x = mapAngles(self.xIsAngle, y)
         self.o = self.observe(self.x)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
@@ -284,25 +284,13 @@ class StateSpaceModel(Environment):
 
         # Euler forward step
         y = self.x_ + dt*self.ode(None, self.x_, u)
-        self.x = self.mapAngles(y)
+        self.x = mapAngles(self.xIsAngle, y)
         self.o = self.observe(self.x)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         self.terminated = self.terminate(self.x)
         c = (self.cost(self.x_, u, self.x, np) + self.terminal_cost*self.terminated)*dt
         return c
-
-    def mapAngles(self, x):
-        """ Maps angles to the interval [-pi,pi]. """
-
-        for i in range(len(x)):
-            if self.xIsAngle[i]:
-                # map theta to [-pi,pi]
-                if x[i] > np.pi:
-                    x[i] -= 2*np.pi
-                elif x[i] < -np.pi:
-                    x[i] += 2*np.pi
-        return x
 
     def observe(self, x):
         obsv = observation(x, self.xIsAngle)
@@ -333,7 +321,7 @@ class Pendulum(StateSpaceModel):
 
     def terminate(self, x):
         x1, x2 = x
-        if abs(x2) > 10:
+        if abs(x2) > 10 or abs(x1)>2*np.pi:
             return True
         else:
             return False
