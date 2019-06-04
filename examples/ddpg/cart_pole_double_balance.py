@@ -10,17 +10,17 @@ def cost(x_, u, x):
     return c
 
 def x0fun():
-    x0 = [np.random.uniform(-0.01, 0.01), np.random.uniform(0.99*np.pi, 1.01*np.pi),
-          np.random.uniform(0.99*np.pi, 1.01*np.pi), 0, 0, 0]
+    x0 = [np.random.uniform(-0.1, 0.1), np.random.uniform(-0.1, 0.1),
+          np.random.uniform(-0.1, 0.1), 0, 0, 0]
     return x0
 
 t = 10
-dt = 0.02
+dt = 0.01
 
-cartPole = CartPoleDoubleSerial(cost, x0fun, dt)
+cartPole = CartPoleDoubleSerial(cost, x0fun, dt, task='balance')
 cartPole.terminal_cost = 200
 
-path = '../../../results/cart_pole_double/ddpg/'
+path = '../../../results/cart_pole_double_balance/ddpg/'
 
 algorithm = DDPG(cartPole, t, dt, path=path)
 algorithm.load()
