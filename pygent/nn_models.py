@@ -87,7 +87,7 @@ class Critic(nn.Module):
         h2_in = torch.cat((h1, u), 1)
         h2 = self.layer2(h2_in)
         h2_out = F.relu(h2)
-        y = self.layer3(h2_out)
+        y = F.relu(self.layer3(h2_out))
         return y
 
 class ActorBN(nn.Module):
