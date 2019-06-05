@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='PyGent',
     version='0.15',
-    packages=['pygent', 'pygent.algorithms','pygent.modeling_scripts'],#packages=['pygent', 'pygent/algorithms', 'pygent/modeling_scripts','pygent/modeling_scripts/c_files'],
+    packages=['pygent', 'pygent.algorithms','pygent.modeling_scripts','pygent.modeling_scripts.c_files'],#packages=['pygent', 'pygent/algorithms', 'pygent/modeling_scripts','pygent/modeling_scripts/c_files'],
     install_requires=['torch', 'gym'],
     requires=['sympy_to_c (>=0.1.2)', 'ffmpeg'],
     package_data={'pygent/modeling_scripts/c_files': ['*.so']},
