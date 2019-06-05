@@ -420,7 +420,7 @@ class CartPole(StateSpaceModel):
         return ani
 
 class CartPoleDoubleSerial(StateSpaceModel):
-    def __init__(self, cost, x0, dt):
+    def __init__(self, cost, x0, dt, task='swing_up'):
         self.ode = cart_pole_double_serial_ode()
         super(CartPoleDoubleSerial, self).__init__(self.ode, cost, x0, 1, dt)
         self.xIsAngle = [False, True, True, False, False, False]
@@ -428,11 +428,20 @@ class CartPoleDoubleSerial(StateSpaceModel):
         self.oDim = len(self.o) #observation dimensions
         self.o_ = self.o
         self.uMax = 15*np.ones(1)
+        self.task = task
 
     def terminate(self, x):
         x1, x2, x3, x4, x5, x6 = x
-        if abs(x1) > 1.5 or abs(x5) > 25 or abs(x6) > 25:
-            return True
+        if self.task == 'swing_up':
+            if abs(x1) > 1.5 or abs(x5) > 25 or abs(x6) > 25:
+                return True
+            else:
+                return false
+        elif self.task == 'balance':
+            if abs(x1) > 1.5 or abs(x2) > 1. or abs(x3) > 1. or abs(x5) > 25 or abs(x6) > 25:
+                return True
+            else: 
+                return False
         else:
             return False
 
