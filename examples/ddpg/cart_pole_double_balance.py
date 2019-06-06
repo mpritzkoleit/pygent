@@ -10,7 +10,7 @@ def cost(x_, u, x):
     return c
 
 def x0fun():
-    x0 = [np.random.uniform(-0.1, 0.1), np.random.uniform(-0.1, 0.1),
+    x0 = [np.random.uniform(-0.01, 0.01), np.random.uniform(-0.1, 0.1),
           np.random.uniform(-0.1, 0.1), 0, 0, 0]
     return x0
 
