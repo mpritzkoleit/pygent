@@ -1,4 +1,4 @@
-__name__ == "pygent.nnmodels"
+__name__ == "pygent.nn_models"
 
 import torch
 torch.manual_seed(0)
