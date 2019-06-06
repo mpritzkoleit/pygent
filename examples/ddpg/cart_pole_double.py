@@ -15,7 +15,7 @@ def x0fun():
     return x0
 
 t = 10
-dt = 0.02
+dt = 0.01
 
 cartPole = CartPoleDoubleSerial(cost, x0fun, dt)
 cartPole.terminal_cost = 200
