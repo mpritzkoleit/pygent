@@ -9,6 +9,7 @@ import matplotlib.patches as patches
 from scipy.integrate import solve_ivp
 import inspect
 import pickle
+import copy
 
 # from PyGent
 from pygent.modeling_scripts.cart_pole_double_parallel import load_existing as cart_pole_double_parallel_ode
@@ -239,12 +240,14 @@ class StateSpaceModel(Environment):
         sol = solve_ivp(lambda t, x: self.ode(t, x, u), (0, dt), self.x_)
         # todo: only output value of the last timestep
         y = list(sol.y[:, -1])  # extract simulation result
-        self.x = mapAngles(self.xIsAngle, y)
+        self.x = y
         self.o = self.observe(self.x)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         self.terminated = self.terminate(self.x)
-        c = (self.cost(self.x_, u, self.x, np) + self.terminal_cost*self.terminated)*dt
+        x_2pi = mapAngles(self.xIsAngle, self.x_)
+        x2pi = mapAngles(self.xIsAngle, self.x)
+        c = (self.cost(x_2pi, u, x2pi, np) + self.terminal_cost*self.terminated)*dt
         return c
 
     def terminate(self, x):
@@ -284,12 +287,14 @@ class StateSpaceModel(Environment):
 
         # Euler forward step
         y = self.x_ + dt*self.ode(None, self.x_, u)
-        self.x = mapAngles(self.xIsAngle, y)
+        self.x = y
         self.o = self.observe(self.x)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         self.terminated = self.terminate(self.x)
-        c = (self.cost(self.x_, u, self.x, np) + self.terminal_cost*self.terminated)*dt
+        x_2pi = mapAngles(self.xIsAngle, self.x_)
+        x2pi = mapAngles(self.xIsAngle, self.x)
+        c = (self.cost(x_2pi, u, x2pi, np) + self.terminal_cost*self.terminated)*dt
         return c
 
     def observe(self, x):
@@ -321,7 +326,7 @@ class Pendulum(StateSpaceModel):
 
     def terminate(self, x):
         x1, x2 = x
-        if abs(x2) > 10 or abs(x1)>2*np.pi:
+        if abs(x2) > 10 or abs(x1)>8*np.pi:
             return True
         else:
             return False

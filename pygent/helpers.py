@@ -153,15 +153,14 @@ class OUnoise(object):
 
 def mapAngles(xIsAngle, x, mod=np):
         """ Maps angles to the interval [-pi,pi]. """
-
-        for i in range(len(x)):
+        x_pi = []
+        for i, state in enumerate(x):
             if xIsAngle[i]:
                 # map theta to [-pi,pi]
-                if x[i] > mod.pi:
-                    x[i] -= 2*mod.pi
-                elif x[i] < -mod.pi:
-                    x[i] += 2*mod.pi
-        return x
+                x_pi.append((state + mod.pi) % (2*mod.pi) - mod.pi)   
+            else:
+                x_pi.append(state)
+        return x_pi
 
 
 def control_limiting_cost(u, alpha=0.3, mod=np):

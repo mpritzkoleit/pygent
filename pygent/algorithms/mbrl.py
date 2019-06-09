@@ -311,22 +311,22 @@ class MBRL(Algorithm):
 
 
 class MPCAgent(Agent):
-    def __init__(self, uDim, environment, horizon, dt, path, init_iterations=40, fcost=None, constrained=True, fastForward=False):
+    def __init__(self, uDim, environment, horizon, dt, path, init_iterations=500, fcost=None, constrained=True, fastForward=False):
         super(MPCAgent, self).__init__(uDim)
-        self.traj_optimizer = iLQR(environment, horizon, dt, path=path, fcost=fcost, constrained=constrained,fastForward=fastForward)
+        self.traj_optimizer = iLQR(copy.deepcopy(environment), horizon, dt, path=path, fcost=fcost, constrained=constrained,fastForward=fastForward)
         self.uMax = self.traj_optimizer.environment.uMax
         self.init_iterations = init_iterations
-        #self.init_optim()
+        self.init_optim()
         #self.traj_optimizer.plot()
 
     def init_optim(self):
         self.traj_optimizer.max_iters = self.init_iterations
-        #self.traj_optimizer.init_trajectory()
+        print('Running inital optimization.')
         self.traj_optimizer.run_optim()
         self.traj_optimizer.max_iters = 1
         pass
 
-    def take_action(self, dt, x, idx):
+    def take_action(self, dt, x, idx=None):
         """ Compute the control/action of the policy network (actor).
 
             Args:

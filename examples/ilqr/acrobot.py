@@ -11,7 +11,7 @@ def cost(x, u):
 
 def finalcost(x):
     x1, x2, x3, x4 = x
-    c = 100*x1**2 + 10*x2**2 + 1*x3**2 + 1*x4**2
+    c = 100*x1**2 + 100*x2**2 + 10*x3**2 + 10*x4**2
     return c
 
 
@@ -25,8 +25,8 @@ acrobot = Acrobot(cost, x0, dt)
 path = '../../../results/ilqr/acrobot/'
 
 controller = iLQR(acrobot, t, dt, fcost=finalcost, path=path, constrained=True)
-controller.run_optim()
-#controller.run(x0)
+#controller.run_optim()
+controller.run_disk(x0)
 controller.plot()
 plt.show()
 controller.animation()
