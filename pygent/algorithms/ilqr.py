@@ -158,13 +158,14 @@ class iLQR(Algorithm):
                 c = self.environment.step(u, self.dt)
             cost += c
 
-        #cost += self.fcost_fnc(self.environment.x, np)*self.dt
         cost += self.fcost_fnc(self.environment.x, np)*self.dt
 
         xx = self.environment.history
         uu = self.agent.history[1:]
 
-        return xx, uu, cost
+        
+
+        return xx, uu, cost, self.environment.terminated
 
     def backward_pass(self):
         x = self.xx[-1]
@@ -266,7 +267,7 @@ class iLQR(Algorithm):
 
     def run(self, x0):
         self.environment.reset(x0)
-        self.xx, self.uu, self.cost = self.forward_pass(1.)
+        self.xx, self.uu, self.cost, terminated = self.forward_pass(1.)
         pass
 
     def run_disk(self, x0):
@@ -311,11 +312,11 @@ class iLQR(Algorithm):
                 for a_index, alpha in enumerate(self.alphas):
                     self.current_alpha = alpha
                     #print('Linesearch:', a_index+1, '/', len(self.alphas))
-                    xx, uu, cost = self.forward_pass(alpha)
+                    xx, uu, cost, sys_terminated = self.forward_pass(alpha)
                     x_list.append(xx)
                     u_list.append(uu)
                     cost_list.append(cost)
-                    if np.any(xx > 1e8):
+                    if np.any(xx > 1e8):# or sys_terminated:
                         print('forward diverged.')
                         break
                     # cost difference between iterations
