@@ -432,7 +432,7 @@ class CartPoleDoubleSerial(StateSpaceModel):
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o) #observation dimensions
         self.o_ = self.o
-        self.uMax = 15*np.ones(1)
+        self.uMax = 20*np.ones(1)
         self.task = task
 
     def terminate(self, x):
