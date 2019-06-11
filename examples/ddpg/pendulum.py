@@ -22,6 +22,6 @@ path = '../../../results/pendulum/ddpg/'
 algorithm = DDPG(pendulum, t, dt, path=path)
 start = time.time()
 algorithm.load()
-algorithm.run_learning(1e5)
+algorithm.run_learning(1e6)
 end = time.time()
 print('Training duration: %.2f s' % (end - start))

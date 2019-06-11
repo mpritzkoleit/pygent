@@ -15,11 +15,11 @@ t = 6
 dt = 0.05
 
 env = CartPole(c_k, x0, dt)
-
+ 
 
 path = '../../../results/nmpc/cart_pole/'
 
-agent = MPCAgent(1, env, 2.0, dt, path=path)
+agent = MPCAgent(1, env, 2., dt, path=path)
 # reset environment/agent to initial state, delete history
 env.reset(x0)
 agent.reset()
@@ -31,6 +31,7 @@ for _ in range(int(t/dt)):
     # simulation of environment
     c = env.step(u, dt)
     cost.append(c)
-    env.plot()
-    plt.show()
+env.plot()
+plt.show()
+
 env.animation()

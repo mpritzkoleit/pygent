@@ -441,7 +441,7 @@ class CartPoleDoubleSerial(StateSpaceModel):
             if abs(x1) > 1.5 or abs(x5) > 25 or abs(x6) > 25:
                 return True
             else:
-                return false
+                return False
         elif self.task == 'balance':
             if abs(x1) > 1.5 or abs(x2) > 1. or abs(x3) > 1. or abs(x5) > 25 or abs(x6) > 25:
                 return True
