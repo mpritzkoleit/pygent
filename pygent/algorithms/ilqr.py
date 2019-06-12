@@ -276,7 +276,9 @@ class iLQR(Algorithm):
         self.kk = np.load(self.path + 'data/k.npy')
         self.uu = np.load(self.path + 'data/uu.npy')
         self.xx = np.load(self.path + 'data/xx.npy')
-        self.xx, self.uu, self.cost = self.forward_pass(self.current_alpha)
+        self.current_alpha = np.load(self.path + 'data/alpha.npy')
+        print(self.current_alpha)
+        self.xx, self.uu, self.cost, terminated = self.forward_pass(self.current_alpha)
         pass
 
 
@@ -310,7 +312,6 @@ class iLQR(Algorithm):
                 u_list = []
                 cost_list = []
                 for a_index, alpha in enumerate(self.alphas):
-                    self.current_alpha = alpha
                     #print('Linesearch:', a_index+1, '/', len(self.alphas))
                     xx, uu, cost, sys_terminated = self.forward_pass(alpha)
                     x_list.append(xx)
@@ -342,6 +343,7 @@ class iLQR(Algorithm):
                 self.cost = np.copy(cost_list[best_idx])
                 self.xx = np.copy(x_list[best_idx])
                 self.uu = np.copy(u_list[best_idx])
+                self.current_alpha = self.alphas[best_idx]
 
                 # decrease mu
                 self.decrease_mu()
@@ -508,4 +510,5 @@ class iLQR(Algorithm):
         np.save(self.path + 'data/k', self.kk)
         np.save(self.path + 'data/uu', self.uu)
         np.save(self.path + 'data/xx', self.xx)
+        np.save(self.path + 'data/alpha', self.current_alpha)
         self.plot()
