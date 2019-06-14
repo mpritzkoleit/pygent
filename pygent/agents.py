@@ -60,11 +60,11 @@ class Agent(object):
 
         """
 
-        fig, ax = plt.subplots(self.uDim, 1, dpi=150)
+        fig, ax = plt.subplots(self.uDim, 1, dpi=300, sharex=True)
         # plot control trajectories
         if self.uDim > 1:
             for i, axes in enumerate(ax):
-                ax[i].step(self.tt, self.history[:, i], 'b', lw=1, sharex=True)
+                ax[i].step(self.tt, self.history[:, i], 'b', lw=1)
                 ax[i].grid(True)
                 ax[i].set_ylabel(r'$u_'+str(i+1)+'$')
         else:
