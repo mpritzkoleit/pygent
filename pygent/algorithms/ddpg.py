@@ -41,17 +41,33 @@ class DDPG(Algorithm):
 
     """
 
-    def __init__(self, environment, t, dt, plotInterval=50, nData=1e6, path='../Results/DDPG/', checkInterval=50,
-                 evalPolicyInterval=100, costScale=None, warm_up=1e4, actor_lr=1e-4, critic_lr=1e-3, tau=0.005, batch_size=100,
-                 noise_scale=True, gamma=0.99, seed=0):
+    def __init__(self, environment, t, dt,
+                 plotInterval=50,
+                 nData=1e6,
+                 path='../results/ddpg/',
+                 checkInterval=50,
+                 evalPolicyInterval=100,
+                 costScale=None,
+                 warm_up=1e4,
+                 actor_lr=1e-4,
+                 critic_lr=1e-3,
+                 tau=0.005,
+                 batch_size=100,
+                 noise_scale=True,
+                 gamma=0.99, seed=0):
         torch.manual_seed(seed) # torch running on CUDA leads to different results, than running on CPU!
         np.random.seed(seed)
         xDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax
         self.batch_size = batch_size
-        agent = ActorCriticDDPG(xDim, uDim, torch.Tensor(uMax), dt, batch_size=self.batch_size, actor_lr=actor_lr,
-                            critic_lr=critic_lr, tau=tau, noise_scale=noise_scale, gamma=gamma)
+        agent = ActorCriticDDPG(xDim, uDim, torch.Tensor(uMax), dt,
+                                batch_size=self.batch_size,
+                                actor_lr=actor_lr,
+                                critic_lr=critic_lr,
+                                tau=tau,
+                                noise_scale=noise_scale,
+                                gamma=gamma)
         super(DDPG, self).__init__(environment, agent, t, dt)
         self.R = DataSet(nData)
         self.plotInterval = plotInterval  # inter
@@ -119,7 +135,6 @@ class DDPG(Algorithm):
         # store the mean of the incremental cost
         self.meanCost.append(np.mean(cost))
         self.totalCost.append(np.sum(disc_cost))
-        # todo: create a function in environments, that returns x0, o0
         x = self.environment.observe(self.environment.history[0, :])
         self.expCost.append(self.agent.expCost(x))
         self.episode_steps.append(i+1)
@@ -264,17 +279,9 @@ class DDPG(Algorithm):
         self.environment.plot()
         self.environment.save_history(str(self.episode - 1) + '_environment', self.path + 'data/')
         plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pdf')
-        try:
-            plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pgf')
-        except:
-            pass
         self.agent.plot()
         self.agent.save_history(str(self.episode - 1) + '_agent', self.path + 'data/')
         plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pdf')
-        try:
-            plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pgf')
-        except:
-            pass
         plt.close('all')
         pass
 
@@ -312,11 +319,6 @@ class DDPG(Algorithm):
         plt.xlabel('Samples')
         plt.tight_layout()
         plt.savefig(self.path + 'learning_curve.pdf')
-        try:
-            plt.savefig(self.path + 'learning_curve.pgf')
-        except:
-            pass
-        # todo: save learning curve data
         plt.close('all')
         pass
 
@@ -346,8 +348,13 @@ class ActorCriticDDPG(Agent):
 
     """
 
-    def __init__(self, xDim, uDim, uMax, dt, batch_size=64, gamma=0.99, tau=0.001, actor_lr=1e-4, critic_lr=1e-3,
-                noise_scale=True):
+    def __init__(self, xDim, uDim, uMax, dt,
+                 batch_size=64,
+                 gamma=0.99,
+                 tau=0.001,
+                 actor_lr=1e-4,
+                 critic_lr=1e-3,
+                 noise_scale=True):
         super(ActorCriticDDPG, self).__init__(uDim)
         self.xDim = xDim
         if torch.cuda.is_available():
