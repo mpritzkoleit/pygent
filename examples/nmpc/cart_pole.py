@@ -1,8 +1,9 @@
 from pygent.environments import CartPole
-from pygent.algorithms.mbrl import MPCAgent
+from pygent.algorithms.nmpc import NMPC
 import numpy as np
 import matplotlib.pyplot as plt
 
+# incremental cost
 def c_k(x, u):
     x1, x2, x3, x4 = x
     u1, = u
@@ -11,27 +12,16 @@ def c_k(x, u):
 
 x0 = [0, np.pi, 0, 0]
 
-t = 6
-dt = 0.05
+t = 6.
+horizon = 2
+dt = 0.02
 
 env = CartPole(c_k, x0, dt)
+mpc_env = CartPole(c_k, x0, dt)
  
 
 path = '../../../results/nmpc/cart_pole/'
 
-agent = MPCAgent(1, env, 2., dt, path=path)
+algorithm = NMPC(env, mpc_env, t, dt, horizon, path=path)
 # reset environment/agent to initial state, delete history
-env.reset(x0)
-agent.reset()
-cost = []
-for _ in range(int(t/dt)):
-    # agent computes control/action
-    u = agent.take_action(dt, env.x)
-
-    # simulation of environment
-    c = env.step(u, dt)
-    cost.append(c)
-env.plot()
-plt.show()
-
-env.animation()
+algorithm.run()

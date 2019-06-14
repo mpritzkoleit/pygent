@@ -3,28 +3,35 @@ from pygent.algorithms.ilqr import iLQR
 import numpy as np
 import matplotlib.pyplot as plt
 
-def cost(x, u):
+# define the incremental cost
+def c_k(x, u):
     x1, x2, x3, x4 = x
     u1, = u
     c = x1**2 + x2**2 + 0.01*x3**2 + 0.01*x4**2 + 0.05*u1**2
     return c
 
-def finalcost(x):
+# define the final cost at step N
+def c_N(x):
     x1, x2, x3, x4 = x
     c = 100*x1**2 + 100*x2**2 + 10*x3**2 + 10*x4**2
     return c
 
+# initial state value
 x0 = [np.pi, 0., 0., 0.]
 
-t = 6
-dt = 0.03
+t = 6 # simulation time
+dt = 0.03 # time step-size
 
-acrobot = Acrobot(cost, x0, dt)
+env = Acrobot(c_k, x0, dt)
 
-path = '../../../results/ilqr/acrobot/'
+path = '../../../results/ilqr/acrobot/' # path, where results are saved
 
-controller = iLQR(acrobot, t, dt, fcost=finalcost, path=path, constrained=True)
-controller.run_optim()
-controller.plot()
+algorithm = iLQR(env, t, dt, fcost=c_N, path=path, constrained=True) # instance of the iLQR algorithm
+
+algorithm.run_optim() # run trajectory optimization
+
+# plot trajectories
+algorithm.plot()
 plt.show()
-controller.animation()
+# create an animation
+algorithm.animation()
