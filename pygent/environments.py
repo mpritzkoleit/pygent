@@ -86,7 +86,7 @@ class Environment(object):
 
         """
 
-        fig, ax = plt.subplots(len(self.x), 1, sharex=True)
+        fig, ax = plt.subplots(len(self.x), 1, dpi=300, sharex=True)
         # Plot state trajectories
         if len(self.x) > 1:
             for i in range(len(self.x)):
@@ -193,7 +193,8 @@ class StateSpaceModel(Environment):
 
     """
 
-    def __init__(self, ode, cost, x0, uDim, dt, terminal_cost=0.):
+    def __init__(self, ode, cost, x0, uDim, dt,
+                 terminal_cost=0.):
         super(StateSpaceModel, self).__init__(x0, uDim, dt)
         self.ode = ode
         cost_args = inspect.signature(cost).parameters.__len__()
@@ -646,6 +647,10 @@ class Car(StateSpaceModel):
         return np.array([dx1dt, dx2dt, dx3dt, dx4dt])
 
     def terminate(self, x):
+        x1, x2, x3, x4 = x
+        if abs(x1) > 5 or abs(x2) > 5:
+            return True
+        else:
             return False
 
 class Acrobot(StateSpaceModel):

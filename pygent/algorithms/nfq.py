@@ -6,6 +6,10 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import random
 random.seed(0)
+import os
+import inspect
+from shutil import copyfile
+
 
 # pygent
 from pygent.agents import Agent
@@ -151,7 +155,9 @@ class NFQ(Algorithm):
 
     """
 
-    def __init__(self, environment, controls, xGoal, t, dt, h_layers, eps, gamma, nData=180000):
+    def __init__(self, environment, controls, xGoal, t, dt, h_layers=[20,20], eps=0,
+                 gamma=0.99, path='../results/ddpg/', nData=180000):
+        self.path = path
         xGoal = observation(xGoal, environment.xIsAngle)
         uDim = 1 # dimension input
         netStructure = [len(xGoal) + uDim] + h_layers + [1]
@@ -159,6 +165,17 @@ class NFQ(Algorithm):
         super(NFQ, self).__init__(environment, agent, t, dt)
         self.D = DataSet(nData)
         self.episode = 0
+        if not os.path.isdir(path):
+            os.makedirs(path)
+        if not os.path.isdir(path + 'plots/'):
+            os.makedirs(path + 'plots/')
+        if not os.path.isdir(path + 'animations/'):
+            os.makedirs(path + 'animations/')
+        if not os.path.isdir(path + 'data/'):
+            os.makedirs(path + 'data/')
+        copyfile(inspect.stack()[-1][1], path + 'exec_script.py')
+        self.cost_scale = int(1/dt)
+        self.environment.terminal_cost = 1.
 
     def run_episode(self):
         print('started episode ', self.episode)
@@ -175,7 +192,7 @@ class NFQ(Algorithm):
             else:
                 u = self.agent.take_random_action(self.dt)
             # simulation of environment
-            c = self.environment.step(u, self.dt)
+            c = self.environment.step(u, self.dt)*self.cost_scale
             if c == 1.0:
                 self.environment.terminated = True
             elif c == 0.0:
@@ -207,35 +224,61 @@ class NFQ(Algorithm):
             # plot environment after episode finished
             print('Samples: ',self.D.data.__len__())
             if k % 10 == 0:
-                self.plot()
                 self.learning_curve()
                 # if self.meanCost[-1] < 0.01: # goal reached
                 #self.animation()
+            if k % 50 == 0:
+                self.plot()
+                self.animation()
         pass
 
     def plot(self):
+        """ Plots the environment's and agent's history. """
+
         self.environment.plot()
-        plt.savefig('results/'+str(self.episode-1)+'_environment')
+        self.environment.save_history(str(self.episode - 1) + '_environment', self.path + 'data/')
+        plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pdf')
+        try:
+            plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pgf')
+        except:
+            pass
         self.agent.plot()
-        plt.savefig('results/'+str(self.episode-1)+'_agent')
+        self.agent.save_history(str(self.episode - 1) + '_agent', self.path + 'data/')
+        plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pdf')
+        try:
+            plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pgf')
+        except:
+            pass
         plt.close('all')
         pass
 
     def animation(self):
-        ani = self.environment.animation(self.episode-1, self.meanCost[self.episode-1])
-        try:
-            ani.save('results/'+str(self.episode-1)+'_animation.mp4', fps=1/self.dt)
-        except:
-            ani.save('results/' + str(self.episode - 1) + '_animation.gif', fps=1 / self.dt)
+        """ Animation of the environment (if available). """
+
+        ani = self.environment.animation()
+        if ani != None:
+            try:
+                ani.save(self.path + 'animations/' + str(self.episode - 1) + '_animation.mp4', fps=1 / self.dt)
+            except:
+                ani.save(self.path + 'animations/' + str(self.episode - 1) + '_animation.gif', fps=1 / self.dt)
         plt.close('all')
         pass
 
     def learning_curve(self):
-        fig, (ax) = plt.subplots(1, 1)
-        ax.step(np.arange(self.episode), self.meanCost)
-        plt.title('Learning curve')
-        plt.ylabel('Mean cost')
-        plt.xlabel('Epsiode')
-        plt.savefig('results/learning_curve')
+        """ Plot of the learning curve. """
+
+        fig, ax = plt.subplots(1, 1, dpi=150, sharex=True, figsize=(5.56, 3.44))
+
+        #x = np.arange(1, self.episode)
+        x = np.arange(self.episode)
+
+        ax.step(x, self.meanCost, 'b', lw=1, label=r'$\frac{1}{N}\sum_{k=0}^N c_k$')
+        ax.legend(loc='center', bbox_to_anchor=(1.15, .5), ncol=1, shadow=True)
+        ax.grid(True)
+        ax.ticklabel_format(axis='both', style='sci', scilimits=(-3,4), useMathText=True)
+        plt.rc('font', family='serif')
+        plt.xlabel('Samples')
+        plt.tight_layout()
+        plt.savefig(self.path + 'learning_curve.pdf')
         plt.close('all')
         pass

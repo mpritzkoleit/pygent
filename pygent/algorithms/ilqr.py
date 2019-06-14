@@ -48,8 +48,16 @@ class iLQR(Algorithm):
         nData: maximum length of data set
 
     """
-    def __init__(self, environment, t, dt, maxIters=500, tolGrad=1e-4,
-                 tolFun=1e-7, fastForward=False, path='../Results/iLQR/', fcost=None, constrained=False, save_interval=10):
+    def __init__(self, environment, t, dt,
+                 maxIters=500,
+                 tolGrad=1e-4,
+                 tolFun=1e-7,
+                 fastForward=False,
+                 path='../results/ilqr/',
+                 fcost=None,
+                 constrained=False,
+                 save_interval=10,
+                 printing=True):
         """
 
         Args:
@@ -93,6 +101,7 @@ class iLQR(Algorithm):
         self.cost_init()
         self.init_trajectory()
         self.current_alpha = 1
+        self.printing = printing
         # todo: mu to eta
 
         # algorithm parameters
@@ -332,13 +341,15 @@ class iLQR(Algorithm):
                     else:
                         z = np.sign(dcost)
                         print('non-positive expected reduction')
+                        #self.increase_mu() # todo: probably delete this line, if something's not working!
                     if z > self.zmin:
                         success_fw = True
                         if not self.parallel:
                             break
             if success_fw:
                 #todo: cost instead of self.cost in print?
-                print('Iter. ', _, '| Cost: %.7f' % cost, ' | red.: %.5f' % dcost, '| exp.: %.5f' % expected)
+                if self.printing:
+                    print('Iter. ', _, '| Cost: %.7f' % cost, ' | red.: %.5f' % dcost, '| exp.: %.5f' % expected)
                 best_idx = np.argmin(cost_list)
                 self.cost = np.copy(cost_list[best_idx])
                 self.xx = np.copy(x_list[best_idx])
@@ -349,18 +360,22 @@ class iLQR(Algorithm):
                 self.decrease_mu()
 
                 if dcost < self.tolFun:
-                    print('Converged: small improvement')
+                    if self.printing:
+                        print('Converged: small improvement')
                     break
                 if success_gradient:
-                    print('Converged: small gradient')
+                    if self.printing:
+                        print('Converged: small gradient')
                     break
                 if _ % self.save_interval == 0:
                     self.save()
             else:
                 self.increase_mu()
-                print('Iter. ', _, '| Forward not successfull')
+                if self.printing:
+                    print('Iter. ', _, '| Forward not successfull')
                 if self.mu > self.mu_max:
-                    print('Diverged: no improvement')
+                    if self.printing:
+                        print('Diverged: no improvement')
                     break
 
         print('Iterations: %d | Final Cost-to-Go: %.2f | Runtime: %.2f min.' % (_, self.cost, (time.time() - start_time) / 60))
@@ -483,17 +498,9 @@ class iLQR(Algorithm):
         self.environment.plot()
         self.environment.save_history('environment', self.path + 'data/')
         plt.savefig(self.path + 'plots/environment.pdf')
-        try:
-            plt.savefig(self.path + 'plots/environment.pgf')
-        except:
-            pass
         self.agent.plot()
         self.agent.save_history('agent', self.path + 'data/')
         plt.savefig(self.path + 'plots/controller.pdf')
-        try:
-            plt.savefig(self.path + 'plots/controller.pgf')
-        except:
-            pass
         plt.close('all')
 
     def animation(self):
@@ -511,4 +518,5 @@ class iLQR(Algorithm):
         np.save(self.path + 'data/uu', self.uu)
         np.save(self.path + 'data/xx', self.xx)
         np.save(self.path + 'data/alpha', self.current_alpha)
-        self.plot()
+        if self.printing:
+            self.plot()
