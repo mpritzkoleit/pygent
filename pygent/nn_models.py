@@ -1,9 +1,11 @@
-import numpy as np
+__name__ == "pygent.nn_models"
+
 import torch
+torch.manual_seed(0)
 import torch.nn as nn
 import torch.nn.functional as F
 
-from helpers import fanin_init
+from pygent.helpers import fanin_init
 
 class MLP(nn.Module):
     """ Multilayer perceptron (MLP) with tanh/sigmoid activation functions implemented in PyTorch
@@ -85,7 +87,7 @@ class Critic(nn.Module):
         h2_in = torch.cat((h1, u), 1)
         h2 = self.layer2(h2_in)
         h2_out = F.relu(h2)
-        y = self.layer3(h2_out)
+        y = F.relu(self.layer3(h2_out))
         return y
 
 class ActorBN(nn.Module):
@@ -143,5 +145,32 @@ class Actor(nn.Module):
         h2 = F.relu(self.layer2(h1))
         h3 = torch.tanh(self.layer3(h2))
         y = torch.mul(h3, self.uMax) # scale output
+        return y
+
+class NNDynamics(nn.Module):
+    def __init__(self, xDim, uDim):
+        super(NNDynamics, self).__init__()
+        self.xDim = xDim
+        self.uDim = uDim
+        self.layer1 = nn.Linear(xDim + uDim, 500)
+        self.layer2 = nn.Linear(500, 500)
+        self.layer3 = nn.Linear(500, xDim)
+
+        # weight initialization
+        wMin = -3.0*1e-3
+        wMax = 3.0*1e-3
+        fanin_init(self.layer1)
+        fanin_init(self.layer2)
+        self.layer3.weight = torch.nn.init.uniform_(self.layer3.weight, a=wMin, b=wMax)
+        self.layer3.bias = torch.nn.init.uniform_(self.layer3.bias, a=wMin, b=wMax)
+
+    def forward(self, x, u):
+        # connect layers
+        h1_in = torch.cat((x, u), 1)
+        h1 = self.layer1(h1_in)
+        h1_out = F.relu(h1)
+        h2 = self.layer2(h1_out)
+        h2_out = F.relu(h2)
+        y = self.layer3(h2_out)
         return y
 

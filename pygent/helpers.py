@@ -1,6 +1,10 @@
+__name__ == "pygent.helpers"
+
 import torch
+torch.manual_seed(0)
 from torch.autograd import grad
 import numpy as np
+np.random.seed(0)
 import scipy as sci
 
 def nth_derivative(f, wrt, n):
@@ -146,6 +150,17 @@ class OUnoise(object):
         dx = self.theta * (self.mu - self.x) * self.dt + self.sigma*np.sqrt(self.dt)*np.random.normal(size=self.uDim)
         self.x = self.x + dx
         return self.x
+
+def mapAngles(xIsAngle, x, mod=np):
+        """ Maps angles to the interval [-pi,pi]. """
+        x_pi = []
+        for i, state in enumerate(x):
+            if xIsAngle[i]:
+                # map theta to [-pi,pi]
+                x_pi.append((state + mod.pi) % (2*mod.pi) - mod.pi)   
+            else:
+                x_pi.append(state)
+        return x_pi
 
 
 def control_limiting_cost(u, alpha=0.3, mod=np):

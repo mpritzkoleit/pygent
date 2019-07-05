@@ -1,5 +1,7 @@
 import numpy as np
+np.random.seed(0)
 import torch
+torch.manual_seed(0)
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import os
@@ -8,11 +10,11 @@ import inspect
 from shutil import copyfile
 
 # pygent
-from agents import Agent
-from data import DataSet
-from algorithms.core import Algorithm
-from nn_models import Actor, Critic
-from helpers import OUnoise
+from pygent.agents import Agent
+from pygent.data import DataSet
+from pygent.algorithms.core import Algorithm
+from pygent.nn_models import Actor, Critic
+from pygent.helpers import OUnoise
 
 
 class DDPG(Algorithm):
@@ -39,15 +41,33 @@ class DDPG(Algorithm):
 
     """
 
-    def __init__(self, environment, t, dt, plotInterval=50, nData=1e6, path='../Results/DDPG/', checkInterval=50,
-                 evalPolicyInterval=100, costScale=None, warm_up=5e4, actor_lr=1e-4, critic_lr=1e-3, tau=0.001, batch_size=64,
-                 noise_scale=False, gamma=0.99):
+    def __init__(self, environment, t, dt,
+                 plotInterval=50,
+                 nData=1e6,
+                 path='../results/ddpg/',
+                 checkInterval=50,
+                 evalPolicyInterval=100,
+                 costScale=None,
+                 warm_up=1e4,
+                 actor_lr=1e-4,
+                 critic_lr=1e-3,
+                 tau=0.005,
+                 batch_size=100,
+                 noise_scale=True,
+                 gamma=0.99, seed=0):
+        torch.manual_seed(seed) # torch running on CUDA leads to different results, than running on CPU!
+        np.random.seed(seed)
         xDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax
         self.batch_size = batch_size
-        agent = ActorCriticDDPG(xDim, uDim, torch.Tensor(uMax), dt, batch_size=self.batch_size, actor_lr=actor_lr,
-                            critic_lr=critic_lr, tau=tau, noise_scale=noise_scale, gamma=gamma)
+        agent = ActorCriticDDPG(xDim, uDim, torch.Tensor(uMax), dt,
+                                batch_size=self.batch_size,
+                                actor_lr=actor_lr,
+                                critic_lr=critic_lr,
+                                tau=tau,
+                                noise_scale=noise_scale,
+                                gamma=gamma)
         super(DDPG, self).__init__(environment, agent, t, dt)
         self.R = DataSet(nData)
         self.plotInterval = plotInterval  # inter
@@ -55,7 +75,7 @@ class DDPG(Algorithm):
         self.checkInterval = checkInterval  # checkpoint interval
         self.path = path
         if costScale == None:
-            self.costScale = 1/dt
+            self.costScale = int(1/dt)
         else:
             self.costScale = costScale
         self.warm_up = warm_up
@@ -115,12 +135,11 @@ class DDPG(Algorithm):
         # store the mean of the incremental cost
         self.meanCost.append(np.mean(cost))
         self.totalCost.append(np.sum(disc_cost))
-        # todo: create a function in environments, that returns x0, o0
         x = self.environment.observe(self.environment.history[0, :])
         self.expCost.append(self.agent.expCost(x))
-        self.episode_steps.append(i)
+        self.episode_steps.append(i+1)
         self.episode += 1
-        pass
+        return np.sum(cost), i+1
 
     def run_controller(self, x0):
         """ Run an episode, where the policy network is evaluated. """
@@ -128,6 +147,7 @@ class DDPG(Algorithm):
         print('Started episode ', self.episode)
         tt = np.arange(0, self.t, self.dt)
         cost = []  # list of incremental costs
+        disc_cost = []  # list of incremental costs
 
         # reset environment/agent to initial state, delete history
         self.environment.reset(x0)
@@ -140,32 +160,36 @@ class DDPG(Algorithm):
             # simulation of environment
             c = self.environment.step(u, self.dt)
             cost.append(c)
+            disc_cost.append(c*self.agent.gamma**i)
 
             # check if environment terminated
             if self.environment.terminated:
                 print('Environment terminated!')
                 break
-        pass
+        return cost, disc_cost
 
-    def run_learning(self, n):
+    def run_learning(self, steps, n=int(1e5)):
         """ Learning process.
 
             Args:
+                steps (int): number of steps
                 n (int): number of episodes
         """
-
         for k in range(1, n + 1):
-            self.run_episode()
-            # plot environment after episode finished
-            print('Samples: ', self.R.data.__len__())
-            if k % 10 == 0:
-                self.learning_curve()
-            if k % self.checkInterval == 0:
-                self.save()
-                # if self.meanCost[-1] < 0.01: # goal reached
-            if k % self.plotInterval == 0:
-                self.plot()
-                self.animation()
+            if steps > self.R.data.__len__():
+                total_cost, episode_steps = self.run_episode()
+                # plot environment after episode finished
+                print('Episode length: %d | Data set size: %d | Total cost: %.2f ' % (episode_steps, self.R.data.__len__(), total_cost))
+                if k % 10 == 0:
+                    self.learning_curve()
+                if k % self.checkInterval == 0:
+                    self.save()
+                    # if self.meanCost[-1] < 0.01: # goal reached
+                if k % self.plotInterval == 0:
+                    self.plot()
+                    self.animation()
+            else:
+                break
         pass
 
     def save(self):
@@ -176,6 +200,11 @@ class DDPG(Algorithm):
                     'actor2': self.agent.actor2.state_dict(),
                     'critic1': self.agent.critic1.state_dict(),
                     'critic2': self.agent.critic2.state_dict()}, self.path + 'data/checkpoint.pth')
+        torch.save({'actor1': self.agent.actor1.state_dict(),
+                    'actor2': self.agent.actor2.state_dict(),
+                    'critic1': self.agent.critic1.state_dict(),
+                    'critic2': self.agent.critic2.state_dict()}, 
+                    self.path + 'data/checkpoint'+str(self.episode-1)+'.pth')
 
         # save data set
         self.R.save(self.path + 'data/dataSet.p')
@@ -183,24 +212,21 @@ class DDPG(Algorithm):
         # save learning curve data
         learning_curve_dict = {'totalCost': self.totalCost, 'meanCost':self.meanCost,
                                'expCost': self.expCost, 'episode_steps': self.episode_steps}
-
         pickle.dump(learning_curve_dict, open(self.path + 'data/learning_curve.p', 'wb'))
+        
+        # save seed values of random number generators
+        seed_dict = {'np_seed': np.random.get_state(), 'torch_seed': torch.get_rng_state()}
+        pickle.dump(seed_dict, open(self.path + 'data/seeds.p', 'wb'))
+
         print('Network parameters, data set and learning curve saved.')
+
         pass
 
     def load(self):
         """ Load neural network parameters and data set. """
 
         # load network parameters
-        if os.path.isfile(self.path + 'data/checkpoint.pth'):
-            checkpoint = torch.load(self.path + 'data/checkpoint.pth')
-            self.agent.actor1.load_state_dict(checkpoint['actor1'])
-            self.agent.actor2.load_state_dict(checkpoint['actor2'])
-            self.agent.critic1.load_state_dict(checkpoint['critic1'])
-            self.agent.critic2.load_state_dict(checkpoint['critic2'])
-            print('Loaded neural network parameters!')
-        else:
-            print('Could not load neural network parameters!')
+        self.load_networks()
 
         # load data set
         if os.path.isfile(self.path + 'data/dataSet.p'):
@@ -220,24 +246,42 @@ class DDPG(Algorithm):
             print('Loaded learning curve data!')
         else:
             print('No learning curve data found!')
-        self.run_controller(self.environment.x0)
+        # load seed values for random number generators
+        if os.path.isfile(self.path + 'data/seeds.p'):
+            seed_dict = pickle.load(open(self.path + 'data/seeds.p', 'rb'))
+            np.random.set_state(seed_dict['np_seed'])
+            torch.set_rng_state(seed_dict['torch_seed'])
+        pass
+
+    def load_networks(self, path=None, filename=None):
+        if path == None:
+            path = self.path + 'data/'
+        if filename == None:
+            filename = 'checkpoint.pth'
+        # load network parameters
+        if os.path.isfile(path + filename):
+            if torch.cuda.is_available():
+                checkpoint = torch.load(path + filename)
+            else:
+                checkpoint = torch.load(path + filename, map_location='cpu')
+            self.agent.actor1.load_state_dict(checkpoint['actor1'])
+            self.agent.actor2.load_state_dict(checkpoint['actor2'])
+            self.agent.critic1.load_state_dict(checkpoint['critic1'])
+            self.agent.critic2.load_state_dict(checkpoint['critic2'])
+            print('Loaded neural network parameters!')
+        else:
+            print('Could not load neural network parameters!')
         pass
 
     def plot(self):
         """ Plots the environment's and agent's history. """
 
         self.environment.plot()
+        self.environment.save_history(str(self.episode - 1) + '_environment', self.path + 'data/')
         plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pdf')
-        try:
-            plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pgf')
-        except:
-            pass
         self.agent.plot()
+        self.agent.save_history(str(self.episode - 1) + '_agent', self.path + 'data/')
         plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pdf')
-        try:
-            plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pgf')
-        except:
-            pass
         plt.close('all')
         pass
 
@@ -272,14 +316,9 @@ class DDPG(Algorithm):
         ax[1].legend(loc='center', bbox_to_anchor=(1.15, .5), ncol=1, shadow=True)
         ax[1].ticklabel_format(axis='both', style='sci',scilimits=(-3,5), useMathText=True)
         plt.rc('font', family='serif')
-        plt.xlabel('Samples', usetex=True)
+        plt.xlabel('Samples')
         plt.tight_layout()
         plt.savefig(self.path + 'learning_curve.pdf')
-        try:
-            plt.savefig(self.path + 'learning_curve.pgf')
-        except:
-            pass
-        # todo: save learning curve data
         plt.close('all')
         pass
 
@@ -309,13 +348,21 @@ class ActorCriticDDPG(Agent):
 
     """
 
-    def __init__(self, xDim, uDim, uMax, dt, batch_size=64, gamma=0.99, tau=0.001, actor_lr=1e-4, critic_lr=1e-3,
-                noise_scale=False):
+    def __init__(self, xDim, uDim, uMax, dt,
+                 batch_size=64,
+                 gamma=0.99,
+                 tau=0.001,
+                 actor_lr=1e-4,
+                 critic_lr=1e-3,
+                 noise_scale=True):
         super(ActorCriticDDPG, self).__init__(uDim)
         self.xDim = xDim
-        self.uMax = uMax
-        self.actor1 = Actor(xDim, uDim, uMax)
-        self.actor2 = Actor(xDim, uDim, uMax)
+        if torch.cuda.is_available():
+            self.uMax = uMax.cuda()
+        else:
+            self.uMax = uMax
+        self.actor1 = Actor(xDim, uDim, self.uMax)
+        self.actor2 = Actor(xDim, uDim, self.uMax)
         self.blend_hard(self.actor1, self.actor2)  # equate parameters of actor networks
         self.critic1 = Critic(xDim, uDim)
         self.critic2 = Critic(xDim, uDim)
@@ -324,6 +371,8 @@ class ActorCriticDDPG(Agent):
         self.tau = tau  # blend factor
         self.optimCritic = torch.optim.Adam(self.critic1.parameters(), lr=critic_lr, weight_decay=1e-2)
         self.optimActor = torch.optim.Adam(self.actor1.parameters(), lr=actor_lr)
+        if torch.cuda.is_available():
+            self.enable_cuda()
         self.noise = OUnoise(uDim, dt)  # exploration noise
         self.batch_size = batch_size
         self.noise_scale = noise_scale
@@ -342,6 +391,7 @@ class ActorCriticDDPG(Agent):
         x_Inputs, uInputs, qTargets = self.training_data(dataSet)
 
         for epoch in range(1):  # loop over the dataset multiple times
+            running_loss = 0.0
             # output of the Q-network
             qOutputs = self.critic1(x_Inputs, uInputs)
             qOutputs = torch.squeeze(qOutputs)
@@ -429,7 +479,9 @@ class ActorCriticDDPG(Agent):
 
         self.eval()
         x = torch.Tensor([x])
-        self.u = np.asarray(self.actor1(x).detach())[0]
+        if torch.cuda.is_available():
+            x = x.cuda()
+        self.u = np.asarray(self.actor1(x).detach().cpu())[0]
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
@@ -447,9 +499,12 @@ class ActorCriticDDPG(Agent):
 
         self.eval()
         x = torch.Tensor([x])
-        noise = self.noise.sample()
-        u = np.asarray(self.actor1(x).detach())[0] + (1 - self.noise_scale)*noise + self.noise_scale*self.uMax.numpy()*noise
-        self.u = np.clip(u, -self.uMax.numpy(), self.uMax.numpy())
+        if torch.cuda.is_available():
+            x = x.cuda()
+        #noise = self.noise.sample()
+        noise = np.random.normal(loc=0.0, scale=0.1, size=self.uDim)
+        u = np.asarray(self.actor1(x).detach().cpu())[0] + (1 - self.noise_scale)*noise + self.noise_scale*self.uMax.cpu().numpy()*noise
+        self.u = np.clip(u, -self.uMax.cpu().numpy(), self.uMax.cpu().numpy())
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
@@ -465,7 +520,7 @@ class ActorCriticDDPG(Agent):
                 u (ndarray): noisy control/action
         """
 
-        self.u = np.random.uniform(-self.uMax, self.uMax, self.uDim)
+        self.u = np.random.uniform(-self.uMax.cpu(), self.uMax.cpu(), self.uDim)
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
@@ -489,13 +544,31 @@ class ActorCriticDDPG(Agent):
         costs = torch.Tensor([sample['c'] for sample in batch])
         terminated = torch.Tensor([sample['t'] for sample in batch])
         self.eval()  # evaluation mode (for batch normalization)
+        if torch.cuda.is_available():
+            xInputs = xInputs.cuda()
+            costs = costs.cuda()
+            terminated = terminated.cuda()
         nextQ = self.critic2(xInputs, self.actor2(xInputs)).detach()
-        qTargets = costs + self.gamma*(1 - terminated)*nextQ
+        qTargets = costs + self.gamma*(1 - terminated*False)*nextQ #this should actually be (1 - terminated), but somehow this way training is faster and more stable.
         qTargets = torch.squeeze(qTargets)
+        if torch.cuda.is_available():
+            x_Inputs = x_Inputs.cuda()
+            uInputs = uInputs.cuda()
+            qTargets = qTargets.cuda()
         return x_Inputs, uInputs, qTargets
 
     def expCost(self, x):
         """ Returns the current estimate for V(x). """
         x = torch.Tensor([x])
+        if torch.cuda.is_available():
+            x = x.cuda()
         V = self.critic1(x, self.actor1(x)).detach()
         return V
+
+    def enable_cuda(self):
+        """ Enable CUDA - training on GPU."""
+        self.actor1.cuda()
+        self.actor2.cuda()
+        self.critic1.cuda()
+        self.critic2.cuda()
+        pass

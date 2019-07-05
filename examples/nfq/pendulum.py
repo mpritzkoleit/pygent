@@ -1,32 +1,31 @@
-from environments import Pendulum
-from algorithms.nfq import NFQ
+from pygent.environments import Pendulum
+from pygent.algorithms.nfq import NFQ
 import numpy as np
-import matplotlib.pyplot as plt
-def cost(x):
+
+# define the incremental cost
+def c_k(x):
     x1, x2 = x
-    terminate = False
-    if abs(x2) > 10:
-        c = 1.
-        terminate = True
-    elif abs(x1) < 0.1  and abs(x2) < 0.5:
+    if abs(x1) < 0.1  and abs(x2) < 0.5:
         c = 0.
     else:
         c = 0.01
-    return c, terminate
+    return c
 
+# initial state value
 x0 = [np.pi, 0]
 
-pendulum = Pendulum(cost, x0)
-t = 6
-dt = 0.05
-controls = np.array([-1, 0, 1]).T
-xGoal = [0, 0]
-gamma = 0.99
-eps = 0.1
-netStructure = [3, 20, 20, 1]
+t = 6 # simulation time
+dt = 0.05 # time step-size
 
+env = Pendulum(c_k, x0, dt)
 
-algorithm = NFQ(pendulum, controls, xGoal, t, dt, netStructure, eps, gamma)
+controls = np.array([-5, 0, 5]).T # possible control values, the agent can choose
 
-algorithm.run_episode()
-algorithm.run_learning(200)
+xGoal = [0, 0] # goal state
+
+path = '../../../results/nfq/pendulum/' # path, where results are saved
+
+algorithm = NFQ(env, controls, xGoal, t, dt, path=path)  # instance of the NFQ algorithm
+
+episodes = 400 # number of episodes
+algorithm.run_learning(episodes) # run reinforcement learning

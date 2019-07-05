@@ -1,6 +1,12 @@
+__name__ == "pygent.data"
+
+# todo: add agent and feedback to init
+
 import numpy as np
+np.random.seed(0)
 from abc import abstractmethod, abstractproperty
 import matplotlib.pyplot as plt
+import pickle
 
 class Agent(object):
     """ Base class for an agent. 
@@ -54,11 +60,11 @@ class Agent(object):
 
         """
 
-        fig, ax = plt.subplots(self.uDim, 1, dpi=150)
+        fig, ax = plt.subplots(self.uDim, 1, dpi=300, sharex=True)
         # plot control trajectories
         if self.uDim > 1:
             for i, axes in enumerate(ax):
-                ax[i].step(self.tt, self.history[:, i], 'b', lw=1, sharex=True)
+                ax[i].step(self.tt, self.history[:, i], 'b', lw=1)
                 ax[i].grid(True)
                 ax[i].set_ylabel(r'$u_'+str(i+1)+'$')
         else:
@@ -70,6 +76,11 @@ class Agent(object):
         plt.tight_layout()
         # Todo: save data in numpy arrays
         return fig, ax
+
+    def save_history(self, filename, path):
+        history_dict = {'tt': self.tt, 'uu': self.history}
+        pickle.dump(history_dict, open(path + filename +'.p', 'wb'))
+        pass
 
 class FeedBack(Agent):
     """Agent subclass: a standard state feedback of the form u = mu(x)

@@ -1,16 +1,17 @@
-from environments import OpenAIGym
-from algorithms.ddpg import DDPG
+from pygent.environments import OpenAIGym
+from pygent.algorithms.ddpg import DDPG
 
-#id = 'Pendulum-v0'
-id = 'MountainCarContinuous-v0'
-pendulum = OpenAIGym(id, render=True)
+id = 'Pendulum-v0'
+#id = 'MountainCarContinuous-v0'
 
-t = 10
-dt = 0.05
+env = OpenAIGym(id, render=True) #instanciate the gym environment
 
-path = '../../../results/gym/experiment2/'
+t = 10 # time of an episode
+dt = 0.05 # time step-size
 
+path = '../../../results/gym/' # path, where results are saved
 
-algorithm = DDPG(pendulum,t, dt, path=path, warm_up=64)
+algorithm = DDPG(env ,t , dt, path=path, warm_up=64) # instance of the DDPG algorithm
 
-algorithm.run_learning(10000)
+learning_steps = 100000 # define training duration
+algorithm.run_learning(learning_steps) # run reinforcment learning

@@ -1,3 +1,5 @@
+__name__ == "pygent.environments"
+
 from abc import abstractmethod
 import gym
 import matplotlib.pyplot as plt
@@ -6,14 +8,16 @@ from matplotlib import animation
 import matplotlib.patches as patches
 from scipy.integrate import solve_ivp
 import inspect
+import pickle
+import copy
 
 # from PyGent
-from modeling_scripts.cart_pole_double_parallel import load_existing as cart_pole_double_parallel_ode
-from modeling_scripts.cart_pole_double_serial import load_existing as cart_pole_double_serial_ode
-from modeling_scripts.cart_pole_triple import load_existing as cart_pole_triple_ode
-from modeling_scripts.cart_pole import load_existing as cart_pole_ode
-from modeling_scripts.acrobot import load_existing as acrobot_ode
-from helpers import observation
+from pygent.modeling_scripts.cart_pole_double_parallel import load_existing as cart_pole_double_parallel_ode
+from pygent.modeling_scripts.cart_pole_double_serial import load_existing as cart_pole_double_serial_ode
+from pygent.modeling_scripts.cart_pole_triple import load_existing as cart_pole_triple_ode
+from pygent.modeling_scripts.cart_pole import load_existing as cart_pole_ode
+from pygent.modeling_scripts.acrobot import load_existing as acrobot_ode
+from pygent.helpers import observation, mapAngles
 
 class Environment(object):
     """ Environment base class.
@@ -82,7 +86,7 @@ class Environment(object):
 
         """
 
-        fig, ax = plt.subplots(len(self.x), 1, sharex=True)
+        fig, ax = plt.subplots(len(self.x), 1, dpi=300, sharex=True)
         # Plot state trajectories
         if len(self.x) > 1:
             for i in range(len(self.x)):
@@ -97,6 +101,11 @@ class Environment(object):
         plt.tight_layout()
         # Todo: save data in numpy arrays
         return fig, ax
+
+    def save_history(self, filename, path):
+        history_dict = {'tt': self.tt, 'xx': self.history}
+        pickle.dump(history_dict, open(path + filename +'.p', 'wb'))
+        pass
 
     def animation(self):
         pass
@@ -184,7 +193,8 @@ class StateSpaceModel(Environment):
 
     """
 
-    def __init__(self, ode, cost, x0, uDim, dt, terminal_cost=0.):
+    def __init__(self, ode, cost, x0, uDim, dt,
+                 terminal_cost=0.):
         super(StateSpaceModel, self).__init__(x0, uDim, dt)
         self.ode = ode
         cost_args = inspect.signature(cost).parameters.__len__()
@@ -231,12 +241,14 @@ class StateSpaceModel(Environment):
         sol = solve_ivp(lambda t, x: self.ode(t, x, u), (0, dt), self.x_)
         # todo: only output value of the last timestep
         y = list(sol.y[:, -1])  # extract simulation result
-        self.x = self.mapAngles(y)
+        self.x = y
         self.o = self.observe(self.x)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         self.terminated = self.terminate(self.x)
-        c = (self.cost(self.x_, u, self.x, np) + self.terminal_cost*self.terminated)*dt
+        x_2pi = mapAngles(self.xIsAngle, self.x_)
+        x2pi = mapAngles(self.xIsAngle, self.x)
+        c = (self.cost(x_2pi, u, x2pi, np) + self.terminal_cost*self.terminated)*dt
         return c
 
     def terminate(self, x):
@@ -276,25 +288,15 @@ class StateSpaceModel(Environment):
 
         # Euler forward step
         y = self.x_ + dt*self.ode(None, self.x_, u)
-        self.x = self.mapAngles(y)
+        self.x = y
         self.o = self.observe(self.x)
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         self.terminated = self.terminate(self.x)
-        c = (self.cost(self.x_, u, self.x, np) + self.terminal_cost*self.terminated)*dt
+        x_2pi = mapAngles(self.xIsAngle, self.x_)
+        x2pi = mapAngles(self.xIsAngle, self.x)
+        c = (self.cost(x_2pi, u, x2pi, np) + self.terminal_cost*self.terminated)*dt
         return c
-
-    def mapAngles(self, x):
-        """ Maps angles to the interval [-pi,pi]. """
-
-        for i in range(len(x)):
-            if self.xIsAngle[i]:
-                # map theta to [-pi,pi]
-                if x[i] > np.pi:
-                    x[i] -= 2*np.pi
-                elif x[i] < -np.pi:
-                    x[i] += 2*np.pi
-        return x
 
     def observe(self, x):
         obsv = observation(x, self.xIsAngle)
@@ -308,13 +310,13 @@ class Pendulum(StateSpaceModel):
         self.o = self.observe(self.x)
         self.o_ = self.o
         self.oDim = len(self.o)  # observation dimensions
-        self.uMax = 2*np.ones(1)
+        self.uMax = 3.5*np.ones(1)
 
     @staticmethod
     def ode(t, x, u):
 
         g = 9.81  # gravity
-        b = 0.1  # dissipation
+        b = 0.02  # dissipation
         u1, = u  # torque
         x1, x2 = x
 
@@ -325,7 +327,7 @@ class Pendulum(StateSpaceModel):
 
     def terminate(self, x):
         x1, x2 = x
-        if abs(x2) > 25:
+        if abs(x2) > 10 or abs(x1)>8*np.pi:
             return True
         else:
             return False
@@ -379,7 +381,7 @@ class CartPole(StateSpaceModel):
 
     def terminate(self, x):
         x1, x2, x3, x4 = x
-        if np.abs(x1) > 1.0:
+        if np.abs(x1) > 1.5:
             return True
         else:
             return False
@@ -424,19 +426,28 @@ class CartPole(StateSpaceModel):
         return ani
 
 class CartPoleDoubleSerial(StateSpaceModel):
-    def __init__(self, cost, x0, dt):
+    def __init__(self, cost, x0, dt, task='swing_up'):
         self.ode = cart_pole_double_serial_ode()
         super(CartPoleDoubleSerial, self).__init__(self.ode, cost, x0, 1, dt)
         self.xIsAngle = [False, True, True, False, False, False]
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o) #observation dimensions
         self.o_ = self.o
-        self.uMax = 15*np.ones(1)
+        self.uMax = 20*np.ones(1)
+        self.task = task
 
     def terminate(self, x):
         x1, x2, x3, x4, x5, x6 = x
-        if abs(x1) > 1.5 or abs(x5) > 25 or abs(x6) > 25:
-            return True
+        if self.task == 'swing_up':
+            if abs(x1) > 1.5 or abs(x5) > 25 or abs(x6) > 25:
+                return True
+            else:
+                return False
+        elif self.task == 'balance':
+            if abs(x1) > 1.5 or abs(x2) > 1. or abs(x3) > 1. or abs(x5) > 25 or abs(x6) > 25:
+                return True
+            else: 
+                return False
         else:
             return False
 
@@ -636,6 +647,10 @@ class Car(StateSpaceModel):
         return np.array([dx1dt, dx2dt, dx3dt, dx4dt])
 
     def terminate(self, x):
+        x1, x2, x3, x4 = x
+        if abs(x1) > 5 or abs(x2) > 5:
+            return True
+        else:
             return False
 
 class Acrobot(StateSpaceModel):
@@ -705,7 +720,7 @@ class MarBot(StateSpaceModel):
         self.o = observation(self.x, self.xIsAngle)
         self.oDim = len(self.o)  # observation dimensions
         self.o_ = self.o
-        self.uMax = 5*np.ones(1)
+        self.uMax = 2*np.ones(1)
 
     @staticmethod
     def ode(t, x, u):
@@ -737,7 +752,7 @@ class MarBot(StateSpaceModel):
 
     def terminate(self, x):
         x1, x2, x3, x4 = x
-        if np.abs(x1) > 1.5 or np.abs(x2)>0.5*np.pi:
+        if np.abs(x1) > 1:
             return True
         else:
             return False

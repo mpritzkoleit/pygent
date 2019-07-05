@@ -2,11 +2,11 @@ from setuptools import setup
 
 setup(
     name='PyGent',
-    version='0.1',
-    packages=['', 'algorithms', 'modeling_scripts','modeling_scripts/c_files'],
+    version='0.15',
+    packages=['pygent', 'pygent.algorithms','pygent.modeling_scripts','pygent.modeling_scripts.c_files'],#packages=['pygent', 'pygent/algorithms', 'pygent/modeling_scripts','pygent/modeling_scripts/c_files'],
     install_requires=['torch', 'gym'],
-    requires=['sympy_to_c (>=0.1.2)'],
-    package_data={'modeling_scripts/c_files': ['*.so']},
+    requires=['sympy_to_c (>=0.1.2)', 'ffmpeg'],
+    package_data={'pygent.modeling_scripts.c_files': ['*.so']},
     url='https//github.com/mpritzkoleit/pygent',
     author='Max Pritzkoleit',
     author_email='Max.Pritzkoleit@tu-dresden.de',

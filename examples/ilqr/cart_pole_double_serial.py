@@ -1,32 +1,37 @@
-from environments import CartPoleDoubleSerial
-from algorithms.ilqr import iLQR
+from pygent.environments import CartPoleDoubleSerial
+from pygent.algorithms.ilqr import iLQR
 import numpy as np
 import matplotlib.pyplot as plt
 
-def cost(x, u):
+# define the incremental cost
+def c_k(x, u):
     x1, x2, x3, x4, x5, x6 = x
     u1, = u
-    c = 15*x1**2 + 10*x2**2 + 10*x3**2 + .01*u1**2
+    c = 15*x1**2 + 10*x2**2 + 10*x3**2 + .1*u1**2
     return c
 
-
-def finalcost(x):
+# define the final cost at step N
+def c_N(x):
     x1, x2, x3, x4, x5, x6 = x
-    c = 100*x1**2 + 100*x2**2 + 100*x3**2
+    c = 100*x1**2 + 100*x2**2 + 100*x3**2 + 10*x4**2 + 10*x5**2 + 10*x6**2
     return c
 
-
+# initial state value
 x0 = [0, np.pi, np.pi, 0, 0, 0]
 
-t = 3.5
-dt = 0.005
+t = 5 # simulation time
+dt = 0.01 # time step-size
 
-cartPole = CartPoleDoubleSerial(cost, x0, dt)
+env = CartPoleDoubleSerial(c_k, x0, dt)
 
 path = '../../../results/ilqr/cart_pole_double_serial/'
-controller = iLQR(cartPole, t, dt, constrained=True, fcost=finalcost, path=path)
-controller.run(x0)
-controller.run_optim()
-controller.plot()
+
+algorithm = iLQR(env, t, dt, constrained=True, fcost=c_N, path=path, maxIters=1000) # instance of the iLQR algorithm
+
+algorithm.run_optim() # run trajectory optimization
+
+# plot trajectories
+algorithm.plot()
 plt.show()
-controller.animation()
+# create an animation
+algorithm.animation()

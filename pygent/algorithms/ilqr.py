@@ -1,5 +1,5 @@
-from numba import jit
 import numpy as np
+np.random.seed(0)
 import matplotlib.pyplot as plt
 import time
 import copy
@@ -15,9 +15,10 @@ import cvxopt as opt
 opt.solvers.options['show_progress'] = False
 
 # pygent
-from helpers import c2d, system_linearization
-from agents import FeedBack, Agent
-from algorithms.core import Algorithm
+from pygent.helpers import c2d, system_linearization
+from pygent.agents import FeedBack, Agent
+from pygent.algorithms.core import Algorithm
+from pygent.helpers import mapAngles
 
 
 class iLQR(Algorithm):
@@ -47,9 +48,16 @@ class iLQR(Algorithm):
         nData: maximum length of data set
 
     """
-
-    def __init__(self, environment, t, dt, maxIters=500, tolGrad=1e-4,
-                 tolFun=1e-7, fastForward=False, path='../Results/iLQR/', fcost=None, constrained=False, save_interval=10):
+    def __init__(self, environment, t, dt,
+                 maxIters=500,
+                 tolGrad=1e-4,
+                 tolFun=1e-7,
+                 fastForward=False,
+                 path='../results/ilqr/',
+                 fcost=None,
+                 constrained=False,
+                 save_interval=10,
+                 printing=True):
         """
 
         Args:
@@ -80,9 +88,10 @@ class iLQR(Algorithm):
             os.makedirs(path + 'c_files/')
         copyfile(inspect.stack()[-1][1], path + 'exec_script.py')
         self.fastForward = fastForward  # if True use Eulers Method instead of ODE solver
-        agent = FeedBack(None, self.uDim)
+        agent = FeedBack(None, self.uDim) 
         super(iLQR, self).__init__(environment, agent, t, dt)
         self.environment.xIsAngle = np.zeros(self.xDim, dtype=bool)
+        self.xIsAngle = self.environment.xIsAngle
         self.cost = 0.
         if fcost == None:
             self.fcost_fnc = lambda x, mod: self.cost_fnc(x, np.zeros((1, self.uDim)), mod)
@@ -92,6 +101,7 @@ class iLQR(Algorithm):
         self.cost_init()
         self.init_trajectory()
         self.current_alpha = 1
+        self.printing = printing
         # todo: mu to eta
 
         # algorithm parameters
@@ -109,6 +119,10 @@ class iLQR(Algorithm):
         self.lims = self.environment.uMax
         self.regType = 2.
         self.save_interval = save_interval
+        self.parallel = False
+
+        self.KK = []
+        self.kk = []
 
     def cost_fnc(self, x, u, mod):
         """
@@ -158,7 +172,9 @@ class iLQR(Algorithm):
         xx = self.environment.history
         uu = self.agent.history[1:]
 
-        return xx, uu, cost
+        
+
+        return xx, uu, cost, self.environment.terminated
 
     def backward_pass(self):
         x = self.xx[-1]
@@ -260,11 +276,18 @@ class iLQR(Algorithm):
 
     def run(self, x0):
         self.environment.reset(x0)
+        self.xx, self.uu, self.cost, terminated = self.forward_pass(1.)
+        pass
+
+    def run_disk(self, x0):
+        self.environment.reset(x0)
         self.KK = np.load(self.path + 'data/K_.npy')
         self.kk = np.load(self.path + 'data/k.npy')
         self.uu = np.load(self.path + 'data/uu.npy')
         self.xx = np.load(self.path + 'data/xx.npy')
-        self.xx, self.uu, self.cost = self.forward_pass(self.current_alpha)
+        self.current_alpha = np.load(self.path + 'data/alpha.npy')
+        print(self.current_alpha)
+        self.xx, self.uu, self.cost, terminated = self.forward_pass(self.current_alpha)
         pass
 
 
@@ -294,11 +317,16 @@ class iLQR(Algorithm):
 
                 # Line-search
                 # todo: add parallel linesearch
+                x_list = []
+                u_list = []
+                cost_list = []
                 for a_index, alpha in enumerate(self.alphas):
-                    self.current_alpha = alpha
-                    print('Linesearch:', a_index+1, '/', len(self.alphas))
-                    xx, uu, cost = self.forward_pass(alpha)
-                    if np.any(xx > 1e8):
+                    #print('Linesearch:', a_index+1, '/', len(self.alphas))
+                    xx, uu, cost, sys_terminated = self.forward_pass(alpha)
+                    x_list.append(xx)
+                    u_list.append(uu)
+                    cost_list.append(cost)
+                    if np.any(xx > 1e8):# or sys_terminated:
                         print('forward diverged.')
                         break
                     # cost difference between iterations
@@ -313,32 +341,41 @@ class iLQR(Algorithm):
                     else:
                         z = np.sign(dcost)
                         print('non-positive expected reduction')
-
+                        #self.increase_mu() # todo: probably delete this line, if something's not working!
                     if z > self.zmin:
                         success_fw = True
-                        break
+                        if not self.parallel:
+                            break
             if success_fw:
-                print('Iter. ', _, '| Cost: %.7f' % self.cost, ' | red.: %.5f' % dcost, '| exp.: %.5f' % expected)
-                self.cost = np.copy(cost)
-                self.xx = np.copy(xx)
-                self.uu = np.copy(uu)
+                #todo: cost instead of self.cost in print?
+                if self.printing:
+                    print('Iter. ', _, '| Cost: %.7f' % cost, ' | red.: %.5f' % dcost, '| exp.: %.5f' % expected)
+                best_idx = np.argmin(cost_list)
+                self.cost = np.copy(cost_list[best_idx])
+                self.xx = np.copy(x_list[best_idx])
+                self.uu = np.copy(u_list[best_idx])
+                self.current_alpha = self.alphas[best_idx]
 
                 # decrease mu
                 self.decrease_mu()
 
                 if dcost < self.tolFun:
-                    print('Converged: small improvement')
+                    if self.printing:
+                        print('Converged: small improvement')
                     break
                 if success_gradient:
-                    print('Converged: small gradient')
+                    if self.printing:
+                        print('Converged: small gradient')
                     break
                 if _ % self.save_interval == 0:
                     self.save()
             else:
                 self.increase_mu()
-                print('Iter. ', _, '| Forward not successfull')
+                if self.printing:
+                    print('Iter. ', _, '| Forward not successfull')
                 if self.mu > self.mu_max:
-                    print('Diverged: no improvement')
+                    if self.printing:
+                        print('Diverged: no improvement')
                     break
 
         print('Iterations: %d | Final Cost-to-Go: %.2f | Runtime: %.2f min.' % (_, self.cost, (time.time() - start_time) / 60))
@@ -349,7 +386,7 @@ class iLQR(Algorithm):
         """ Initial trajectory, with u=0. """
 
         for _ in range(self.steps):
-            u = np.random.uniform(0., 0., self.uDim)
+            u = np.random.uniform(0.001, 0.001, self.uDim)
             u = self.agent.control(self.dt, u)
             # necessary to store control in agents history
             if self.fastForward:
@@ -437,6 +474,7 @@ class iLQR(Algorithm):
         pass
 
     def cost_lin(self, x, u):
+        x = mapAngles(self.xIsAngle, x)
         Cxx = self.Cxx(x, u)
         Cuu = self.Cuu(x, u)
         Cxu = self.Cxu(x, u)
@@ -458,17 +496,11 @@ class iLQR(Algorithm):
 
     def plot(self):
         self.environment.plot()
+        self.environment.save_history('environment', self.path + 'data/')
         plt.savefig(self.path + 'plots/environment.pdf')
-        try:
-            plt.savefig(self.path + 'plots/environment.pgf')
-        except:
-            pass
         self.agent.plot()
+        self.agent.save_history('agent', self.path + 'data/')
         plt.savefig(self.path + 'plots/controller.pdf')
-        try:
-            plt.savefig(self.path + 'plots/controller.pgf')
-        except:
-            pass
         plt.close('all')
 
     def animation(self):
@@ -485,144 +517,6 @@ class iLQR(Algorithm):
         np.save(self.path + 'data/k', self.kk)
         np.save(self.path + 'data/uu', self.uu)
         np.save(self.path + 'data/xx', self.xx)
-
-
-class NMPC(iLQR):
-    """ Nonlinear model predictive control (NMPC) algorithm based on iLQR.
-
-    Args:
-        horizon (int): optimization horizon. """
-
-    def __init__(self, environment, t, dt, horizon=.6, maxIters=2, tolGrad=1e-4,
-                 tolFun=1e-7, fastForward=True, path='../Results/iLQR/', constrained=False):
-        self.sim_environment = copy.deepcopy(environment)
-        self.sim_agent = FeedBack(None, self.sim_environment.uDim)
-        self.horizon = horizon
-        self.tsim = t
-        self.sim_steps = int(t/dt)
-        super(NMPC, self).__init__(environment=environment, t=horizon, dt=dt, maxIters=maxIters, tolGrad=tolGrad,
-                 tolFun=tolFun, fastForward=fastForward, path=path, fcost=None, constrained=constrained)
-
-    def mpc_step(self):
-        self.run_optim()
-        u = self.kk[0].T[0] + self.uu[0]
-        if self.constrained:
-            u = np.clip(u, -self.environment.uMax, self.environment.uMax)
-        u = self.sim_agent.control(self.dt, u)
-        c = self.sim_environment.step(u, self.dt)
-        u0 = self.agent.control(self.dt, np.zeros(self.uDim))
-        self.environment.step(u0, self.dt)
-        self.xx = self.environment.history[1:]
-        self.uu = self.agent.history[2:]
-        self.environment.history = self.xx
-        self.agent.history = self.uu
-        self.environment.x0 = self.xx[0]
-        return c
-
-    def run_mpc(self):
-        cost = 0
-        for _ in range(self.sim_steps):
-            print('NMPC step:', _, '/', self.sim_steps)
-            cost += self.mpc_step()
-
-    def plot(self):
-        self.sim_environment.plot()
-        plt.savefig(self.path + 'plots/environment.pdf')
-        try:
-            plt.savefig(self.path + 'plots/environment.pgf')
-        except:
-            pass
-        self.sim_agent.plot()
-        plt.savefig(self.path + 'plots/controller.pdf')
-        try:
-            plt.savefig(self.path + 'plots/controller.pgf')
-        except:
-            pass
-        plt.close('all')
-
-    def animation(self):
-        ani = self.sim_environment.animation()
-        if ani != None:
-            ani.save(self.path + 'animations/animation.mp4', fps=1 / self.dt)
-        plt.close('all')
-
-class NMPC2(Algorithm):
-    """ Nonlinear model predictive control (NMPC) algorithm based on iLQR.
-
-    Args:
-        horizon (float): optimization horizon. """
-
-    def __init__(self, environment, t, dt, horizon=.6, maxIters=1, fastForward=True,
-                 path='../Results/iLQR/', constrained=False):
-        super(NMPC2, self).__init__(environment, Agent(environment.uDim), t, dt)
-        self.planner = iLQR(copy.deepcopy(environment), horizon, dt, path=path, constrained=constrained,
-                            maxIters=maxIters, fastForward=fastForward)
-        self.horizon = horizon
-        self.tsim = t
-        self.sim_steps = int(t/dt)
-        self.constrained = constrained
-        self.path = path
-        self.kk = []
-        self.KK = []
-        self.planner.max_iters = 50
-        self.planner.run_optim()
-        self.planner.max_iters = maxIters
-
-    def mpc_step(self):
-        self.planner.run_optim()
-        # compute u
-        u = self.compute_u()
-        # apply u
-        c = self.environment.step(u, self.dt)
-        # shift planner x_k := x_k+1
-        self.shift_planner()
-        return c
-
-    def compute_u(self):
-        K = self.planner.KK[0]
-        k = self.planner.kk[0].T[0]
-        alpha = self.planner.current_alpha
-        x_ = self.planner.xx[0]
-        u_ = self.planner.uu[0]
-        u = K@(self.environment.x - x_) + alpha*k + u_  # eq. (7b)
-        if self.constrained:
-            u = np.clip(u, -self.environment.uMax, self.environment.uMax)
-        self.agent.control(self.dt, u)
-        return u
-
-    def shift_planner(self):
-        # apply u = 0
-        # delete time step k=0
-        # foward pass
-        self.planner.environment.reset(self.environment.x)
-        self.planner.xx, self.planner.uu, self.planner.cost = self.planner.forward_pass(self.planner.current_alpha)
-        #u0 = np.zeros(self.agent.uDim)
-        #self.planner.environment.step(self.dt, u0)
-        #self.planner.agent.control(self.dt, u0)
-        #self.planner.environment.history = self.planner.environment.history[1:]
-        #self.planner.environment.x0 = self.environment.x
-        #self.planner.agent.history = self.planner.agent.history[1:]
-        #self.planner.xx = self.planner.environment.history
-        #self.planner.uu = self.planner.agent.history[1:]
-        pass
-
-    def run_mpc(self):
-        cost = 0
-        for _ in range(self.sim_steps):
-            print('NMPC step:', _, '/', self.sim_steps)
-            cost += self.mpc_step()
-
-    def plot(self):
-        self.environment.plot()
-        plt.savefig(self.path + 'plots/environment.pdf')
-        plt.savefig(self.path + 'plots/environment.pgf')
-        self.agent.plot()
-        plt.savefig(self.path + 'plots/controller.pdf')
-        plt.savefig(self.path + 'plots/controller.pgf')
-        plt.close('all')
-
-    def animation(self):
-        ani = self.environment.animation()
-        if ani != None:
-            ani.save(self.path + 'animations/animation.mp4', fps=1 / self.dt)
-        plt.close('all')
+        np.save(self.path + 'data/alpha', self.current_alpha)
+        if self.printing:
+            self.plot()
