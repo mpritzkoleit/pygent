@@ -125,9 +125,7 @@ def modeling(linearized=True, fnc=True):
     Bsym = B.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values)
 
 
-    # callable functions
-    A_func = sp.lambdify((x1, x2, x3, x4, x5, x6, u), Asym, modules="numpy")
-    B_func = sp.lambdify((x1, x2, x3, x4, x5, x6, u), Bsym, modules="numpy")
+
 
 
     dx_t_sym = dx_t.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values) # replacing all symbolic functions with symbols
@@ -136,17 +134,24 @@ def modeling(linearized=True, fnc=True):
     try: # use c-code
         dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), dx_t_sym, cfilepath="c_files/cart_pole_double_serial.c",
                                       use_exisiting_so=False)
+        A_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), Asym,
+                                      cfilepath="c_files/cart_pole_double_serial_A.c",
+                                      use_exisiting_so=False)
+        B_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), Bsym,
+                                     cfilepath="c_files/cart_pole_double_serial_B.c",
+                                     use_exisiting_so=False)
+        A_func = lambda x, u: A_c_func(*x, *u)
+        B_func = lambda x, u: B_c_func(*x, *u)
         dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
-
     except:
         print('C-function of systems ODE could not be created')
         dx_func = sp.lambdify((x1, x2, x3, x4, x5, x6, u), dx_t_sym[:], modules="numpy")  # creating a callable python function
         dxdt = lambda t, x, u: np.array(dx_func(*x, *u))
+        # callable functions
+        A_func = lambda x, u: sp.lambdify((*x, *u), Asym, modules="numpy")
+        B_func = lambda x, u: sp.lambdify((*x, *u), Bsym, modules="numpy")
 
-    if not fnc:
-        return A_func, B_func
-    else:
-        return dxdt
+    return dxdt, A_func, B_func
 
 
 def load_existing():
@@ -155,13 +160,23 @@ def load_existing():
         dx_t_sym = sp.Matrix([[0], [0], [0], [0], [0], [0]])
         dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), dx_t_sym, cfilepath="c_files/cart_pole_double_serial.c",
                                       use_exisiting_so=True)
+        Asym = sp.zeros(6, 6)
+        A_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), Asym,
+                                     cfilepath="c_files/cart_pole_double_serial_A.c",
+                                     use_exisiting_so=True)
+        Bsym = sp.zeros(6, 1)
+        B_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), Bsym,
+                                     cfilepath="c_files/cart_pole_double_serial_B.c",
+                                     use_exisiting_so=True)
+        A_func = lambda x, u: A_c_func(*x, *u)
+        B_func = lambda x, u: B_c_func(*x, *u)
         dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
         assert(any(dxdt(0, [0, 0, 0, 1., 1., 1.], [0]) != [0., 0., 0., 0., 0., 0.]))
         print('Model loaded!')
     except:
         print('Model could not be loaded! Rerunning model creation!')
-        dxdt = modeling()
-    return dxdt
+        dxdt, A_func, B_func = modeling()
+    return dxdt, A_func, B_func
 
 if __name__ == "__main__":
     # execute only if run as a script

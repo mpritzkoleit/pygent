@@ -434,7 +434,7 @@ class CartPole(StateSpaceModel):
 
 class CartPoleDoubleSerial(StateSpaceModel):
     def __init__(self, cost, x0, dt, task='swing_up'):
-        self.ode = cart_pole_double_serial_ode()
+        self.ode, self.A, self.B = cart_pole_double_serial_ode()
         super(CartPoleDoubleSerial, self).__init__(self.ode, cost, x0, 1, dt)
         self.xIsAngle = [False, True, True, False, False, False]
         self.o = observation(self.x, self.xIsAngle)

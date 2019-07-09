@@ -38,7 +38,7 @@ def torch_jacobian(f, x):
     return fxx
 
 
-def hessian(f, xx, uu, eps=1e-3):
+def fxu(f, xx, uu, eps=1e-3):
     # finite differences approximation of d^2f(x, u)/dxdu
     # http://www.iue.tuwien.ac.at/phd/heinzl/node27.html Eq. 2.52
     xDim = len(xx)
@@ -51,8 +51,8 @@ def hessian(f, xx, uu, eps=1e-3):
             H[i, j] = (f(xx+ex, uu+eu) - f(xx-ex, uu+eu) - f(xx+ex, uu-eu) + f(xx-ex, uu-eu))/(4*eps**2)
     return H
 
-def hessian2(f, xx, uu, eps=1e-3):
-    # finite differences approximation of d^2f(x, u)/dxdu
+def fxx(f, xx, uu, eps=1e-3):
+    # finite differences approximation of d^2f(x, u)/dxdx
     # http://www.iue.tuwien.ac.at/phd/heinzl/node27.html Eq. 2.52
     xDim = len(xx)
     uDim = len(uu)
@@ -64,8 +64,20 @@ def hessian2(f, xx, uu, eps=1e-3):
             H[i, j] = (f(xx+exi+exj, uu) - f(xx-exi+exj, uu) - f(xx+exi-exj, uu) + f(xx-exi-exj, uu))/(4*eps**2)
     return H
 
-def hessian3(f, xx, uu, eps=1e-3):
-    # finite differences approximation of d^2f(x, u)/dxdu
+def fxxN(f, xx, eps=1e-3):
+    # finite differences approximation of d^2f(x, u)/dxdx
+    # http://www.iue.tuwien.ac.at/phd/heinzl/node27.html Eq. 2.52
+    xDim = len(xx)
+    H = np.zeros([xDim, xDim])
+    for i, xi in enumerate(xx):
+        for j, xj in enumerate(xx):
+            exi = np.eye(1, xDim, i)[0]*eps
+            exj = np.eye(1, xDim, j)[0]*eps
+            H[i, j] = (f(xx+exi+exj) - f(xx-exi+exj) - f(xx+exi-exj) + f(xx-exi-exj))/(4*eps**2)
+    return H
+
+def fuu(f, xx, uu, eps=1e-3):
+    # finite differences approximation of d^2f(x, u)/dudu
     # http://www.iue.tuwien.ac.at/phd/heinzl/node27.html Eq. 2.52
     xDim = len(xx)
     uDim = len(uu)
@@ -77,7 +89,45 @@ def hessian3(f, xx, uu, eps=1e-3):
             H[i, j] = (f(xx, uu+eui+euj) - f(xx, uu-eui+euj) - f(xx, uu+eui-euj) + f(xx, uu-eui-euj))/(4*eps**2)
     return H
 
-def system_linearization(f, xx, uu, eps=2**-17):
+def fx(f, xx, uu, eps=1e-3):
+    xDim = len(xx)
+    if np.isscalar(f(xx, uu)):
+        outDim = 1
+    else:
+        outDim = len(f(xx, uu))
+
+    fx = np.zeros([outDim, xDim])
+    for i, x in enumerate(xx):
+        ex = np.eye(1, xDim, i)[0] * eps
+        fx[:, i] = (f(xx + ex, uu) - f(xx - ex, uu)) / (2 * eps)
+    return fx
+
+def fxN(f, xx, eps=1e-3):
+    xDim = len(xx)
+    if np.isscalar(f(xx)):
+        outDim = 1
+    else:
+        outDim = len(f(xx))
+    fx = np.zeros([outDim, xDim])
+    for i, x in enumerate(xx):
+        ex = np.eye(1, xDim, i)[0] * eps
+        fx[:, i] = (f(xx + ex) - f(xx - ex)) / (2 * eps)
+    return fx
+
+def fu(f, xx, uu, eps=1e-3):
+    uDim = len(uu)
+    if np.isscalar(f(xx, uu)):
+        outDim = 1
+    else:
+        outDim = len(f(xx, uu))
+
+    fu = np.zeros([outDim, uDim])
+    for j, u in enumerate(uu):
+        eu = np.eye(1, uDim, j)[0] * eps
+        fu[:, j] = (f(xx, uu + eu) - f(xx, uu - eu)) / (2 * eps)
+    return fu
+
+def system_linearization(f, xx, uu, eps=1e-3):
     # finite differences approximation of A = df/dx and B = df/du
     # http://www.iue.tuwien.ac.at/phd/heinzl/node27.html Eq. 2.52
     xDim = len(xx)

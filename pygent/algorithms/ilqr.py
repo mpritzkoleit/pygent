@@ -15,7 +15,7 @@ import cvxopt as opt
 opt.solvers.options['show_progress'] = False
 
 # pygent
-from pygent.helpers import c2d, system_linearization
+from pygent.helpers import c2d, system_linearization, fx, fu, fxx, fxu, fuu, fxN, fxxN
 from pygent.agents import FeedBack, Agent
 from pygent.algorithms.core import Algorithm
 from pygent.helpers import mapAngles
@@ -59,7 +59,9 @@ class iLQR(Algorithm):
                  save_interval=10,
                  printing=True,
                  log_data=False,
-                 regType = 2):
+                 dataset_size=1e6,
+                 regType = 2,
+                 finite_diff = False):
         """
 
         Args:
@@ -94,6 +96,7 @@ class iLQR(Algorithm):
         super(iLQR, self).__init__(environment, agent, t, dt)
         #self.environment.xIsAngle = np.zeros(self.xDim, dtype=bool)
         self.xIsAngle = self.environment.xIsAngle
+        self.finite_diff = finite_diff
         self.cost = 0.
         if fcost == None:
             self.fcost_fnc = lambda x, mod: self.cost_fnc(x, np.zeros((1, self.uDim)), mod)
@@ -102,7 +105,8 @@ class iLQR(Algorithm):
                 self.fcost_fnc = lambda x, mod: fcost(x)  # final cost
             elif inspect.signature(fcost).parameters.__len__() == 2:
                 self.fcost_fnc = fcost
-        self.cost_init()
+        if not self.finite_diff:
+            self.cost_init()
         self.init_trajectory()
         self.current_alpha = 1
         self.printing = printing
@@ -124,9 +128,8 @@ class iLQR(Algorithm):
         self.regType = regType
         self.save_interval = save_interval
         self.parallel = False
-        if log_data == True:
-            self.R = DataSet(1e6)
-
+        self.log_data = log_data
+        self.R = DataSet(dataset_size)
         self.KK = []
         self.kk = []
 
@@ -172,11 +175,10 @@ class iLQR(Algorithm):
             else:
                 c = self.environment.step(u, self.dt)
             cost += c
-            if self.R != None:
+            if self.log_data:
                 # store transition in data set (x_, u, x, c)
-                transition = ({'x_': self.environment.o_, 'u': self.agent.u, 'x': self.environment.o,
-                               'c': [c], 't': [self.environment.terminated]})
-
+                transition = ({'x_': self.environment.x_, 'u': self.agent.u, 'x': self.environment.x,
+                               'o_': self.environment.o_, 'o': self.environment.o})
                 # add sample to data set
                 self.R.force_add_sample(transition)
 
@@ -195,8 +197,12 @@ class iLQR(Algorithm):
         cost_matrices = [self.cost_lin(x, u) for x, u in zip(self.xx[:-1], self.uu)]
 
         # DARE in Vt, vt
-        vx = self.cfx(x)*self.dt
-        Vxx = self.Cfxx(x)*self.dt
+        if self.finite_diff:
+            vx = fxN(lambda xx: self.fcost_fnc(xx, np), x).T*self.dt
+            Vxx = fxxN(lambda xx: self.fcost_fnc(xx, np), x)*self.dt
+        else:
+            vx = self.cfx(x)*self.dt
+            Vxx = self.Cfxx(x)*self.dt
 
         dV1 = np.zeros((1, 1))
         dV2 = np.zeros((1, 1))
@@ -359,7 +365,6 @@ class iLQR(Algorithm):
                         if not self.parallel:
                             break
             if success_fw:
-                #todo: cost instead of self.cost in print?
                 if self.printing:
                     print('Iter. ', _, '| Cost: %.7f' % cost, ' | red.: %.5f' % dcost, '| exp.: %.5f' % expected)
                 best_idx = np.argmin(cost_list)
@@ -398,7 +403,7 @@ class iLQR(Algorithm):
         """ Initial trajectory, with u=0. """
 
         for _ in range(self.steps):
-            u = np.random.uniform(0.01, 0.01, self.uDim)
+            u = np.random.uniform(0.1, 0.1, self.uDim)
             u = self.agent.control(self.dt, u)
             # necessary to store control in agents history
             if self.fastForward:
@@ -486,11 +491,18 @@ class iLQR(Algorithm):
         pass
 
     def cost_lin(self, x, u):
-        Cxx = self.Cxx(x, u)
-        Cuu = self.Cuu(x, u)
-        Cxu = self.Cxu(x, u)
-        cx = self.cx(x, u)
-        cu = self.cu(x, u)
+        if self.finite_diff:
+            Cxx = fxx(lambda x, u: self.cost_fnc(x, u, np), x, u)
+            Cuu = fuu(lambda x, u: self.cost_fnc(x, u, np), x, u)
+            Cxu = fxu(lambda x, u: self.cost_fnc(x, u, np), x, u)
+            cx = fx(lambda x, u: self.cost_fnc(x, u, np), x, u).T
+            cu = fu(lambda x, u: self.cost_fnc(x, u, np), x, u).T
+        else:
+            Cxx = self.Cxx(x, u)
+            Cuu = self.Cuu(x, u)
+            Cxu = self.Cxu(x, u)
+            cx = self.cx(x, u)
+            cu = self.cu(x, u)
         return Cxx, Cuu, Cxu, cx, cu
 
     def decrease_mu(self):
