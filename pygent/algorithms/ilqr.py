@@ -19,7 +19,7 @@ from pygent.helpers import c2d, system_linearization
 from pygent.agents import FeedBack, Agent
 from pygent.algorithms.core import Algorithm
 from pygent.helpers import mapAngles
-
+from pygent.data import DataSet
 
 class iLQR(Algorithm):
     """ iLQR - iterative linear-quadratic regulator with box control constraints.
@@ -57,7 +57,9 @@ class iLQR(Algorithm):
                  fcost=None,
                  constrained=False,
                  save_interval=10,
-                 printing=True):
+                 printing=True,
+                 log_data=False,
+                 regType = 2):
         """
 
         Args:
@@ -90,7 +92,7 @@ class iLQR(Algorithm):
         self.fastForward = fastForward  # if True use Eulers Method instead of ODE solver
         agent = FeedBack(None, self.uDim) 
         super(iLQR, self).__init__(environment, agent, t, dt)
-        self.environment.xIsAngle = np.zeros(self.xDim, dtype=bool)
+        #self.environment.xIsAngle = np.zeros(self.xDim, dtype=bool)
         self.xIsAngle = self.environment.xIsAngle
         self.cost = 0.
         if fcost == None:
@@ -98,6 +100,8 @@ class iLQR(Algorithm):
         else:
             if inspect.signature(fcost).parameters.__len__() == 1:
                 self.fcost_fnc = lambda x, mod: fcost(x)  # final cost
+            elif inspect.signature(fcost).parameters.__len__() == 2:
+                self.fcost_fnc = fcost
         self.cost_init()
         self.init_trajectory()
         self.current_alpha = 1
@@ -117,9 +121,11 @@ class iLQR(Algorithm):
         self.tolFun = tolFun
         self.constrained = constrained
         self.lims = self.environment.uMax
-        self.regType = 2.
+        self.regType = regType
         self.save_interval = save_interval
         self.parallel = False
+        if log_data == True:
+            self.R = DataSet(1e6)
 
         self.KK = []
         self.kk = []
@@ -166,6 +172,13 @@ class iLQR(Algorithm):
             else:
                 c = self.environment.step(u, self.dt)
             cost += c
+            if self.R != None:
+                # store transition in data set (x_, u, x, c)
+                transition = ({'x_': self.environment.o_, 'u': self.agent.u, 'x': self.environment.o,
+                               'c': [c], 't': [self.environment.terminated]})
+
+                # add sample to data set
+                self.R.force_add_sample(transition)
 
         cost += self.fcost_fnc(self.environment.x, np)*self.dt
 
@@ -261,7 +274,6 @@ class iLQR(Algorithm):
             vx = qx + Kt.T@Quu@kt + Kt.T@qu + Qux.T@kt
             Vxx = Qxx + Kt.T@Quu@Kt + Kt.T@Qux + Qux.T@Kt
             Vxx = 0.5*(Vxx + Vxx.T)  # remain symmetry
-
             dV2 = 0.5*kt.T@Quu@kt
             dV1 = kt.T@qu
 
@@ -386,7 +398,7 @@ class iLQR(Algorithm):
         """ Initial trajectory, with u=0. """
 
         for _ in range(self.steps):
-            u = np.random.uniform(0.001, 0.001, self.uDim)
+            u = np.random.uniform(0.01, 0.01, self.uDim)
             u = self.agent.control(self.dt, u)
             # necessary to store control in agents history
             if self.fastForward:
@@ -474,7 +486,6 @@ class iLQR(Algorithm):
         pass
 
     def cost_lin(self, x, u):
-        x = mapAngles(self.xIsAngle, x)
         Cxx = self.Cxx(x, u)
         Cuu = self.Cuu(x, u)
         Cxu = self.Cxu(x, u)
