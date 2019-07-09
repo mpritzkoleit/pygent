@@ -11,7 +11,7 @@ import pickle
 '''
 https://www.acin.tuwien.ac.at/file/publications/cds/pre_post_print/glueck2013.pdf
 '''
-def modeling():
+def modeling(linearized=True):
     t = sp.Symbol('t') # time
     params = sp.symbols('m0, m1, m2, m3, J1, J2, J3, a1, a2, a3, l1, l2, l3, g, d0, d1, d2, d3') # system parameters
     m0, m1, m2, m3, J1, J2, J3, a1, a2, a3, l1, l2, l3, g, d0, d1, d2, d3 = params
@@ -94,7 +94,10 @@ def modeling():
 
     # solve for ddq/dt
     ddq_t = sp.Matrix([ddq0_t, ddq1_t, ddq2_t, ddq3_t])
-    ddq = sp.solve(Eq_lin, ddq_t)
+    if linearized:
+        ddq = sp.solve(Eq_lin, ddq_t)
+    else:
+        ddq = sp.solve(Eq, ddq_t)
     # state space model
 
     # functions of x, u
@@ -115,9 +118,12 @@ def modeling():
     xx = [x1, x2, x3, x4, x5, x6, x7, x8]
 
     # replace generalized coordinates with states
-    xu_subs = [(dq0_t, x5_t), (dq1_t, x6_t), (dq2_t, x7_t), (dq3_t, x8_t),
-               (q0_t, x1_t), (q1_t, x2_t), (q2_t, x3_t), (q3_t, x4_t), (a, u_t)]
-
+    if linearized:
+        xu_subs = [(dq0_t, x5_t), (dq1_t, x6_t), (dq2_t, x7_t), (dq3_t, x8_t),
+                   (q0_t, x1_t), (q1_t, x2_t), (q2_t, x3_t), (q3_t, x4_t), (a, u_t)]
+    else:
+        xu_subs = [(dq0_t, x5_t), (dq1_t, x6_t), (dq2_t, x7_t), (dq3_t, x8_t),
+                   (q0_t, x1_t), (q1_t, x2_t), (q2_t, x3_t), (q3_t, x4_t), (F, u_t)]
     # first order ODE (right hand side)
     dx_t = sp.Matrix([x5_t, x6_t, x7_t, x8, ddq[ddq0_t], ddq[ddq1_t], ddq[ddq2_t], ddq[ddq3_t]])
     dx_t = dx_t.subs(xu_subs)
@@ -134,7 +140,7 @@ def modeling():
     B_func = sp.lambdify((x2, x3), Bsym, modules="numpy")
 
     dx_t_sym = dx_t.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values) # replacing all symbolic functions with symbols
-
+    print(dx_t_sym)
     # RHS as callable function
     try: # use c-code
         dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym, cfilepath="c_files/cart_pole_triple.c",

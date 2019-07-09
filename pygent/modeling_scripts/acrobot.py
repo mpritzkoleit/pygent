@@ -7,7 +7,7 @@ except ImportError:
     print('sympy-to-c could not be imported!')
 
 
-def modeling():
+def modeling(linearized=True):
     t = sp.Symbol('t') # time
     params = sp.symbols('m0, m1, J0, J1, l0, l1, g, d0, d1') # system parameters
     m0, m1, J0, J1, l0, l1, g, d0, d1 = params
@@ -57,12 +57,26 @@ def modeling():
     # equations of motion
     Eq = sp.Matrix([Eq0, Eq1])
 
+    # partial linerization / acceleration as input, not force/torque
+    # new input - acceleration of the cart
+    a = sp.Function('a')(t)
+
+    # replace ddq0 with a
+    Eq_a = Eq.subs(ddq1_t, a)
+
+    # solve for F
+    sol = sp.solve(Eq_a, tau)
+    tau_a = sol[tau]  # F(a)
+
+    # partial linearization
+    Eq_lin = Eq.subs(tau, tau_a)
+
+    # solve for ddq/dt
     ddq_t = sp.Matrix([ddq0_t, ddq1_t])
-    M = Eq.jacobian(ddq_t)
-
-    q_zeros = [(ddq0_t, 0), (ddq1_t, 0)]
-    ddq = M.inv()* -Eq.subs(q_zeros)
-
+    if linearized:
+        ddq = sp.solve(Eq_lin, ddq_t)
+    else:
+        ddq = sp.solve(Eq, ddq_t)
     # state space model
 
     # functions of x, u
@@ -79,11 +93,14 @@ def modeling():
     xx = [x1, x2, x3, x4]
 
     # replace generalized coordinates with states
-    xu_subs = [(dq0_t, x3_t), (dq1_t, x4_t), (q0_t, x1_t), (q1_t, x2_t), (tau, u_t)]
+    if linearized:
+        xu_subs = [(dq0_t, x3_t), (dq1_t, x4_t), (q0_t, x1_t), (q1_t, x2_t), (tau_a, u_t)]
+    else:
+        xu_subs = [(dq0_t, x3_t), (dq1_t, x4_t), (q0_t, x1_t), (q1_t, x2_t), (tau, u_t)]
     ddq = ddq.subs(xu_subs)
 
     # first order ODE (right hand side)
-    dx_t = sp.Matrix([x3_t, x4_t, ddq[0], ddq[1]])
+    dx_t = sp.Matrix([x3_t, x4_t, ddq[ddq0_t], ddq[ddq1_t]])
 
     # linearized dynamics
     A = dx_t.jacobian(x_t)
@@ -98,7 +115,7 @@ def modeling():
     B_func = sp.lambdify((x1, x2, x3, x4, u), Bsym, modules="numpy")
 
     dx_t_sym = dx_t.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values) # replacing all symbolic functions with symbols
-
+    print(dx_t_sym)
     # RHS as callable function
     try: # use c-code
         dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, u), dx_t_sym, cfilepath="c_files/acrobot.c",
@@ -130,4 +147,4 @@ def load_existing():
 
 if __name__ == "__main__":
     # execute only if run as a script
-    modeling()
+    modeling(linearized=True)

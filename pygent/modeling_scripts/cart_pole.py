@@ -7,7 +7,7 @@ try:
 except ImportError:
     print('sympy-to-c could not be imported!')
 
-def modeling():
+def modeling(linearized=True):
     t = sp.Symbol('t') # time
     params = sp.symbols('m0, m1, J1, a1, l1, g, d0, d1') # system parameters
     m0, m1, J1, a1, l1, g, d0, d1 = params # J = 4/3*m1*l1**2
@@ -87,8 +87,10 @@ def modeling():
 
     # solve for ddq/dt
     ddq_t = sp.Matrix([ddq0_t, ddq1_t])
-    ddq = sp.solve(Eq_lin, ddq_t)
-
+    if linearized:
+        ddq = sp.solve(Eq_lin, ddq_t)
+    else:
+        ddq = sp.solve(Eq, ddq_t)
 
     # state space model
 
@@ -106,8 +108,10 @@ def modeling():
     xx = [x1, x2, x3, x4]
 
     # replace generalized coordinates with states
-    xu_subs = [(dq0_t, x3_t), (dq1_t, x4_t), (q0_t, x1_t), (q1_t, x2_t), (a, u_t)]
-
+    if linearized:
+        xu_subs = [(dq0_t, x3_t), (dq1_t, x4_t), (q0_t, x1_t), (q1_t, x2_t), (a, u_t)]
+    else:
+        xu_subs = [(dq0_t, x3_t), (dq1_t, x4_t), (q0_t, x1_t), (q1_t, x2_t), (F, u_t)]
     # first order ODE (right hand side)
     dx_t = sp.Matrix([x3_t, x4_t, ddq[ddq0_t], ddq[ddq1_t]])
     dx_t = dx_t.subs(xu_subs)
@@ -149,10 +153,10 @@ def load_existing():
         print('Model loaded')
     except:
         print('Model could not be loaded! Rerunning model creation!')
-        dxdt = modeling()
+        dxdt = modeling(linearized=True)
     return dxdt
 
 
 if __name__ == "__main__":
     # execute only if run as a script
-    modeling()
+    modeling(linearized=False)
