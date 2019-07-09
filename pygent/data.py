@@ -48,6 +48,9 @@ class DataSet(object):
         """ Adds sample to data set without checking for duplicates."""
 
         self.data.append(sample)
+        # if data set exceeds length, pop first value (FIFO)
+        if self.length < self.data.__len__():
+            del self.data[0]
         return True
 
     def rm_sample(self, sample):
