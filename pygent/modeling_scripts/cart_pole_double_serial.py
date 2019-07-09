@@ -10,7 +10,7 @@ import pickle
 '''
 https://www.acin.tuwien.ac.at/file/publications/cds/pre_post_print/glueck2013.pdf
 '''
-def modeling(linearized=True, fnc=True):
+def modeling(linearized=False):
     t = sp.Symbol('t') # time
     params = sp.symbols('m0, m1, m2, J1, J2, a1, a2, l1, l2, g, d0, d1, d2') # system parameters
     m0, m1, m2, J1, J2, a1, a2, l1, l2, g, d0, d1, d2 = params
@@ -123,10 +123,6 @@ def modeling(linearized=True, fnc=True):
     # symbolic expressions of A and B with parameter values
     Asym = A.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values)
     Bsym = B.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values)
-
-
-
-
 
     dx_t_sym = dx_t.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values) # replacing all symbolic functions with symbols
     print(dx_t_sym)
