@@ -5,7 +5,7 @@ import numpy as np
 
 # define the incremental cost
 def c_k(x, u):
-	x = mapAngles([0, 1, 1, 0, 0, 0], x)
+    x = mapAngles([0, 1, 1, 0, 0, 0], x)
     x1, x2, x3, x4, x5, x6 = x
     u1, = u
     c = 0.5*x1**2 + x2**2 + x3**2 + 0.01*x4**2 + 0.01*x5**2+ 0.01*x6**2 + 0.01*u1**2
