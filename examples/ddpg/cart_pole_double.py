@@ -20,7 +20,7 @@ dt = 0.01 # time step-size
 
 env = CartPoleDoubleSerial(c_k, p_x0, dt)
 
-env.terminal_cost = 200 # define the terminal cost if x(k+1) is a terminal state
+env.terminal_cost = 2000 # define the terminal cost if x(k+1) is a terminal state
 
 path = '../../../results/cart_pole_double_serial/ddpg/'  # path, where results are saved
 
