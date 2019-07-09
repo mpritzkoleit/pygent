@@ -549,7 +549,7 @@ class ActorCriticDDPG(Agent):
             costs = costs.cuda()
             terminated = terminated.cuda()
         nextQ = self.critic2(xInputs, self.actor2(xInputs)).detach()
-        qTargets = costs + self.gamma*(1 - terminated)*nextQ #this should actually be (1 - terminated), but somehow this way training is more stable.
+        qTargets = costs + self.gamma*(1 - terminated*False)*nextQ #this should actually be (1 - terminated), but somehow this way training is more stable.
         qTargets = torch.squeeze(qTargets)
         if torch.cuda.is_available():
             x_Inputs = x_Inputs.cuda()
