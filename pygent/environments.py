@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
 import matplotlib.patches as patches
+from matplotlib.ticker import FuncFormatter, MultipleLocator
 from scipy.integrate import solve_ivp
 import inspect
 import pickle
@@ -93,10 +94,15 @@ class Environment(object):
                 ax[i].step(self.tt, self.history[:, i], 'b',  lw=1)
                 ax[i].set_ylabel(r'$x_'+str(i+1)+'$')
                 ax[i].grid(True)
+                if self.xIsAngle[i]:
+                    ax[i].yaxis.set_major_formatter(FuncFormatter(
+                        lambda val, pos: '{:.0g}$\pi$'.format(val / np.pi) if val != 0 else '0'))
+                    ax[i].yaxis.set_major_locator(MultipleLocator(base=np.pi))
         else:
             ax.step(self.tt, self.history[:, 0], 'b',  lw=1)
             ax.grid(True)
             plt.ylabel(r'$x_1$')
+        fig.align_ylabels(ax)
         plt.xlabel(r't[s]')
         plt.tight_layout()
         # Todo: save data in numpy arrays
@@ -246,9 +252,10 @@ class StateSpaceModel(Environment):
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         self.terminated = self.terminate(self.x)
-        x_2pi = mapAngles(self.xIsAngle, self.x_)
-        x2pi = mapAngles(self.xIsAngle, self.x)
-        c = (self.cost(x_2pi, u, x2pi, np) + self.terminal_cost*self.terminated)*dt
+        #x_2pi = mapAngles(self.xIsAngle, self.x_)
+        #x2pi = mapAngles(self.xIsAngle, self.x)
+        #c = (self.cost(x_2pi, u, x2pi, np) + self.terminal_cost*self.terminated)*dt
+        c = (self.cost(self.x_, u, self.x, np) + self.terminal_cost * self.terminated) * dt
         return c
 
     def terminate(self, x):
