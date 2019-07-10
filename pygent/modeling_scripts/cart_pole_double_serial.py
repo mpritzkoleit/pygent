@@ -10,7 +10,7 @@ import pickle
 '''
 https://www.acin.tuwien.ac.at/file/publications/cds/pre_post_print/glueck2013.pdf
 '''
-def modeling(linearized=False):
+def modeling(linearized=True):
     t = sp.Symbol('t') # time
     params = sp.symbols('m0, m1, m2, J1, J2, a1, a2, l1, l2, g, d0, d1, d2') # system parameters
     m0, m1, m2, J1, J2, a1, a2, l1, l2, g, d0, d1, d2 = params
@@ -176,4 +176,4 @@ def load_existing():
 
 if __name__ == "__main__":
     # execute only if run as a script
-    modeling()
+    load_existing()
