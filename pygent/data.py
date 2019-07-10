@@ -103,8 +103,8 @@ class DataSet(object):
             Args:
                 path (string): 'directory/filename.p'
             """
-
-        pickle.dump(self.data, open(path, 'wb'))
+        with open(path, 'wb') as opened_file:
+            pickle.dump(self.data, opened_file)
         pass
 
     def load(self, path):
@@ -113,5 +113,6 @@ class DataSet(object):
             Args:
                 path (string): 'directory/filename.p'
             """
-        self.data = pickle.load(open(path, 'rb'))
+        with open(path, 'rb') as opened_file:
+            self.data = pickle.load(opened_file)
         pass

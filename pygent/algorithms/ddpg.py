@@ -212,11 +212,13 @@ class DDPG(Algorithm):
         # save learning curve data
         learning_curve_dict = {'totalCost': self.totalCost, 'meanCost':self.meanCost,
                                'expCost': self.expCost, 'episode_steps': self.episode_steps}
-        pickle.dump(learning_curve_dict, open(self.path + 'data/learning_curve.p', 'wb'))
+        with open(self.path + 'data/learning_curve.p', 'wb') as opened_file:
+            pickle.dump(learning_curve_dict, opened_file)
         
         # save seed values of random number generators
         seed_dict = {'np_seed': np.random.get_state(), 'torch_seed': torch.get_rng_state()}
-        pickle.dump(seed_dict, open(self.path + 'data/seeds.p', 'wb'))
+        with open(self.path + 'data/seeds.p', 'wb') as opened_file:
+            pickle.dump(seed_dict, opened_file)
 
         print('Network parameters, data set and learning curve saved.')
 
@@ -237,7 +239,8 @@ class DDPG(Algorithm):
 
         # load learning curve
         if os.path.isfile(self.path + 'data/learning_curve.p'):
-            learning_curve_dict = pickle.load(open(self.path + 'data/learning_curve.p', 'rb'))
+            with open(self.path + 'data/learning_curve.p', 'rb') as opened_file:
+                learning_curve_dict = pickle.load(opened_file)
             self.meanCost = learning_curve_dict['meanCost']
             self.totalCost = learning_curve_dict['totalCost']
             self.expCost = learning_curve_dict['expCost']
@@ -248,7 +251,8 @@ class DDPG(Algorithm):
             print('No learning curve data found!')
         # load seed values for random number generators
         if os.path.isfile(self.path + 'data/seeds.p'):
-            seed_dict = pickle.load(open(self.path + 'data/seeds.p', 'rb'))
+            with open(self.path + 'data/seeds.p', 'rb') as opened_file:
+                seed_dict = pickle.load(opened_file)
             np.random.set_state(seed_dict['np_seed'])
             torch.set_rng_state(seed_dict['torch_seed'])
         pass
