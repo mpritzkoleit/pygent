@@ -14,9 +14,17 @@ from pygent.algorithms.core import Algorithm
 from pygent.algorithms.ilqr import iLQR
 
 class NMPC(Algorithm):
-    def __init__(self, environment, mpc_environment, t, dt, horizon, maxIters=500, step_iterations=1,
-                 tolGrad=1e-4, tolFun=1e-7, fastForward=False, path='../results/nmpc/',
-                 fcost=None, constrained=True, save_interval=10):
+    def __init__(self, environment, mpc_environment, t, dt, horizon,
+                 maxIters=500,
+                 step_iterations=1,
+                 tolGrad=1e-4,
+                 tolFun=1e-7,
+                 fastForward=False,
+                 path='../results/nmpc/',
+                 fcost=None,
+                 constrained=True,
+                 save_interval=10,
+                 init_optim=False):
         """
 
         Args:
@@ -52,7 +60,8 @@ class NMPC(Algorithm):
                          fcost=fcost,
                          constrained=constrained,
                          fastForward=fastForward,
-                         printing=True)
+                         printing=True,
+                         init_optim=init_optim)
         super(NMPC, self).__init__(environment, agent, t, dt)
         self.agent.traj_optimizer.printing = False
         self.save_interval = save_interval
@@ -109,7 +118,8 @@ class MPCAgent(Agent):
                  tolGrad = 1e-4,
                  tolFun = 1e-7,
                  save_interval=10,
-                 printing=True):
+                 printing=True,
+                 init_optim = True):
         super(MPCAgent, self).__init__(environment.uDim)
         self.traj_optimizer = iLQR(environment, horizon, dt,
                                    path=path,
@@ -123,7 +133,8 @@ class MPCAgent(Agent):
         self.uMax = self.traj_optimizer.environment.uMax
         self.init_iterations = init_iterations
         self.step_iterations = step_iterations
-        self.init_optim()
+        if init_optim==True:
+            self.init_optim()
         #self.traj_optimizer.plot()
 
     def init_optim(self):

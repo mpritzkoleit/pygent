@@ -15,7 +15,7 @@ from pygent.agents import Agent
 from pygent.data import DataSet
 from pygent.environments import StateSpaceModel
 from pygent.algorithms.core import Algorithm
-from pygent.algorithms.ilqr import iLQR
+from pygent.algorithms.nmpc import NMPC
 from pygent.nn_models import NNDynamics
 
 class MBRL(Algorithm):
@@ -33,8 +33,8 @@ class MBRL(Algorithm):
         nn_environment = StateSpaceModel(self.ode, environment.cost, environment.x0, uDim, dt)
         nn_environment.uMax = uMax
         #agent = MPCAgent(uDim, nn_environment, horizon, dt, path)
-        agent = MPCAgent(uDim, copy.deepcopy(environment), horizon, dt, path)
-        super(MBRL, self).__init__(environment, agent, t, dt)
+        self.nmpc_algorithm = NMPC(copy.deepcopy(environment), copy.deepcopy(environment), t, dt, horizon, path=path)
+        super(MBRL, self).__init__(environment, self.nmpc_algorithm.agent, t, dt)
         self.R = DataSet(nData)
         self.R_RL = DataSet(nData)
         self.plotInterval = plotInterval  # inter
@@ -43,7 +43,7 @@ class MBRL(Algorithm):
         self.path = path
         self.warm_up = warm_up
         self.batch_size = batch_size
-        self.dyn_steps_train = 60
+        self.dyn_steps_train = 1000
         self.aggregation_interval = aggregation_interval
 
         if not os.path.isdir(path):
@@ -150,15 +150,15 @@ class MBRL(Algorithm):
                 n (int): number of episodes
         """
 
-        for k in range(1, n + 1):
+        for k in range(1, int(n) + 1):
             if self.R.data.__len__()>self.batch_size:
                 for i in range(1):
                     print('train dynamics')
                     self.train_dynamics(self.R)
                     if self.R_RL.data.__len__() > self.batch_size:
-                        for i in range(9):
-                            self.train_dynamics(self.R_RL)
-            for i in range(2):
+                    #    for i in range(9):
+                         self.train_dynamics(self.R_RL)
+            for i in range(1):
                 self.run_episode()               
             # plot environment after episode finished
             print('Samples: ', self.R.data.__len__(), self.R_RL.data.__len__())
@@ -284,21 +284,22 @@ class MBRL(Algorithm):
         # loss function (mean squared error)
         criterion = nn.MSELoss()
         # create training data/targets
-        batch = dataSet.minibatch(self.batch_size)
-
-        for epoch in range(self.dyn_steps_train):
-
+        #batch = dataSet.minibatch(self.batch_size)
+        running_loss = 0.0
+        for iter in range(self.dyn_steps_train):
+            batch = dataSet.minibatch(self.batch_size)
+            if iter==2:
+                print(running_loss / max(1, iter))
             x_Inputs, xInputs, fOutputs = self.training_data(batch)
             # definition of loss functions
             loss = criterion(fOutputs, (xInputs - x_Inputs)/self.dt)
-            running_loss = 0.0
             # train
             self.optim.zero_grad()  # delete gradients
             loss.backward()  # error back-propagation
             self.optim.step()  # gradient descent step
             running_loss += loss.item()
-
             #self.eval() # eval mode on (batch normalization)
+        print(running_loss / max(1, iter))
         pass
 
     def training_data(self, batch):
@@ -309,91 +310,3 @@ class MBRL(Algorithm):
         return x_Inputs, xInputs, fOutputs
 
 
-
-class MPCAgent(Agent):
-    def __init__(self, uDim, environment, horizon, dt, path, init_iterations=500, fcost=None, constrained=True, fastForward=False):
-        super(MPCAgent, self).__init__(uDim)
-        self.traj_optimizer = iLQR(copy.deepcopy(environment), horizon, dt, path=path, fcost=fcost, constrained=constrained,fastForward=fastForward)
-        self.uMax = self.traj_optimizer.environment.uMax
-        self.init_iterations = init_iterations
-        self.init_optim()
-        #self.traj_optimizer.plot()
-
-    def init_optim(self):
-        self.traj_optimizer.max_iters = self.init_iterations
-        print('Running inital optimization.')
-        self.traj_optimizer.run_optim()
-        self.traj_optimizer.max_iters = 1
-        pass
-
-    def take_action(self, dt, x, idx=None):
-        """ Compute the control/action of the policy network (actor).
-
-            Args:
-                dt (float): stepsize
-                x (ndarray, list): state (input of policy network)
-
-            Returns:
-                u (ndarray): control/action
-        """
-
-        self.traj_optimizer.environment.x0 = x
-        self.traj_optimizer.run_optim()
-
-        kk = self.traj_optimizer.kk[0].T[0]
-        uu = self.traj_optimizer.uu[0]
-        alpha = self.traj_optimizer.current_alpha
-        self.u = uu + alpha*kk
-        self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
-        self.tt.extend([self.tt[-1] + dt])  # increment simulation time
-        self.shift_planner()
-        return self.u
-
-
-    def take_action_plan(self, dt, x, idx):
-        """ Compute the control/action of the policy network (actor).
-
-            Args:
-                dt (float): stepsize
-                x (ndarray, list): state (input of policy network)
-
-            Returns:
-                u (ndarray): control/action
-        """
-
-        #self.traj_optimizer.environment.x0 = x
-        #self.traj_optimizer.run_optim()
-        kk = self.traj_optimizer.kk[idx].T[0]
-        uu = self.traj_optimizer.uu[idx]
-        alpha = self.traj_optimizer.current_alpha
-        self.u = uu + alpha*kk
-        self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
-        self.tt.extend([self.tt[-1] + dt])  # increment simulation time
-        return self.u
-
-    def shift_planner(self):
-        self.traj_optimizer.uu[0:-1] = self.traj_optimizer.uu[1:]
-        self.traj_optimizer.xx[0:-1] = self.traj_optimizer.xx[1:]
-        self.traj_optimizer.kk[-1] = self.traj_optimizer.kk[-1]*0
-        self.traj_optimizer.KK[-1] = self.traj_optimizer.KK[-1]*0
-        u = self.traj_optimizer.uu[-1]
-        self.traj_optimizer.environment.step(u)
-        self.traj_optimizer.xx[-1] = self.traj_optimizer.environment.x
-        self.traj_optimizer.environment.reset(self.traj_optimizer.xx[0])
-        pass
-
-    def take_random_action(self, dt):
-        """ Compute a random control/action (actor).
-
-            Args:
-                dt (float): stepsize
-                x (ndarray, list): state (input of policy network)
-
-            Returns:
-                u (ndarray): noisy control/action
-        """
-
-        self.u = np.random.uniform(-self.uMax, self.uMax, self.uDim)
-        self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
-        self.tt.extend([self.tt[-1] + dt])  # increment simulation time
-        return self.u

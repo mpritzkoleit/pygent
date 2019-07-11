@@ -1,6 +1,6 @@
 from pygent.environments import CartPole
 from pygent.algorithms.ddpg import DDPG
-from pygent.algorithms.ilqr import iLQR
+from pygent.algorithms.mbrl import MBRL
 from pygent.data import DataSet
 from pygent.helpers import mapAngles
 import numpy as np
@@ -29,39 +29,13 @@ t = 10 # time of an episode
 dt = 0.02 # time step-size
 
 env = CartPole(c_k, p_x0, dt)
-env2 = CartPole(c_k, p_x0, dt)
-
-env2.terminal_cost = 200 # define the terminal cost if x(k+1) is a terminal state
-
-path = '../../../results/cart_pole/lqr-rl/'  # path, where results are saved
-
-algorithm = iLQR(env, 6, dt, path=path, fcost=c_N, constrained=True, dataset_size=1e4, maxIters=50) # instance of the iLQR algorithm
-
-rl_algorithm = DDPG(env2, t, dt, path=path, warm_up=0, actor_lr=1e-3, plotInterval=10, costScale=1) # instance of the DDPG algorithm
-
-algorithm.run_optim() # run trajectory optimization
 
 
-R = DataSet(1e6)
-D = DataSet(1e6)
-for transition in algorithm.R.data:
-    x_ = transition['x_']
-    o_ = transition['o_']
-    o = transition['o']
-    u = transition['u']
-    t = env2.terminate(x_)
-    c = c_k(mapAngles([0,1,0,0],x_), u)*dt
-    trans = ({'x_': o_, 'u': u, 'x': o,
-                   'c': [c], 't': [False]})
-    R.force_add_sample(trans)
-    trans = ({'x': o_, 'u': u})
-    D.force_add_sample(trans)
-pretrain_actor(rl_algorithm.agent.actor1, D)
-rl_algorithm.agent.blend_hard(rl_algorithm.agent.actor1, rl_algorithm.agent.actor2)
-rl_algorithm.R = R
-#algorithm.load() # can be used to load existing networks and data set
-#for _ in range(10000):
-#    rl_algorithm.agent.training(rl_algorithm.R)
-learning_steps = 5e5 # define training duration
-rl_algorithm.run_learning(learning_steps) # run reinforcment learning
+env.terminal_cost = 200 # define the terminal cost if x(k+1) is a terminal state
+
+path = '../../../results/mbrl'  # path, where results are saved
+
+rl_algorithm = MBRL(env, t, dt, path=path) # instance of the DDPG algorithm
+
+rl_algorithm.run_learning(1e6)
 
