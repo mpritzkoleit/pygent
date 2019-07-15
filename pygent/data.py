@@ -83,19 +83,47 @@ class DataSet(object):
 
         return sample
 
-    def minibatch(self, n):
+    def random_batch(self, n):
         """ Samples a minibatch of size 'n' from the data set.
 
             Args:
                 n(int): size of the minibatch
 
             Returns:
-                minibatch (list): batch of 'n' samples
+                random_batch (list): batch of 'n' samples
             """
 
-        #minibatch = random.sample(self.data, min(n, len(self.data)))
-        minibatch = np.random.choice(self.data, min(n, len(self.data)))
-        return minibatch
+        random_batch = np.random.choice(self.data, min(n, len(self.data)))
+        return random_batch
+
+    def shuffled_batches(self, n):
+        """ Returns a list of shuffled batches of size n from the dataset"""
+        idxs = np.arange(self.data.__len__())
+        np.random.shuffle(idxs)
+        batches = []
+        for i in range(int(self.data.__len__()/n)):
+            idx = idxs[i*n:(i+1)*n]
+            batch = [self.data[id] for id in idx]
+            batches.append(batch)
+        # add last batch of size < n
+        idx = idxs[(i+1)* n::]
+        batch = [self.data[id] for id in idx]
+        batches.append(batch)
+        return batches
+
+    def batches(self, n):
+        """ Returns a list of batches of size n from the dataset"""
+        idxs = np.arange(self.data.__len__())
+        batches = []
+        for i in range(int(self.data.__len__() / n)):
+            idx = idxs[i * n:(i + 1) * n]
+            batch = [self.data[id] for id in idx]
+            batches.append(batch)
+        # add last batch of size < n
+        idx = idxs[(i + 1) * n::]
+        batch = [self.data[id] for id in idx]
+        batches.append(batch)
+        return batches
 
     def save(self, path):
         """ Save data in file.

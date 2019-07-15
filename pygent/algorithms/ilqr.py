@@ -359,7 +359,7 @@ class iLQR(Algorithm):
                     else:
                         z = np.sign(dcost)
                         print('non-positive expected reduction')
-                        #self.increase_mu() # todo: probably delete this line, if something's not working!
+                        self.increase_mu() # todo: probably delete this line, if something's not working!
                     if z > self.zmin:
                         success_fw = True
                         if not self.parallel:

@@ -24,7 +24,8 @@ class NMPC(Algorithm):
                  fcost=None,
                  constrained=True,
                  save_interval=10,
-                 init_optim=False):
+                 init_optim=True,
+                 finite_diff=False):
         """
 
         Args:
@@ -61,9 +62,10 @@ class NMPC(Algorithm):
                          constrained=constrained,
                          fastForward=fastForward,
                          printing=True,
-                         init_optim=init_optim)
+                         init_optim=init_optim,
+                         finite_diff=finite_diff)
         super(NMPC, self).__init__(environment, agent, t, dt)
-        self.agent.traj_optimizer.printing = False
+        #self.agent.traj_optimizer.printing = False
         self.save_interval = save_interval
 
 
@@ -119,7 +121,8 @@ class MPCAgent(Agent):
                  tolFun = 1e-7,
                  save_interval=10,
                  printing=True,
-                 init_optim = True):
+                 init_optim = True,
+                 finite_diff=True):
         super(MPCAgent, self).__init__(environment.uDim)
         self.traj_optimizer = iLQR(environment, horizon, dt,
                                    path=path,
@@ -129,7 +132,8 @@ class MPCAgent(Agent):
                                    save_interval=save_interval,
                                    tolGrad = tolGrad,
                                    tolFun = tolFun,
-                                   printing=printing)
+                                   printing=printing,
+                                   finite_diff=finite_diff)
         self.uMax = self.traj_optimizer.environment.uMax
         self.init_iterations = init_iterations
         self.step_iterations = step_iterations
@@ -162,9 +166,38 @@ class MPCAgent(Agent):
         uu = self.traj_optimizer.uu[0]
         alpha = self.traj_optimizer.current_alpha
         self.u = uu + alpha*kk
+
+        kk = self.traj_optimizer.kk[0].T[0]
+        KK = self.traj_optimizer.KK[0]
+        uu = self.traj_optimizer.uu[0]
+        xx = self.traj_optimizer.xx[0]
+
+        alpha = self.traj_optimizer.current_alpha
+        self.u = KK @ (x - xx) + uu + alpha * kk
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         self.shift_planner()
+        return self.u
+
+    def take_action_plan(self, dt, x, i):
+        """ Compute the control/action of the policy network (actor).
+
+            Args:
+                dt (float): stepsize
+                x (ndarray, list): state (input of policy network)
+
+            Returns:
+                u (ndarray): control/action
+        """
+
+        kk = self.traj_optimizer.kk[i].T[0]
+        KK = self.traj_optimizer.KK[i]
+        uu = self.traj_optimizer.uu[i]
+        xx = self.traj_optimizer.xx[i]
+        alpha = self.traj_optimizer.current_alpha
+        self.u = KK@(x - xx)+ uu + alpha*kk
+        self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
+        self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
 
     def shift_planner(self):

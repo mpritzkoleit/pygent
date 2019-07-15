@@ -482,7 +482,7 @@ class ActorCriticDDPG(Agent):
         """
 
         self.eval()
-        x = torch.Tensor([x])
+        x = torch.Tensor(x).reshape(1, self.xDim)
         if torch.cuda.is_available():
             x = x.cuda()
         self.u = np.asarray(self.actor1(x).detach().cpu())[0]
@@ -502,7 +502,7 @@ class ActorCriticDDPG(Agent):
         """
 
         self.eval()
-        x = torch.Tensor([x])
+        x = torch.Tensor(x).reshape(1, self.xDim)
         if torch.cuda.is_available():
             x = x.cuda()
         #noise = self.noise.sample()
@@ -541,7 +541,7 @@ class ActorCriticDDPG(Agent):
                 qTargets (torch.Tensor): target value tensor for the Q-network
         """
 
-        batch = dataSet.minibatch(self.batch_size)
+        batch = dataSet.random_batch(self.batch_size)
         x_Inputs = torch.Tensor([sample['x_'] for sample in batch])
         xInputs = torch.Tensor([sample['x'] for sample in batch])
         uInputs = torch.Tensor([sample['u'] for sample in batch])

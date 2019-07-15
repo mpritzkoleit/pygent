@@ -20,20 +20,24 @@ from pygent.nn_models import NNDynamics
 
 class MBRL(Algorithm):
 
-    def __init__(self, environment, t, dt, plotInterval=10, nData=1e6, path='../results/mbrl/', checkInterval=50,
+    def __init__(self, environment, t, dt, plotInterval=5, nData=1e6, path='../results/mbrl/', checkInterval=50,
                  evalPolicyInterval=100, warm_up=10000, dyn_lr=1e-3, batch_size=512, aggregation_interval=10,
-                 fcost=None, horizon=None):
+                 fcost=None, horizon=None, use_mpc_plan=True):
         xDim = environment.xDim
         uDim = environment.uDim
         uMax = environment.uMax
         if horizon == None:
-            horizon = 10*dt
+            if use_mpc_plan == True:
+                horizon = t
+            else:
+                horizon = 100*dt
         self.nn_dynamics = NNDynamics(xDim, uDim) # neural network dynamics
         self.optim = torch.optim.Adam(self.nn_dynamics.parameters(), lr=dyn_lr)
         nn_environment = StateSpaceModel(self.ode, environment.cost, environment.x0, uDim, dt)
         nn_environment.uMax = uMax
         #agent = MPCAgent(uDim, nn_environment, horizon, dt, path)
-        self.nmpc_algorithm = NMPC(copy.deepcopy(environment), copy.deepcopy(environment), t, dt, horizon, path=path)
+        self.nmpc_algorithm = NMPC(copy.deepcopy(nn_environment), copy.deepcopy(nn_environment), t, dt, horizon,
+                                   path=path, fcost=fcost, fastForward=False, init_optim=False)
         super(MBRL, self).__init__(environment, self.nmpc_algorithm.agent, t, dt)
         self.R = DataSet(nData)
         self.R_RL = DataSet(nData)
@@ -43,8 +47,10 @@ class MBRL(Algorithm):
         self.path = path
         self.warm_up = warm_up
         self.batch_size = batch_size
-        self.dyn_steps_train = 1000
+        self.dyn_steps_train = 500
         self.aggregation_interval = aggregation_interval
+        self.use_mpc_plan=use_mpc_plan
+        self.dynamics_first_trained = False
 
         if not os.path.isdir(path):
             os.makedirs(path)
@@ -74,6 +80,7 @@ class MBRL(Algorithm):
         """ Run a training episode. If terminal state is reached, episode stops."""
 
         print('Started episode ', self.episode)
+        print(self.R.data.__len__())
         tt = np.arange(0, self.t, self.dt)
         cost = []  # list of incremental costs
         disc_cost = [] # discounted cost
@@ -81,14 +88,20 @@ class MBRL(Algorithm):
         # reset environment/agent to initial state, delete history
         self.environment.reset(self.environment.x0)
         self.agent.reset()
-        if self.R_RL.data.__len__() >= self.batch_size:
+        use_mpc = False
+        if self.R.data.__len__() >= self.warm_up and self.dynamics_first_trained:#self.batch_size:
+            use_mpc = True
             self.agent.traj_optimizer.environment.reset(self.environment.x)
             self.agent.init_optim()
 
         for i, t in enumerate(tt):
             # agent computes control/action
-            if self.R_RL.data.__len__() >= self.batch_size:
-                u = self.agent.take_action(self.dt, self.environment.x, i)
+            if use_mpc:
+                noise = np.random.normal(loc=0.0, scale=0.005, size=self.environment.uDim)
+                if self.use_mpc_plan:
+                    u = self.agent.take_action_plan(self.dt, self.environment.x, i) + noise
+                else:
+                    u = self.agent.take_action(self.dt, self.environment.x) + noise
             else:
                 u = self.agent.take_random_action(self.dt)
             # simulation of environment
@@ -131,7 +144,7 @@ class MBRL(Algorithm):
 
         for i, t in enumerate(tt):
             # agent computes control/action
-            u = self.agent.take_action(self.dt, self.environment.x) + self.uMax*np.random.normal(-self.uMax, 0.005, self.uDim)
+            u = self.agent.take_action(self.dt, self.environment.x) + self.uMax*np.random.normal(0, 0.005, self.uDim)
 
             # simulation of environment
             c = self.environment.step(u, self.dt)
@@ -151,25 +164,21 @@ class MBRL(Algorithm):
         """
 
         for k in range(1, int(n) + 1):
-            if self.R.data.__len__()>self.batch_size:
-                for i in range(1):
-                    print('train dynamics')
-                    self.train_dynamics(self.R)
-                    if self.R_RL.data.__len__() > self.batch_size:
-                    #    for i in range(9):
-                         self.train_dynamics(self.R_RL)
-            for i in range(1):
-                self.run_episode()               
+            if self.R.data.__len__()>=self.warm_up:#self.batch_size:
+                for i in range(5000):
+                    self.train_dynamics()
+            for i in range(10):
+                self.run_episode()
+                if (self.episode - 1) % self.plotInterval == 0:
+                    self.plot()
+                    self.animation()
             # plot environment after episode finished
             print('Samples: ', self.R.data.__len__(), self.R_RL.data.__len__())
-            if k % 10 == 0:
+            if self.episode % 10 == 0:
                 self.learning_curve()
-            if k % self.checkInterval == 0:
+            if self.episode % self.checkInterval == 0:
                 self.save()
                 # if self.meanCost[-1] < 0.01: # goal reached
-            if k % self.plotInterval == 0:
-                self.plot()
-                self.animation()
         pass
 
     def save(self):
@@ -226,16 +235,8 @@ class MBRL(Algorithm):
 
         self.environment.plot()
         plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pdf')
-        try:
-            plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pgf')
-        except:
-            pass
         self.agent.plot()
         plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pdf')
-        try:
-            plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pgf')
-        except:
-            pass
         plt.close('all')
         pass
 
@@ -280,16 +281,22 @@ class MBRL(Algorithm):
         plt.close('all')
         pass
 
-    def train_dynamics(self, dataSet):
+    def train_dynamics(self):
+        self.dynamics_first_trained = True
+
+        for iter in range(self.dyn_steps_train):
+            loss = self.train_dynamics_data(self.R)
+            for i in range(9):
+                loss = self.train_dynamics_data(self.R_RL)
+
+    def train_dynamics_data(self, dataSet):
         # loss function (mean squared error)
         criterion = nn.MSELoss()
         # create training data/targets
         #batch = dataSet.minibatch(self.batch_size)
         running_loss = 0.0
-        for iter in range(self.dyn_steps_train):
-            batch = dataSet.minibatch(self.batch_size)
-            if iter==2:
-                print(running_loss / max(1, iter))
+        batch = dataSet.random_batch(self.batch_size)
+        for iter in range(1):
             x_Inputs, xInputs, fOutputs = self.training_data(batch)
             # definition of loss functions
             loss = criterion(fOutputs, (xInputs - x_Inputs)/self.dt)
@@ -299,8 +306,7 @@ class MBRL(Algorithm):
             self.optim.step()  # gradient descent step
             running_loss += loss.item()
             #self.eval() # eval mode on (batch normalization)
-        print(running_loss / max(1, iter))
-        pass
+        return running_loss / max(1, iter)
 
     def training_data(self, batch):
         x_Inputs = torch.Tensor([sample['x_'] for sample in batch])
