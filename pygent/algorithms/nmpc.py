@@ -144,9 +144,17 @@ class MPCAgent(Agent):
         if init_optim==True:
             self.init_optim()
         self.noise_gain = noise_gain
+        self.x0 = environment.x0
         #self.traj_optimizer.plot()
 
     def init_optim(self):
+        self.traj_optimizer.environment.reset(self.x0)
+        self.KK = []
+        self.kk = []
+        self.mu = 1.
+        self.mu_d = 1.
+        self.traj_optimizer.init_trajectory()
+
         self.traj_optimizer.max_iters = self.init_iterations
         print('Running inital optimization.')
         self.traj_optimizer.run_optim()
