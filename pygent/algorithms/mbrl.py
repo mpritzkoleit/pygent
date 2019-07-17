@@ -21,18 +21,21 @@ from pygent.nn_models import NNDynamics
 class MBRL(Algorithm):
 
     def __init__(self, environment, t, dt,
-                 plotInterval=5,
-                 nData=1e6,
+                 plotInterval=1,
+                 nData=int(1e6),
                  path='../results/mbrl/',
                  checkInterval=50,
                  evalPolicyInterval=100,
                  warm_up=10000,
-                 dyn_lr=1e-3,
+                 dyn_lr=1e-4,
                  batch_size=512,
                  training_epochs=60,
                  data_ratio = 9,
-                 aggregation_interval=10,
-                 fcost=None, horizon=None, use_mpc_plan=True):
+                 aggregation_interval=3,
+                 fcost=None,
+                 horizon=None,
+                 use_mpc_plan=True,
+                 ilqr_print=False):
         xDim = environment.xDim
         oDim = environment.oDim
         uDim = environment.uDim
@@ -42,13 +45,12 @@ class MBRL(Algorithm):
                 horizon = t
             else:
                 horizon = 100*dt
-        self.nn_dynamics = NNDynamics(xDim, uDim, oDim=oDim, xIsAngle=self.environment.xIsAngle) # neural network dynamics
+        self.nn_dynamics = NNDynamics(xDim, uDim, oDim=oDim, xIsAngle=environment.xIsAngle) # neural network dynamics
         self.optim = torch.optim.Adam(self.nn_dynamics.parameters(), lr=dyn_lr)
         nn_environment = StateSpaceModel(self.ode, environment.cost, environment.x0, uDim, dt)
         nn_environment.uMax = uMax
-        #agent = MPCAgent(uDim, nn_environment, horizon, dt, path)
-        self.nmpc_algorithm = NMPC(copy.deepcopy(nn_environment), copy.deepcopy(nn_environment), t, dt, horizon,
-                                   path=path, fcost=fcost, fastForward=True, init_optim=False)
+        self.nmpc_algorithm = NMPC(copy.deepcopy(environment), copy.deepcopy(environment), t, dt, horizon,
+                                   path=path, fcost=fcost, ilqr_print=ilqr_print)
         super(MBRL, self).__init__(environment, self.nmpc_algorithm.agent, t, dt)
         self.D_rand = DataSet(nData)
         self.D_RL = DataSet(nData)
@@ -77,14 +79,6 @@ class MBRL(Algorithm):
         self.episode_steps = []
 
     def ode(self, t, x, u):
-        if type(u)==type(list()):
-            u = np.array([u])
-        if type(x)==type(list()):
-            x = np.array([x])
-        if u.ndim == 1:
-            u = u.reshape(1, len(u))
-        if x.ndim == 1:
-            x = x.reshape(1, len(x))
         rhs = self.nn_dynamics.ode(x, u)
         return rhs
 
@@ -95,21 +89,20 @@ class MBRL(Algorithm):
         tt = np.arange(0, self.t, self.dt)
         cost = []  # list of incremental costs
         disc_cost = [] # discounted cost
-
         # reset environment/agent to initial state, delete history
+        self.agent.init_optim()
         self.environment.reset(self.environment.x0)
         self.agent.reset()
-        self.agent.traj_optimizer.environment.reset(self.environment.x)
-        self.agent.init_optim()
+
+
 
         for i, t in enumerate(tt):
             # agent computes control/action
 
-            noise = np.random.normal(loc=0.0, scale=0.005, size=self.environment.uDim)
             if self.use_mpc_plan:
-                u = self.agent.take_action_plan(self.dt, self.environment.x, i) + noise
+                u = self.agent.take_action_plan(self.dt, self.environment.x, i)
             else:
-                u = self.agent.take_action(self.dt, self.environment.x) + noise
+                u = self.agent.take_action(self.dt, self.environment.x)
             # simulation of environment
             c = self.environment.step(u, self.dt)
             cost.append(c)
@@ -127,7 +120,7 @@ class MBRL(Algorithm):
             if self.environment.terminated:
                 print('Environment terminated!')
                 break
-
+        self.nmpc_algorithm.plot()
         # store the mean of the incremental cost
         self.meanCost.append(np.mean(cost))
         self.totalCost.append(np.sum(disc_cost))
@@ -135,7 +128,7 @@ class MBRL(Algorithm):
         self.episode += 1
         pass
 
-    def random_episode(self):
+    def run_random_episode(self):
         print('Warmup. Started episode ', self.episode)
         tt = np.arange(0, self.t, self.dt)
         cost = []  # list of incremental costs
@@ -185,7 +178,7 @@ class MBRL(Algorithm):
 
         for i, t in enumerate(tt):
             # agent computes control/action
-            u = self.agent.take_action(self.dt, self.environment.x) + self.uMax*np.random.normal(0, 0.005, self.uDim)
+            u = self.agent.take_action_noise(self.dt, self.environment.x)
 
             # simulation of environment
             c = self.environment.step(u, self.dt)
@@ -203,16 +196,24 @@ class MBRL(Algorithm):
             Args:
                 n (int): number of episodes
         """
+        self.nmpc_algorithm.run()
         for steps in range(1, int(n) + 1):
             if self.D_rand.data.__len__()<self.warm_up:#self.batch_size:
-                self.random_episode()
+                self.run_random_episode()
+                self.plot()
             else:
                 if not self.dynamics_first_trained:
                     self.train_dynamics()
                     self.dynamics_first_trained = True
-                if steps % self.aggregation_interval == 0:
+                    self.run_episode()
+                if steps % self.aggregation_interval == 0 & self.dynamics_first_trained:
                     self.train_dynamics()
-                self.run_episode()
+                    self.run_episode()
+                else:
+                    self.agent.init_optim()
+                    self.run_episode()
+                self.plot()
+                self.animation()
             # plot environment after episode finished
             print('Samples: ', self.D_rand.data.__len__(), self.D_RL.data.__len__())
             if self.episode % 10 == 0:
@@ -331,6 +332,8 @@ class MBRL(Algorithm):
             training_data_set.data += self.D_RL.data
         self.training(training_data_set)
         torch.save(self.nn_dynamics.state_dict(), self.path + '.pth')
+        # update models in NMPC controller
+        #self.nmpc_algorithm.mpc_environment.ode = copy.deepcopy(self.ode)
 
     def training(self, dataSet):
         # loss function (mean squared error)
@@ -353,13 +356,31 @@ class MBRL(Algorithm):
         print(epoch, running_loss / max(1, iter))
         pass
 
+
     def training_data(self, batch):
         x_Inputs = torch.Tensor([sample['x_'] for sample in batch])
+        x_Inputs_norm = (x_Inputs - self.nn_dynamics.xMean) / self.nn_dynamics.xVar
+
         xInputs = torch.Tensor([sample['x'] for sample in batch])
+        xInputs_norm = (xInputs - self.nn_dynamics.xMean) / self.nn_dynamics.xVar
+
         o_Inputs = torch.Tensor([sample['o_'] for sample in batch])
+        o_Inputs_norm = (o_Inputs - self.nn_dynamics.oMean) / self.nn_dynamics.oVar
+
         uInputs = torch.Tensor([sample['u'] for sample in batch])
-        fOutputs = self.nn_dynamics(o_Inputs, uInputs)
-        return x_Inputs, xInputs, fOutputs
+        uInputs_norm = (uInputs - self.nn_dynamics.uMean) / self.nn_dynamics.uVar
 
+        fOutputs_norm = self.nn_dynamics(o_Inputs_norm, uInputs_norm)
+        return x_Inputs_norm, xInputs_norm, fOutputs_norm
 
-
+    def set_moments(self, dataset):
+        x_Inputs = torch.Tensor([sample['x_'] for sample in dataset.data])
+        self.nn_dynamics.xMean = x_Inputs.mean(dim=0, keepdim=True)
+        self.nn_dynamics.xVar = x_Inputs.std(dim=0, keepdim=True)
+        o_Inputs = torch.Tensor([sample['o_'] for sample in dataset.data])
+        self.nn_dynamics.oMean = o_Inputs.mean(dim=0, keepdim=True)
+        self.nn_dynamics.oVar = o_Inputs.std(dim=0, keepdim=True)
+        uInputs = torch.Tensor([sample['u'] for sample in dataset.data])
+        self.nn_dynamics.uMean = uInputs.mean(dim=0, keepdim=True)
+        self.nn_dynamics.uVar = uInputs.std(dim=0, keepdim=True)
+        pass
