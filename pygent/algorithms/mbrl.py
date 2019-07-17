@@ -28,7 +28,7 @@ class MBRL(Algorithm):
                  evalPolicyInterval=100,
                  warm_up=10000,
                  dyn_lr=1e-4,
-                 batch_size=512,
+                 batch_size=12,
                  training_epochs=60,
                  data_ratio = 9,
                  aggregation_interval=3,
@@ -49,8 +49,8 @@ class MBRL(Algorithm):
         self.optim = torch.optim.Adam(self.nn_dynamics.parameters(), lr=dyn_lr)
         nn_environment = StateSpaceModel(self.ode, environment.cost, environment.x0, uDim, dt)
         nn_environment.uMax = uMax
-        self.nmpc_algorithm = NMPC(copy.deepcopy(environment), copy.deepcopy(environment), t, dt, horizon,
-                                   path=path, fcost=fcost, ilqr_print=ilqr_print)
+        self.nmpc_algorithm = NMPC(environment, copy.deepcopy(environment), t, dt, horizon, init_optim=False,
+                                   path=path, fcost=fcost, fastForward=False, maxIters=500, ilqr_print=ilqr_print)
         super(MBRL, self).__init__(environment, self.nmpc_algorithm.agent, t, dt)
         self.D_rand = DataSet(nData)
         self.D_RL = DataSet(nData)
@@ -93,8 +93,6 @@ class MBRL(Algorithm):
         self.agent.init_optim()
         self.environment.reset(self.environment.x0)
         self.agent.reset()
-
-
 
         for i, t in enumerate(tt):
             # agent computes control/action
@@ -196,7 +194,7 @@ class MBRL(Algorithm):
             Args:
                 n (int): number of episodes
         """
-        self.nmpc_algorithm.run()
+
         for steps in range(1, int(n) + 1):
             if self.D_rand.data.__len__()<self.warm_up:#self.batch_size:
                 self.run_random_episode()
@@ -210,7 +208,6 @@ class MBRL(Algorithm):
                     self.train_dynamics()
                     self.run_episode()
                 else:
-                    self.agent.init_optim()
                     self.run_episode()
                 self.plot()
                 self.animation()
