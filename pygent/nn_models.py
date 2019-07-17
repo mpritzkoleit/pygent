@@ -4,8 +4,9 @@ import torch
 torch.manual_seed(0)
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
-from pygent.helpers import fanin_init
+from pygent.helpers import fanin_init, observation
 
 class MLP(nn.Module):
     """ Multilayer perceptron (MLP) with tanh/sigmoid activation functions implemented in PyTorch
@@ -148,13 +149,31 @@ class Actor(nn.Module):
         return y
 
 class NNDynamics(nn.Module):
-    def __init__(self, xDim, uDim):
+    def __init__(self, xDim, uDim, oDim=None, xIsAngle=None):
         super(NNDynamics, self).__init__()
         self.xDim = xDim
+        if oDim == None:
+            self.oDim = xDim
+        else:
+            self.oDim = oDim
         self.uDim = uDim
-        self.layer1 = nn.Linear(xDim + uDim, 500)
+        if xIsAngle == None:
+            self.xIsAngle = [False]*xDim
+        else:
+            self.xIsAngle = xIsAngle
+        # mean/var values
+        self.uMean = torch.zeros((1, uDim))
+        self.uVar = torch.ones((1, uDim))
+        self.oMean = torch.zeros((1, oDim))
+        self.oVar = torch.ones((1, oDim))
+        self.xMean = torch.zeros((1, xDim))
+        self.xVar = torch.ones((1, xDim))
+
+        self.layer1 = nn.Linear(self.oDim + self.uDim, 500)
+        self.bn_layer1 = nn.BatchNorm1d(500)
         self.layer2 = nn.Linear(500, 500)
-        self.layer3 = nn.Linear(500, xDim)
+        self.bn_layer2 = nn.BatchNorm1d(500)
+        self.layer3 = nn.Linear(500, self.xDim)
 
         # weight initialization
         wMin = -3.0*1e-3
@@ -164,13 +183,25 @@ class NNDynamics(nn.Module):
         self.layer3.weight = torch.nn.init.uniform_(self.layer3.weight, a=wMin, b=wMax)
         self.layer3.bias = torch.nn.init.uniform_(self.layer3.bias, a=wMin, b=wMax)
 
-    def forward(self, x, u):
+    def forward(self, o, u):
         # connect layers
-        h1_in = torch.cat((x, u), 1)
+        h1_in = torch.cat((o, u), 1)
         h1 = self.layer1(h1_in)
         h1_out = F.relu(h1)
+        #h1_bn = self.bn_layer1(h1_out)
         h2 = self.layer2(h1_out)
         h2_out = F.relu(h2)
+        #h2_bn = self.bn_layer1(h2_out)
         y = self.layer3(h2_out)
         return y
 
+    def ode(self, x, u):
+        self.eval()
+        o = observation(x, self.xIsAngle)
+        o = torch.Tensor(o).reshape(1, self.oDim)
+        o = (o - self.oMean) / self.oVar
+        u = torch.Tensor(u).reshape(1, self.uDim)
+        u = (u - self.uMean) / self.uVar
+        dxdt = self.forward(o, u).detach()
+        dxdt = (dxdt*self.xVar).numpy()
+        return dxdt[0]
