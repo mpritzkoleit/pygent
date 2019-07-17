@@ -401,9 +401,9 @@ class iLQR(Algorithm):
 
     def init_trajectory(self):
         """ Initial trajectory, with u=0. """
-
+        self.agent.reset()
         for _ in range(self.steps):
-            u = np.random.uniform(0.1, 0.1, self.uDim)
+            u = np.random.uniform(-0.001, 0.001, self.uDim)
             u = self.agent.control(self.dt, u)
             # necessary to store control in agents history
             if self.fastForward:
