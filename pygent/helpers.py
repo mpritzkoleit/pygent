@@ -26,7 +26,7 @@ def observation(x, xIsAngle):
         else:
             obsv.append(state)
 
-    return obsv
+    return np.array(obsv)
 
 
 def torch_jacobian(f, x):
