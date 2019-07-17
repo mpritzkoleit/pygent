@@ -10,7 +10,7 @@ import torch.nn as nn
 def c_k(x, u):
     x1, x2, x3, x4 = x
     u1, = u
-    c = 0.5*x1**2 + x2**2 + 0.02*x3**2 + 0.05*x4**2 + 0.05*u1**2
+    c = .5*(10.*x1**2 + 20*x2**2 + .01*x3**2 + .01*x4**2) + 0.01*u1**2
     return c
 
 def c_N(x):
@@ -25,17 +25,14 @@ def p_x0():
 
 
 x0 = [0, np.pi, 0, 0]
-t = 5 # time of an episode
+t = 6 # time of an episode
 dt = 0.02 # time step-size
 
 env = CartPole(c_k, x0, dt)
 
-
-env.terminal_cost = 200 # define the terminal cost if x(k+1) is a terminal state
-
 path = '../../../results/mbrl/'  # path, where results are saved
 
-rl_algorithm = MBRL(env, t, dt, path=path, warm_up=10000, fcost=c_N) # instance of the DDPG algorithm
+rl_algorithm = MBRL(env, t, dt, path=path, warm_up=500, horizon=2.,  use_mpc_plan=False, ilqr_print=True) # instance of the DDPG algorithm
 
 rl_algorithm.run_learning(1e6)
 
