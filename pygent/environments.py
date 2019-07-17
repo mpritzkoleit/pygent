@@ -375,6 +375,73 @@ class Pendulum(StateSpaceModel):
                                       blit=True)
         return ani
 
+class AngularPendulum(StateSpaceModel):
+
+    def __init__(self, cost, x0, dt):
+        super(AngularPendulum, self).__init__(self.ode, cost, x0, 1, dt)
+        self.xIsAngle = [False, False, False]
+        self.o = self.observe(self.x)
+        self.o_ = self.o
+        self.oDim = len(self.o)  # observation dimensions
+        self.uMax = 3.5*np.ones(1)
+
+    @staticmethod
+    def ode(t, x, u):
+
+        g = 9.81  # gravity
+        b = 0.02  # dissipation
+        u1, = u  # torque
+        x1, x2, x3 = x
+
+        dx1dt = -x2*x3
+        dx2dt = x1*x3
+        dx3dt = u1 + g*x2 - b*x3
+
+        return np.array([dx1dt, dx2dt, dx3dt])
+
+    def terminate(self, x):
+        x1, x2, x3 = x
+        if abs(x3) > 10:
+            return True
+        else:
+            return False
+
+
+    def animation(self):
+        # mapping from theta and s to the x,y-plane (definition of the line points, that represent the pole)
+        def pendulum_plot(l, xt):
+            x_pole_end = -l * xt[:, 1]
+            y_pole_end = l * xt[:, 0]
+
+            return x_pole_end, y_pole_end
+
+        # line and text
+        def animate(t):
+            thisx = [0, x_pole_end[t]]
+            thisy = [0, y_pole_end[t]]
+
+            pole.set_data(thisx, thisy)
+            time_text.set_text(time_template % self.tt[t])
+            return pole, time_text,
+
+        x_pole_end, y_pole_end  = pendulum_plot(0.5, self.history)
+        fig, ax = plt.subplots()
+        ax.set_aspect('equal')
+        plt.ylim((-.6, .6))
+        plt.xlim((-.6, .6))
+        plt.title('Pendulum')
+        plt.xticks([], [])
+        plt.yticks([], [])
+        time_template = 'time = %.1fs'
+        time_text = ax.text(0.05, 1.05, '', transform=ax.transAxes)
+        pole, = ax.plot([], [], 'b-', zorder=1, lw=3)
+        circ = patches.Circle((0, 0), 0.03, fc='b', zorder=1)
+        ax.add_artist(circ)
+        # animation using matplotlibs animation library
+        ani = animation.FuncAnimation(fig, animate, np.arange(len(self.tt)), interval=self.tt[1] * 1000,
+                                      blit=True)
+        return ani
+
 class CartPole(StateSpaceModel):
     def __init__(self, cost, x0, dt):
         self.ode = cart_pole_ode()
