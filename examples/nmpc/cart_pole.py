@@ -13,7 +13,7 @@ def c_k(x, u):
 x0 = [0, np.pi, 0, 0]
 
 t = 6.
-horizon = 2
+horizon = 2.
 dt = 0.02
 
 env = CartPole(c_k, x0, dt)

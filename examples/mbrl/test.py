@@ -24,18 +24,18 @@ def p_x0():
     return x0
 
 
-
-t = 10 # time of an episode
+x0 = [0, np.pi, 0, 0]
+t = 5 # time of an episode
 dt = 0.02 # time step-size
 
-env = CartPole(c_k, p_x0, dt)
+env = CartPole(c_k, x0, dt)
 
 
 env.terminal_cost = 200 # define the terminal cost if x(k+1) is a terminal state
 
-path = '../../../results/mbrl'  # path, where results are saved
+path = '../../../results/mbrl/'  # path, where results are saved
 
-rl_algorithm = MBRL(env, t, dt, path=path) # instance of the DDPG algorithm
+rl_algorithm = MBRL(env, t, dt, path=path, warm_up=10000, fcost=c_N) # instance of the DDPG algorithm
 
 rl_algorithm.run_learning(1e6)
 
