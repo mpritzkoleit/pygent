@@ -168,14 +168,14 @@ class DDPG(Algorithm):
                 break
         return cost, disc_cost
 
-    def run_learning(self, steps, n=int(1e5)):
+    def run_learning(self, steps, max_episodes=int(1e5)):
         """ Learning process.
 
             Args:
                 steps (int): number of steps
                 n (int): number of episodes
         """
-        for k in range(1, n + 1):
+        for k in range(1, int(max_episodes) + 1):
             if steps > self.R.data.__len__():
                 total_cost, episode_steps = self.run_episode()
                 # plot environment after episode finished
