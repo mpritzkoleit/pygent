@@ -31,7 +31,7 @@ class MBRL(Algorithm):
                  batch_size=512,
                  training_epochs=60,
                  data_ratio = 1,
-                 aggregation_interval=1,
+                 aggregation_interval=3,
                  fcost=None,
                  horizon=None,
                  use_mpc_plan=True,
@@ -60,7 +60,9 @@ class MBRL(Algorithm):
                                    fcost=fcost,
                                    fastForward=False,
                                    maxIters=100,
-                                   ilqr_print=ilqr_print)
+                                   step_iterations=2,
+                                   ilqr_print=ilqr_print,
+                                   tolFun=1e-4)
         super(MBRL, self).__init__(environment, self.nmpc_algorithm.agent, t, dt)
         self.D_rand = DataSet(nData)
         self.D_RL = DataSet(nData)
@@ -229,7 +231,7 @@ class MBRL(Algorithm):
                         self.train_dynamics()
                         self.run_episode()
                     else:
-                        self.run_episode(reinit=False)
+                        self.run_episode(reinit=(not self.use_mpc_plan))
 
             # plot environment after episode finished
             print('Samples: ', self.D_rand.data.__len__(), self.D_RL.data.__len__())
@@ -370,9 +372,9 @@ class MBRL(Algorithm):
         for epoch in range(self.training_epochs):
             running_loss = 0.0
             for iter, batch in enumerate(dataSet.shuffled_batches(self.batch_size)):
-                x_Inputs, xInputs, fOutputs = self.training_data(batch)
+                dx, fOutputs = self.training_data(batch)
                 # definition of loss functions
-                loss = criterion(fOutputs, (xInputs - x_Inputs))
+                loss = criterion(fOutputs, dx)
                 # train
                 self.optim.zero_grad()  # delete gradients
                 loss.backward()  # error back-propagation
@@ -385,10 +387,10 @@ class MBRL(Algorithm):
 
     def training_data(self, batch):
         x_Inputs = torch.Tensor([sample['x_'] for sample in batch])
-        x_Inputs_norm = (x_Inputs - self.nn_dynamics.xMean) / self.nn_dynamics.xVar
+        #x_Inputs_norm = (x_Inputs - self.nn_dynamics.xMean) / self.nn_dynamics.xVar
 
         xInputs = torch.Tensor([sample['x'] for sample in batch])
-        xInputs_norm = (xInputs - self.nn_dynamics.xMean) / self.nn_dynamics.xVar
+        #xInputs_norm = (xInputs - self.nn_dynamics.xMean) / self.nn_dynamics.xVar
 
         o_Inputs = torch.Tensor([sample['o_'] for sample in batch])
         o_Inputs_norm = (o_Inputs - self.nn_dynamics.oMean) / self.nn_dynamics.oVar
@@ -396,13 +398,20 @@ class MBRL(Algorithm):
         uInputs = torch.Tensor([sample['u'] for sample in batch])
         uInputs_norm = (uInputs - self.nn_dynamics.uMean) / self.nn_dynamics.uVar
 
+        dx = xInputs - x_Inputs
+        dx_norm =  (dx - self.nn_dynamics.dxMean) / self.nn_dynamics.dxVar
+
         fOutputs_norm = self.nn_dynamics(o_Inputs_norm, uInputs_norm)
-        return x_Inputs_norm, xInputs_norm, fOutputs_norm
+        return dx_norm, fOutputs_norm
 
     def set_moments(self, dataset):
         x_Inputs = torch.Tensor([sample['x_'] for sample in dataset.data])
         self.nn_dynamics.xMean = x_Inputs.mean(dim=0, keepdim=True)
         self.nn_dynamics.xVar = x_Inputs.std(dim=0, keepdim=True)
+        xInputs = torch.Tensor([sample['x'] for sample in dataset.data])
+        dx = xInputs-x_Inputs
+        self.nn_dynamics.dxMean = dx.mean(dim=0, keepdim=True)
+        self.nn_dynamics.dxVar = dx.std(dim=0, keepdim=True)
         o_Inputs = torch.Tensor([sample['o_'] for sample in dataset.data])
         self.nn_dynamics.oMean = o_Inputs.mean(dim=0, keepdim=True)
         self.nn_dynamics.oVar = o_Inputs.std(dim=0, keepdim=True)

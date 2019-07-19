@@ -169,6 +169,8 @@ class NNDynamics(nn.Module):
         self.oVar = torch.ones((1, oDim))
         self.xMean = torch.zeros((1, xDim))
         self.xVar = torch.ones((1, xDim))
+        self.dxMean = torch.zeros((1, xDim))
+        self.dxVar = torch.ones((1, xDim))
 
         self.layer1 = nn.Linear(self.oDim + self.uDim, 500)
         #self.bn_layer1 = nn.BatchNorm1d(500)
@@ -204,7 +206,7 @@ class NNDynamics(nn.Module):
         u = torch.Tensor(u).reshape(1, self.uDim)
         u = (u - self.uMean) / self.uVar
         dxdt = self.forward(o, u).detach()
-        dxdt = (dxdt*self.xVar).numpy()
+        dxdt = (dxdt*self.dxVar + self.dxMean).numpy()
         return dxdt[0]
 
     def save_moments(self, path):
@@ -213,7 +215,9 @@ class NNDynamics(nn.Module):
                 'uMean': self.uMean,
                 'uVar': self.uVar,
                 'oMean': self.oMean,
-                'oVar': self.oVar}
+                'oVar': self.oVar,
+                'dxMean': self.dxMean,
+                'dxVar': self.dxVar}
         with open(path + 'data/moments_dict.p', 'wb') as opened_file:
             pickle.dump(moments_dict, opened_file)
         pass
@@ -227,3 +231,5 @@ class NNDynamics(nn.Module):
         self.uVar = moments_dict['uVar']
         self.oMean = moments_dict['oMean']
         self.oVar = moments_dict['oVar']
+        self.dxMean = moments_dict['dxMean']
+        self.dxVar = moments_dict['dxVar']

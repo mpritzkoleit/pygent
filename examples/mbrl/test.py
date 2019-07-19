@@ -32,7 +32,7 @@ env = CartPole(c_k, x0, dt)
 
 path = '../../../results/mbrl/'  # path, where results are saved
 
-rl_algorithm = MBRL(env, t, dt, path=path, warm_up=500, horizon=2.,  use_mpc_plan=True, ilqr_print=True) # instance of the DDPG algorithm
+rl_algorithm = MBRL(env, t, dt, path=path, warm_up=500, horizon=2.,  use_mpc_plan=False, ilqr_print=True) # instance of the DDPG algorithm
 #rl_algorithm.load()
 rl_algorithm.run_learning(1e6)
 
