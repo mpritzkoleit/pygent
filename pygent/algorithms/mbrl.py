@@ -24,33 +24,43 @@ class MBRL(Algorithm):
                  plotInterval=1,
                  nData=int(1e6),
                  path='../results/mbrl/',
-                 checkInterval=50,
+                 checkInterval=2,
                  evalPolicyInterval=100,
                  warm_up=10000,
-                 dyn_lr=1e-4,
-                 batch_size=12,
+                 dyn_lr=1e-3,
+                 batch_size=512,
                  training_epochs=60,
-                 data_ratio = 9,
-                 aggregation_interval=3,
+                 data_ratio = 1,
+                 aggregation_interval=1,
                  fcost=None,
                  horizon=None,
                  use_mpc_plan=True,
                  ilqr_print=False):
+
         xDim = environment.xDim
         oDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax
         if horizon == None:
-            if use_mpc_plan == True:
-                horizon = t
-            else:
-                horizon = 100*dt
-        self.nn_dynamics = NNDynamics(xDim, uDim, oDim=oDim, xIsAngle=environment.xIsAngle) # neural network dynamics
-        self.optim = torch.optim.Adam(self.nn_dynamics.parameters(), lr=dyn_lr)
+            horizon = t
+        self.dt = dt
+
+        self.nn_dynamics = NNDynamics(xDim, uDim,
+                                      oDim=oDim,
+                                      xIsAngle=environment.xIsAngle) # neural network dynamics
+        self.optim = torch.optim.Adam(self.nn_dynamics.parameters(),
+                                      lr=dyn_lr,
+                                      weight_decay=1e-3)
         nn_environment = StateSpaceModel(self.ode, environment.cost, environment.x0, uDim, dt)
         nn_environment.uMax = uMax
-        self.nmpc_algorithm = NMPC(environment, copy.deepcopy(environment), t, dt, horizon, init_optim=False,
-                                   path=path, fcost=fcost, fastForward=False, maxIters=500, ilqr_print=ilqr_print)
+        self.nmpc_algorithm = NMPC(environment, nn_environment, t, dt, horizon,
+                                   init_optim=False,
+                                   add_noise=True,
+                                   path=path,
+                                   fcost=fcost,
+                                   fastForward=False,
+                                   maxIters=100,
+                                   ilqr_print=ilqr_print)
         super(MBRL, self).__init__(environment, self.nmpc_algorithm.agent, t, dt)
         self.D_rand = DataSet(nData)
         self.D_RL = DataSet(nData)
@@ -79,10 +89,10 @@ class MBRL(Algorithm):
         self.episode_steps = []
 
     def ode(self, t, x, u):
-        rhs = self.nn_dynamics.ode(x, u)
+        rhs = 1/self.dt*self.nn_dynamics.ode(x, u)
         return rhs
 
-    def run_episode(self):
+    def run_episode(self, reinit=True):
         """ Run a training episode. If terminal state is reached, episode stops."""
 
         print('Started episode ', self.episode)
@@ -90,7 +100,10 @@ class MBRL(Algorithm):
         cost = []  # list of incremental costs
         disc_cost = [] # discounted cost
         # reset environment/agent to initial state, delete history
-        self.agent.init_optim()
+        if reinit or not self.use_mpc_plan:
+            if not self.use_mpc_plan:
+                self.agent.clear()
+            self.agent.init_optim()
         self.environment.reset(self.environment.x0)
         self.agent.reset()
 
@@ -107,9 +120,13 @@ class MBRL(Algorithm):
             disc_cost.append(c)
 
             # store transition in data set (x_, u, x, c)
-            transition = ({'x_': self.environment.x_, 'u': self.agent.u, 'x': self.environment.x,
-                           'o_': self.environment.o_, 'o': self.environment.o,
-                           'c': [c], 't': [self.environment.terminated]})
+            transition = ({'x_': self.environment.x_ + np.random.normal(0, 0.001, self.environment.xDim),
+                           'u': self.agent.u + np.random.normal(0, 0.001, self.environment.uDim),
+                           'x': self.environment.x + np.random.normal(0, 0.001, self.environment.xDim),
+                           'o_': self.environment.o_ + np.random.normal(0, 0.001, self.environment.oDim),
+                           'o': self.environment.o + np.random.normal(0, 0.001, self.environment.oDim),
+                           'c': [c],
+                           't': [self.environment.terminated]})
 
             # add sample to data set
             self.D_RL.force_add_sample(transition)
@@ -118,7 +135,7 @@ class MBRL(Algorithm):
             if self.environment.terminated:
                 print('Environment terminated!')
                 break
-        self.nmpc_algorithm.plot()
+
         # store the mean of the incremental cost
         self.meanCost.append(np.mean(cost))
         self.totalCost.append(np.sum(disc_cost))
@@ -145,9 +162,13 @@ class MBRL(Algorithm):
             disc_cost.append(c)
 
             # store transition in data set (x_, u, x, c)
-            transition = ({'x_': self.environment.x_, 'u': self.agent.u, 'x': self.environment.x,
-                           'o_': self.environment.o_, 'o': self.environment.o,
-                           'c': [c], 't': [self.environment.terminated]})
+            transition = ({'x_': self.environment.x_ + np.random.normal(0, 0.001, self.environment.xDim),
+                           'u': self.agent.u + np.random.normal(0, 0.001, self.environment.uDim),
+                           'x': self.environment.x + np.random.normal(0, 0.001, self.environment.xDim),
+                           'o_': self.environment.o_+ np.random.normal(0, 0.001, self.environment.oDim),
+                           'o': self.environment.o + np.random.normal(0, 0.001, self.environment.oDim),
+                           'c': [c],
+                           't': [self.environment.terminated]})
 
             # add sample to data set
             self.D_rand.force_add_sample(transition)
@@ -198,19 +219,18 @@ class MBRL(Algorithm):
         for steps in range(1, int(n) + 1):
             if self.D_rand.data.__len__()<self.warm_up:#self.batch_size:
                 self.run_random_episode()
-                self.plot()
             else:
                 if not self.dynamics_first_trained:
                     self.train_dynamics()
                     self.dynamics_first_trained = True
                     self.run_episode()
-                if steps % self.aggregation_interval == 0 & self.dynamics_first_trained:
-                    self.train_dynamics()
-                    self.run_episode()
                 else:
-                    self.run_episode()
-                self.plot()
-                self.animation()
+                    if steps % self.aggregation_interval == 0 & self.dynamics_first_trained:
+                        self.train_dynamics()
+                        self.run_episode()
+                    else:
+                        self.run_episode(reinit=False)
+
             # plot environment after episode finished
             print('Samples: ', self.D_rand.data.__len__(), self.D_RL.data.__len__())
             if self.episode % 10 == 0:
@@ -218,6 +238,8 @@ class MBRL(Algorithm):
             if self.episode % self.checkInterval == 0:
                 self.save()
                 # if self.meanCost[-1] < 0.01: # goal reached
+            self.plot()
+            self.animation()
         pass
 
     def save(self):
@@ -225,6 +247,8 @@ class MBRL(Algorithm):
 
         # save network parameters
         torch.save({'nn_dynamics': self.nn_dynamics.state_dict()}, self.path + 'data/checkpoint.pth')
+
+        self.nn_dynamics.save_moments(self.path)
 
         # save data set
         self.D_rand.save(self.path + 'data/dataSet_D_rand.p')
@@ -248,6 +272,11 @@ class MBRL(Algorithm):
         else:
             print('Could not load neural network parameters!')
 
+        if os.path.isfile(self.path + 'data/moments_dict.p'):
+            self.nn_dynamics.load_moments(self.path)
+            print('Loaded neural network moments!')
+        else:
+            print('Could not load neural network moments!')
         # load data set
         if os.path.isfile(self.path + 'data/dataSet_D_rand.p'):
             self.D_rand.load(self.path + 'data/dataSet_D_rand.p')
@@ -343,14 +372,14 @@ class MBRL(Algorithm):
             for iter, batch in enumerate(dataSet.shuffled_batches(self.batch_size)):
                 x_Inputs, xInputs, fOutputs = self.training_data(batch)
                 # definition of loss functions
-                loss = criterion(fOutputs, (xInputs - x_Inputs) / self.dt)
+                loss = criterion(fOutputs, (xInputs - x_Inputs))
                 # train
                 self.optim.zero_grad()  # delete gradients
                 loss.backward()  # error back-propagation
                 self.optim.step()  # gradient descent step
                 running_loss += loss.item()
                 # self.eval() # eval mode on (batch normalization)
-        print(epoch, running_loss / max(1, iter))
+        print('NN dynamics training loss:', running_loss / max(1, iter))
         pass
 
 
@@ -380,4 +409,7 @@ class MBRL(Algorithm):
         uInputs = torch.Tensor([sample['u'] for sample in dataset.data])
         self.nn_dynamics.uMean = uInputs.mean(dim=0, keepdim=True)
         self.nn_dynamics.uVar = uInputs.std(dim=0, keepdim=True)
+        pass
+
+    def test_dynamics(self):
         pass
