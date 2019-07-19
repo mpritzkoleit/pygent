@@ -27,7 +27,8 @@ class NMPC(Algorithm):
                  init_optim=True,
                  finite_diff=False,
                  ilqr_print=False,
-                 noise_gain=0.01):
+                 noise_gain=0.01,
+                 add_noise=False):
         """
 
         Args:
@@ -66,9 +67,10 @@ class NMPC(Algorithm):
                          printing=ilqr_print,
                          init_optim=init_optim,
                          finite_diff=finite_diff,
-                         noise_gain=noise_gain)
+                         noise_gain=noise_gain,
+                         add_noise=add_noise)
+
         super(NMPC, self).__init__(environment, agent, t, dt)
-        #self.agent.traj_optimizer.printing = False
         self.save_interval = save_interval
 
 
@@ -126,7 +128,8 @@ class MPCAgent(Agent):
                  printing=True,
                  init_optim = True,
                  finite_diff=True,
-                 noise_gain=0.05):
+                 noise_gain=0.05,
+                 add_noise=False):
         super(MPCAgent, self).__init__(environment.uDim)
         self.traj_optimizer = iLQR(environment, horizon, dt,
                                    path=path,
@@ -137,29 +140,40 @@ class MPCAgent(Agent):
                                    tolGrad = tolGrad,
                                    tolFun = tolFun,
                                    printing=printing,
-                                   finite_diff=finite_diff)
+                                   finite_diff=finite_diff,
+                                   file_prefix='ilqr_')
         self.uMax = self.traj_optimizer.environment.uMax
         self.init_iterations = init_iterations
         self.step_iterations = step_iterations
+        self.x0 = environment.x0
         if init_optim==True:
             self.init_optim()
         self.noise_gain = noise_gain
-        self.x0 = environment.x0
+        self.add_noise = add_noise
+
         #self.traj_optimizer.plot()
 
     def init_optim(self):
         self.traj_optimizer.environment.reset(self.x0)
-        self.KK = []
-        self.kk = []
-        self.mu = 1.
-        self.mu_d = 1.
-        self.traj_optimizer.init_trajectory()
-
+        self.traj_optimizer.mu = 1.
+        self.traj_optimizer.mu_d = 1.
+        if self.traj_optimizer.KK != []:
+            self.traj_optimizer.cost *= 200 # double cost, because forward pass will lead to the same cost
+            self.traj_optimizer.forward_pass(self.traj_optimizer.current_alpha)
+        else:
+            self.traj_optimizer.init_trajectory()
         self.traj_optimizer.max_iters = self.init_iterations
         print('Running inital optimization.')
         self.traj_optimizer.run_optim()
         self.traj_optimizer.max_iters = self.step_iterations
         pass
+
+    def clear(self):
+        self.traj_optimizer.environment.reset(self.x0)
+        self.traj_optimizer.KK = []
+        self.traj_optimizer.kk = []
+        self.traj_optimizer.mu = 1.
+        self.traj_optimizer.mu_d = 1.
 
     def take_action(self, dt, x):
         """ Compute the control/action of the policy network (actor).
@@ -176,52 +190,19 @@ class MPCAgent(Agent):
         self.traj_optimizer.run_optim()
 
         kk = self.traj_optimizer.kk[0].T[0]
-        uu = self.traj_optimizer.uu[0]
-        alpha = self.traj_optimizer.current_alpha
-        self.u = uu + alpha*kk
-
-        kk = self.traj_optimizer.kk[0].T[0]
         KK = self.traj_optimizer.KK[0]
         uu = self.traj_optimizer.uu[0]
         xx = self.traj_optimizer.xx[0]
-
         alpha = self.traj_optimizer.current_alpha
-        self.u = KK @ (x - xx) + uu + alpha * kk
+
+        u = KK @ (x - xx) + uu + alpha * kk + self.add_noise*self.noise()
+        self.u = np.clip(u, -self.uMax, self.uMax)
+
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         self.shift_planner()
         return self.u
 
-    def take_action_noise(self, dt, x):
-        """ Compute the control/action of the policy network (actor).
-
-            Args:
-                dt (float): stepsize
-                x (ndarray, list): state (input of policy network)
-
-            Returns:
-                u (ndarray): control/action
-        """
-
-        self.traj_optimizer.environment.x0 = x
-        self.traj_optimizer.run_optim()
-
-        kk = self.traj_optimizer.kk[0].T[0]
-        uu = self.traj_optimizer.uu[0]
-        alpha = self.traj_optimizer.current_alpha
-        self.u = uu + alpha*kk + self.noise()
-
-        kk = self.traj_optimizer.kk[0].T[0]
-        KK = self.traj_optimizer.KK[0]
-        uu = self.traj_optimizer.uu[0]
-        xx = self.traj_optimizer.xx[0]
-
-        alpha = self.traj_optimizer.current_alpha
-        self.u = KK @ (x - xx) + uu + alpha * kk + self.noise()
-        self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
-        self.tt.extend([self.tt[-1] + dt])  # increment simulation time
-        self.shift_planner()
-        return self.u
 
     def take_action_plan(self, dt, x, i):
         """ Compute the control/action of the policy network (actor).
@@ -236,16 +217,16 @@ class MPCAgent(Agent):
 
         #kk = self.traj_optimizer.kk[i].T[0]
         #KK = self.traj_optimizer.KK[i]
-        uu = self.traj_optimizer.uu[i]
+        u = self.traj_optimizer.uu[i] + self.add_noise*self.noise()
+        self.u = np.clip(u, -self.uMax, self.uMax)
         #xx = self.traj_optimizer.xx[i]
         #alpha = self.traj_optimizer.current_alpha
         #self.u = KK@(x - xx)+ uu + alpha*kk
-        self.u = uu # alpha * kk
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
 
-    def take_action_plan_noise(self, dt, x, i):
+    def take_action_plan_feedback(self, dt, x, i):
         """ Compute the control/action of the policy network (actor).
 
             Args:
@@ -256,17 +237,19 @@ class MPCAgent(Agent):
                 u (ndarray): control/action
         """
 
-        #kk = self.traj_optimizer.kk[i].T[0]
-        #KK = self.traj_optimizer.KK[i]
+        kk = self.traj_optimizer.kk[i].T[0]
+        KK = self.traj_optimizer.KK[i]
         uu = self.traj_optimizer.uu[i]
-        #xx = self.traj_optimizer.xx[i]
-        #alpha = self.traj_optimizer.current_alpha
-        #self.u = KK@(x - xx)+ uu + alpha*kk
+        xx = self.traj_optimizer.xx[i]
+        alpha = self.traj_optimizer.current_alpha
 
-        self.u = uu + self.noise()# alpha * kk
+        u = KK@(x - xx)+ uu + alpha*kk + self.add_noise*self.noise()
+        self.u = np.clip(u, -self.uMax, self.uMax)
+
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
+
 
     def shift_planner(self):
         self.traj_optimizer.uu = np.roll(self.traj_optimizer.uu, -1, axis=0)
