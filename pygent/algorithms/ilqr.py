@@ -62,7 +62,8 @@ class iLQR(Algorithm):
                  dataset_size=1e6,
                  regType = 2,
                  finite_diff = False,
-                 file_prefix = ''):
+                 file_prefix = '',
+                 init=True):
         """
 
         Args:
@@ -108,7 +109,8 @@ class iLQR(Algorithm):
                 self.fcost_fnc = fcost
         if not self.finite_diff:
             self.cost_init()
-        self.init_trajectory()
+        if init:
+            self.init_trajectory()
         self.current_alpha = 1
         self.printing = printing
         self.file_prefix = file_prefix

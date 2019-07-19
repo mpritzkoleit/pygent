@@ -141,7 +141,8 @@ class MPCAgent(Agent):
                                    tolFun = tolFun,
                                    printing=printing,
                                    finite_diff=finite_diff,
-                                   file_prefix='ilqr_')
+                                   file_prefix='ilqr_',
+                                   init=False)
         self.uMax = self.traj_optimizer.environment.uMax
         self.init_iterations = init_iterations
         self.step_iterations = step_iterations
