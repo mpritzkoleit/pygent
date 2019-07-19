@@ -5,6 +5,7 @@ torch.manual_seed(0)
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import pickle
 
 from pygent.helpers import fanin_init, observation
 
@@ -170,9 +171,9 @@ class NNDynamics(nn.Module):
         self.xVar = torch.ones((1, xDim))
 
         self.layer1 = nn.Linear(self.oDim + self.uDim, 500)
-        self.bn_layer1 = nn.BatchNorm1d(500)
+        #self.bn_layer1 = nn.BatchNorm1d(500)
         self.layer2 = nn.Linear(500, 500)
-        self.bn_layer2 = nn.BatchNorm1d(500)
+        #self.bn_layer2 = nn.BatchNorm1d(500)
         self.layer3 = nn.Linear(500, self.xDim)
 
         # weight initialization
@@ -205,3 +206,24 @@ class NNDynamics(nn.Module):
         dxdt = self.forward(o, u).detach()
         dxdt = (dxdt*self.xVar).numpy()
         return dxdt[0]
+
+    def save_moments(self, path):
+        moments_dict = {'xMean': self.xMean,
+                'xVar': self.xVar,
+                'uMean': self.uMean,
+                'uVar': self.uVar,
+                'oMean': self.oMean,
+                'oVar': self.oVar}
+        with open(path + 'data/moments_dict.p', 'wb') as opened_file:
+            pickle.dump(moments_dict, opened_file)
+        pass
+
+    def load_moments(self, path):
+        with open(path + 'data/moments_dict.p', 'rb') as opened_file:
+            moments_dict = pickle.load(opened_file)
+        self.xMean = moments_dict['xMean']
+        self.xVar = moments_dict['xVar']
+        self.uMean = moments_dict['uMean']
+        self.uVar = moments_dict['uVar']
+        self.oMean = moments_dict['oMean']
+        self.oVar = moments_dict['oVar']
