@@ -61,7 +61,8 @@ class iLQR(Algorithm):
                  log_data=False,
                  dataset_size=1e6,
                  regType = 2,
-                 finite_diff = False):
+                 finite_diff = False,
+                 file_prefix = ''):
         """
 
         Args:
@@ -110,6 +111,7 @@ class iLQR(Algorithm):
         self.init_trajectory()
         self.current_alpha = 1
         self.printing = printing
+        self.file_prefix = file_prefix
         # todo: mu to eta
 
         # algorithm parameters
@@ -520,19 +522,19 @@ class iLQR(Algorithm):
     def plot(self):
         self.environment.plot()
         self.environment.save_history('environment', self.path + 'data/')
-        plt.savefig(self.path + 'plots/environment.pdf')
+        plt.savefig(self.path + 'plots/'+self.file_prefix+'environment.pdf')
         self.agent.plot()
         self.agent.save_history('agent', self.path + 'data/')
-        plt.savefig(self.path + 'plots/controller.pdf')
+        plt.savefig(self.path + 'plots/'+self.file_prefix+'controller.pdf')
         plt.close('all')
 
     def animation(self):
         ani = self.environment.animation()
         if ani != None:
             try:
-                ani.save(self.path + 'animations/animation.mp4', fps=1 / self.dt)
+                ani.save(self.path + 'animations/'+self.file_prefix+'animation.mp4', fps=1 / self.dt)
             except:
-                ani.save(self.path + 'animations/animation.gif', fps=1 / self.dt)
+                ani.save(self.path + 'animations/'+self.file_prefix+'animation.gif', fps=1 / self.dt)
         plt.close('all')
 
     def save(self):
