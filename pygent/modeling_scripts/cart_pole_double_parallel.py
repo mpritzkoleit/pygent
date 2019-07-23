@@ -108,11 +108,10 @@ def modeling(linearized=True):
         xu_subs = [(dq0_t, x4_t), (dq1_t, x5_t), (dq2_t, x6_t), (q0_t, x1_t), (q1_t, x2_t), (q2_t, x3_t), (a, u_t)]
     else:
         xu_subs = [(dq0_t, x4_t), (dq1_t, x5_t), (dq2_t, x6_t), (q0_t, x1_t), (q1_t, x2_t), (q2_t, x3_t), (F, u_t)]
-    ddq = ddq.subs(xu_subs)
 
     # first order ODE (right hand side)
     dx_t = sp.Matrix([x4_t, x5_t, x6_t, ddq[ddq0_t], ddq[ddq1_t], ddq[ddq2_t]])
-
+    dx_t = dx_t.subs(xu_subs)
     # linearized dynamics
     A = dx_t.jacobian(x_t)
     B = dx_t.diff(u_t)
