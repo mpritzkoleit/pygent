@@ -31,17 +31,19 @@ class MBRL(Algorithm):
                  batch_size=512,
                  training_epochs=60,
                  data_ratio = 1,
-                 aggregation_interval=3,
+                 aggregation_interval=1,
                  fcost=None,
                  horizon=None,
                  use_mpc_plan=True,
-                 ilqr_print=False):
+                 use_feedback=True,
+                 ilqr_print=False,
+                 ilqr_save=False):
 
         xDim = environment.xDim
         oDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax
-        if horizon == None:
+        if horizon == None or use_mpc_plan:
             horizon = t
         self.dt = dt
 
@@ -50,19 +52,22 @@ class MBRL(Algorithm):
                                       xIsAngle=environment.xIsAngle) # neural network dynamics
         self.optim = torch.optim.Adam(self.nn_dynamics.parameters(),
                                       lr=dyn_lr,
-                                      weight_decay=1e-3)
-        nn_environment = StateSpaceModel(self.ode, environment.cost, environment.x0, uDim, dt)
-        nn_environment.uMax = uMax
-        self.nmpc_algorithm = NMPC(environment, nn_environment, t, dt, horizon,
+                                      weight_decay=0.01)
+        self.nn_environment = StateSpaceModel(self.ode, environment.cost, environment.x0, uDim, dt)
+        self.nn_environment.uMax = uMax
+        self.nmpc_algorithm = NMPC(environment, self.nn_environment, t, dt, horizon,
                                    init_optim=False,
                                    add_noise=True,
                                    path=path,
                                    fcost=fcost,
-                                   fastForward=False,
+                                   fastForward=True,
                                    maxIters=100,
-                                   step_iterations=2,
+                                   step_iterations=1,
                                    ilqr_print=ilqr_print,
-                                   tolFun=1e-4)
+                                   ilqr_save=ilqr_save,
+                                   tolFun=1e-4,
+                                   save_interval=1,
+                                   noise_gain=0.005)
         super(MBRL, self).__init__(environment, self.nmpc_algorithm.agent, t, dt)
         self.D_rand = DataSet(nData)
         self.D_RL = DataSet(nData)
@@ -76,6 +81,7 @@ class MBRL(Algorithm):
         self.data_ratio = data_ratio
         self.aggregation_interval = aggregation_interval
         self.use_mpc_plan=use_mpc_plan
+        self.use_feedback = use_feedback
         self.dynamics_first_trained = False
 
         if not os.path.isdir(path):
@@ -102,10 +108,8 @@ class MBRL(Algorithm):
         cost = []  # list of incremental costs
         disc_cost = [] # discounted cost
         # reset environment/agent to initial state, delete history
-        if reinit or not self.use_mpc_plan:
-            if not self.use_mpc_plan:
-                self.agent.clear()
-            self.agent.init_optim()
+        #if reinit or not self.use_mpc_plan:
+        self.agent.init_optim(self.environment.x0)
         self.environment.reset(self.environment.x0)
         self.agent.reset()
 
@@ -113,7 +117,10 @@ class MBRL(Algorithm):
             # agent computes control/action
 
             if self.use_mpc_plan:
-                u = self.agent.take_action_plan(self.dt, self.environment.x, i)
+                if self.use_feedback:
+                    u = self.agent.take_action_plan_feedback(self.dt, self.environment.x, i)
+                else:
+                    u = self.agent.take_action_plan(self.dt, i)
             else:
                 u = self.agent.take_action(self.dt, self.environment.x)
             # simulation of environment
@@ -137,7 +144,7 @@ class MBRL(Algorithm):
             if self.environment.terminated:
                 print('Environment terminated!')
                 break
-
+        self.test_dynamics(self.environment.history[0])
         # store the mean of the incremental cost
         self.meanCost.append(np.mean(cost))
         self.totalCost.append(np.sum(disc_cost))
@@ -199,7 +206,7 @@ class MBRL(Algorithm):
 
         for i, t in enumerate(tt):
             # agent computes control/action
-            u = self.agent.take_action_noise(self.dt, self.environment.x)
+            u = self.agent.take_action(self.dt, self.environment.x)
 
             # simulation of environment
             c = self.environment.step(u, self.dt)
@@ -304,7 +311,8 @@ class MBRL(Algorithm):
             print('Loaded learning curve data!')
         else:
             print('No learning curve data found!')
-        self.run_controller(self.environment.x0)
+        #self.run_controller(self.environment.x0)
+        self.dynamics_first_trained = True
         pass
 
     def plot(self):
@@ -420,5 +428,26 @@ class MBRL(Algorithm):
         self.nn_dynamics.uVar = uInputs.std(dim=0, keepdim=True)
         pass
 
-    def test_dynamics(self):
-        pass
+    def test_dynamics(self, x0):
+        # simulate dynamics
+        env = copy.deepcopy(self.environment)
+        nn_env = copy.deepcopy(self.nn_environment)
+        env.reset(x0)
+        nn_env.reset(x0)
+        for u in self.agent.history[1:]:
+            #u = np.random.uniform(-env.uMax, env.uMax)
+            env.step(u, self.dt)
+            nn_env.fast_step(u, self.dt)
+        plt.plot(nn_env.tt, env.history)
+        plt.plot(nn_env.tt, nn_env.history)
+        plt.plot(self.agent.tt, self.agent.history)
+        plt.show()
+        mse = (nn_env.history - env.history) ** 2
+        #plt.plot(nn_env.tt, mse)
+        # plt.show()
+        #env.plot()
+        #nn_env.plot()
+        #plt.show()
+        plt.savefig(self.path + 'plots/test.pdf')
+        # agent.plot()
+        print('Prediction Error: ', np.mean(mse))
