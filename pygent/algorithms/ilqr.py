@@ -63,7 +63,9 @@ class iLQR(Algorithm):
                  regType = 2,
                  finite_diff = False,
                  file_prefix = '',
-                 init=True):
+                 init=True,
+                 reset_mu=True,
+                 saving=True):
         """
 
         Args:
@@ -109,14 +111,18 @@ class iLQR(Algorithm):
                 self.fcost_fnc = fcost
         if not self.finite_diff:
             self.cost_init()
+        self.reset_mu = reset_mu # reset mu when running optimization
+        self.init = init
         if init:
             self.init_trajectory()
         self.current_alpha = 1
         self.printing = printing
         self.file_prefix = file_prefix
+        self.saving = saving
         # todo: mu to eta
 
         # algorithm parameters
+        self.success_fw = False
         self.max_iters = maxIters
         self.mu_min = 1e-6
         self.mu_max = 1e10
@@ -136,6 +142,15 @@ class iLQR(Algorithm):
         self.R = DataSet(dataset_size)
         self.KK = []
         self.kk = []
+
+    def reset(self):
+        self.KK = []
+        self.kk = []
+        self.cost = 0.
+        self.mu = 1.
+        self.mu_d = 1.
+        if self.init:
+            self.init_trajectory()
 
     def cost_fnc(self, x, u, mod):
         """
@@ -308,7 +323,6 @@ class iLQR(Algorithm):
         self.uu = np.load(self.path + 'data/uu.npy')
         self.xx = np.load(self.path + 'data/xx.npy')
         self.current_alpha = np.load(self.path + 'data/alpha.npy')
-        print(self.current_alpha)
         self.xx, self.uu, self.cost, terminated = self.forward_pass(self.current_alpha)
         pass
 
@@ -316,7 +330,9 @@ class iLQR(Algorithm):
     def run_optim(self):
         """ Trajectory optimization. """
         start_time = time.time()
-        self.mu = 1.0
+        if self.reset_mu:
+            self.mu = 1.0
+            self.mu_d = 1.
         success_gradient = False
         # later run_episode
         for _ in range(1, self.max_iters + 1):
@@ -327,7 +343,7 @@ class iLQR(Algorithm):
                     self.increase_mu()
                     break
 
-            success_fw = False
+            self.success_fw = False
             if success_bw:
                 # check for gradient
                 g_norm = np.mean(
@@ -365,10 +381,10 @@ class iLQR(Algorithm):
                         print('non-positive expected reduction')
                         self.increase_mu() # todo: probably delete this line, if something's not working!
                     if z > self.zmin:
-                        success_fw = True
+                        self.success_fw = True
                         if not self.parallel:
                             break
-            if success_fw:
+            if self.success_fw:
                 if self.printing:
                     print('Iter. ', _, '| Cost: %.7f' % cost, ' | red.: %.5f' % dcost, '| exp.: %.5f' % expected)
                 best_idx = np.argmin(cost_list)
@@ -388,7 +404,7 @@ class iLQR(Algorithm):
                     if self.printing:
                         print('Converged: small gradient')
                     break
-                if _ % self.save_interval == 0:
+                if _ % self.save_interval == 0 and self.saving:
                     self.save()
             else:
                 self.increase_mu()
@@ -400,7 +416,8 @@ class iLQR(Algorithm):
                     break
 
         print('Iterations: %d | Final Cost-to-Go: %.2f | Runtime: %.2f min.' % (_, self.cost, (time.time() - start_time) / 60))
-        self.save() # save controller
+        if self.saving:
+            self.save() # save controller
         return self.xx, self.uu, self.cost
 
     def init_trajectory(self):
