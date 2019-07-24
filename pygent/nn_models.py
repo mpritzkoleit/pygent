@@ -173,29 +173,20 @@ class NNDynamics(nn.Module):
         self.dxVar = torch.ones((1, xDim))
 
         self.layer1 = nn.Linear(self.oDim + self.uDim, 500)
-        #self.bn_layer1 = nn.BatchNorm1d(500)
         self.layer2 = nn.Linear(500, 500)
-        #self.bn_layer2 = nn.BatchNorm1d(500)
-        self.layer3 = nn.Linear(500, self.xDim)
-
-        # weight initialization
-        wMin = -3.0*1e-3
-        wMax = 3.0*1e-3
-        fanin_init(self.layer1)
-        fanin_init(self.layer2)
-        self.layer3.weight = torch.nn.init.uniform_(self.layer3.weight, a=wMin, b=wMax)
-        self.layer3.bias = torch.nn.init.uniform_(self.layer3.bias, a=wMin, b=wMax)
+        self.layer3 = nn.Linear(500, 500)
+        self.layer4 = nn.Linear(500, self.xDim)
 
     def forward(self, o, u):
         # connect layers
         h1_in = torch.cat((o, u), 1)
         h1 = self.layer1(h1_in)
         h1_out = F.relu(h1)
-        #h1_bn = self.bn_layer1(h1_out)
         h2 = self.layer2(h1_out)
         h2_out = F.relu(h2)
-        #h2_bn = self.bn_layer1(h2_out)
-        y = self.layer3(h2_out)
+        h3 = self.layer3(h2_out)
+        h3_out = F.relu(h3)
+        y = self.layer4(h3_out)
         return y
 
     def ode(self, x, u):
