@@ -1,7 +1,7 @@
 from pygent.environments import CartPole
 from pygent.algorithms.ddpg import DDPG
 import numpy as np
-
+from pygent.helpers import mapAngles
 # define the incremental cost
 def c_k(x, u):
     x1, x2, x3, x4 = x

@@ -13,7 +13,7 @@ def c_k(x, u):
 x0 = [0, np.pi, 0, 0]
 
 t = 6.
-horizon = 1.8
+horizon = 2
 dt = 0.02
 
 env = CartPole(c_k, x0, dt)
@@ -21,6 +21,6 @@ mpc_env = CartPole(c_k, x0, dt)
 
 path = '../../../results/nmpc/cart_pole/'
 
-algorithm = NMPC(env, mpc_env, t, dt, horizon, path=path, ilqr_print=True, step_iterations=5)
+algorithm = NMPC(env, mpc_env, t, dt, horizon, path=path, ilqr_print=False, ilqr_save=False, step_iterations=1)
 # reset environment/agent to initial state, delete history
 algorithm.run()

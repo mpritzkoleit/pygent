@@ -1,10 +1,10 @@
 from pygent.environments import Pendulum
 from pygent.algorithms.ddpg import DDPG
 import numpy as np
-
+from pygent.helpers import mapAngles
 # define the incremental cost
 def c_k(x, u):
-    x1, x2 = x
+    x1, x2 = mapAngles([1,0], x)
     u1, = u
     c = x1**2 + 0.1*x2**2 + 0.05*u1**2
     return c
