@@ -7,6 +7,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 # define the incremental cost
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("time_step")
+args = parser.parse_args()
+print(args.time_step)
 def c_k(x, u):
     x1, x2 = x
     u1, = u
@@ -32,7 +38,6 @@ env = Pendulum(c_k, x0, dt)
 env.uMax = env.uMax/3.5*5
 
 path = '../../../results/mbrl/'  # path, where results are saved
-rl_algorithm = MBRL(env, t, dt, path=path, horizon=4., fcost=c_N, warm_up=600, use_mpc_plan=False, use_feedback=True,
-                    ilqr_print=True, ilqr_save=True) # instance of the DDPG algorithm
+rl_algorithm = MBRL(env, t, dt, path=path, horizon=4., fcost=c_N, warm_up=600, use_mpc_plan=True, use_feedback=True,
+                    ilqr_print=False, ilqr_save=False) # instance of the DDPG algorithm
 rl_algorithm.run_learning(50)
-
