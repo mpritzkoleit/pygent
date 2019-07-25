@@ -39,7 +39,8 @@ class MBRL(Algorithm):
                  use_mpc_plan=True,
                  use_feedback=True,
                  ilqr_print=False,
-                 ilqr_save=False):
+                 ilqr_save=False,
+                 weight_decay=1e-3):
 
         xDim = environment.xDim
         oDim = environment.oDim
@@ -54,7 +55,7 @@ class MBRL(Algorithm):
                                       xIsAngle=environment.xIsAngle) # neural network dynamics
         self.optim = torch.optim.Adam(self.nn_dynamics.parameters(),
                                       lr=dyn_lr,
-                                      weight_decay=0.01)
+                                      weight_decay=weight_decay)
         self.nn_environment = StateSpaceModel(self.ode, environment.cost, environment.x0, uDim, dt)
         self.nn_environment.uMax = uMax
         self.nmpc_algorithm = NMPC(environment, self.nn_environment, t, dt, horizon,
