@@ -162,7 +162,6 @@ class MPCAgent(Agent):
 
     def init_optim(self, x0):
         self.traj_optimizer.reset_mu = True
-        print('init x0', x0)
         self.traj_optimizer.environment.reset(x0)
         self.traj_optimizer.environment.x0 = x0
         self.traj_optimizer.reset()

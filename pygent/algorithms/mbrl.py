@@ -4,6 +4,8 @@ import torch
 torch.manual_seed(0)
 import torch.nn as nn
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.colors as colors
 import os
 import pickle
 import inspect
@@ -363,13 +365,14 @@ class MBRL(Algorithm):
         pass
 
     def train_dynamics(self):
+        self.pointcloud()
         training_data_set = copy.deepcopy(self.D_rand)
         for _ in range(self.data_ratio):
             training_data_set.data += self.D_RL.data
         self.training(training_data_set)
         torch.save(self.nn_dynamics.state_dict(), self.path + '.pth')
         # update models in NMPC controller
-        #self.nmpc_algorithm.mpc_environment.ode = copy.deepcopy(self.ode)
+        self.dynamics_error()
 
     def training(self, dataSet):
         # loss function (mean squared error)
@@ -441,13 +444,55 @@ class MBRL(Algorithm):
         plt.plot(nn_env.tt, env.history)
         plt.plot(nn_env.tt, nn_env.history)
         plt.plot(self.agent.tt, self.agent.history)
-        plt.show()
         mse = (nn_env.history - env.history) ** 2
         #plt.plot(nn_env.tt, mse)
         # plt.show()
         #env.plot()
         #nn_env.plot()
         #plt.show()
-        plt.savefig(self.path + 'plots/test.pdf')
+        plt.savefig(self.path + 'plots/test_'+str(self.episode)+'.pdf')
+        plt.close('all')
         # agent.plot()
         print('Prediction Error: ', np.mean(mse))
+
+
+    def pointcloud(self):
+        datasets = [self.D_RL, self.D_rand]
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        for dataset in datasets:
+            if len(dataset.data)>0:
+                x = np.array([sample['x'] for sample in dataset.data])
+                u = np.array([sample['u'] for sample in dataset.data])
+                ax.scatter(x[:,0], x[:,1], u[:,0], marker='o')
+        ax.scatter(0,0,0,marker='o',color='r')
+        ax.set_xlabel(r'$x_1$')
+        ax.set_ylabel(r'$x_2$')
+        ax.set_zlabel(r'$u_1$')
+        plt.savefig(self.path + 'plots/data_'+str(self.episode)+'.pdf')
+        plt.close('all')
+        pass
+
+
+    def dynamics_error(self):
+        dim = 21
+        fig, axes = plt.subplots(3, 2)
+        xx1 = np.linspace(-np.pi, np.pi, dim)
+        xx2 = np.linspace(-10, 10, dim)
+        uu1 = np.linspace(-5, 5, dim)
+
+        X1, X2 = np.meshgrid(xx1, xx2)
+        for k, ax in enumerate(axes.flat):
+            L = np.zeros((dim, dim))
+            for i, x1 in enumerate(xx1):
+                for j, x2 in enumerate(xx2):
+                    fhat = self.ode(0, [x1, x2], [uu1[k]])
+                    f = self.environment.ode(0, [x1, x2], [uu1[k]])
+                    l = np.mean((f - fhat)**2)
+                    L[j, i] = l
+            im = ax.pcolormesh(X1, X2, L, norm=colors.LogNorm(vmin=1e-6, vmax=3e1), rasterized=True)
+        fig.colorbar(im, ax=axes.ravel().tolist(), )
+        plt.savefig(self.path + 'plots/dyn_error_'+str(self.episode)+'.pdf')
+        plt.close('all')
+        pass
+
