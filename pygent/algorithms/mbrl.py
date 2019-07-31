@@ -39,6 +39,7 @@ class MBRL(Algorithm):
                  use_mpc=False,
                  ilqr_print=False,
                  ilqr_save=False,
+                 print_dyn_error=False,
                  weight_decay=1e-3):
 
         xDim = environment.xDim
@@ -84,6 +85,7 @@ class MBRL(Algorithm):
         self.aggregation_interval = aggregation_interval
         self.use_mpc = use_mpc
         self.dynamics_first_trained = False
+        self.print_dyn_error = print_dyn_error
 
         if not os.path.isdir(path):
             os.makedirs(path)
@@ -369,7 +371,8 @@ class MBRL(Algorithm):
         self.training(training_data_set)
         torch.save(self.nn_dynamics.state_dict(), self.path + '.pth')
         # update models in NMPC controller
-        self.dynamics_error()
+        if self.print_dyn_error:
+            self.dynamics_error()
 
     def training(self, dataSet):
         # loss function (mean squared error)
@@ -442,14 +445,8 @@ class MBRL(Algorithm):
         plt.plot(nn_env.tt, nn_env.history)
         plt.plot(self.agent.tt, self.agent.history)
         mse = (nn_env.history - env.history) ** 2
-        #plt.plot(nn_env.tt, mse)
-        # plt.show()
-        #env.plot()
-        #nn_env.plot()
-        #plt.show()
         plt.savefig(self.path + 'plots/test_'+str(self.episode)+'.pdf')
         plt.close('all')
-        # agent.plot()
         print('Prediction Error: ', np.mean(mse))
 
 
