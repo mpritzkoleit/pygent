@@ -1,34 +1,19 @@
 from pygent.environments import Pendulum
-from pygent.algorithms.ddpg import DDPG
 from pygent.algorithms.mbrl import MBRL
-from pygent.data import DataSet
-from pygent.helpers import mapAngles
 import numpy as np
-import torch
-import torch.nn as nn
 import time
 # define the incremental cost
 
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--time_step", type=float, default=0.05)
-parser.add_argument("--mpc", type=int, default=0)
-parser.add_argument("--warm_up",type=int,  default=1000)
+parser.add_argument("--time_step", type=float, default=0.02)
+parser.add_argument("--use_mpc", type=bool, default=False)
+parser.add_argument("--warm_up_episodes",type=int,  default=10)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
 parser.add_argument("--weight_decay", type=float, default=1e-3)
 args = parser.parse_args()
-print(args.time_step, args.mpc, args.warm_up, args.agg, args.epochs, args.weight_decay)
-if args.mpc ==  0:
-    usempc = False
-    feedback = True
-elif args.mpc == 1:
-    usempc = True
-    feedback = False
-else:
-    usempc = True
-    feedback = False
 
 def c_k(x, u):
     x1, x2 = x
@@ -52,19 +37,20 @@ t = 6 # time of an episode
 dt = args.time_step # time step-size
 
 env = Pendulum(c_k, x0, dt)
-env.uMax = env.uMax/3.5*5
+
+env.uMax = env.uMax
 
 path = '../../../results/mbrl_'+str(int(time.time()))+'/'  # path, where results are saved
 rl_algorithm = MBRL(env, t, dt,
                     path=path,
                     horizon=3.,
                     fcost=c_N,
-                    warm_up=args.warm_up,
-                    use_mpc_plan=usempc,
-                    use_feedback=feedback,
+                    warm_up_episodes=args.warm_up_episodes,
+                    use_mpc=args.use_mpc,
                     ilqr_print=False,
                     ilqr_save=False,
                     aggregation_interval=args.agg,
                     training_epochs=args.epochs,
                     weight_decay=args.weight_decay)
+
 rl_algorithm.run_learning(50)
