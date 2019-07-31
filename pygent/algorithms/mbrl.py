@@ -28,7 +28,7 @@ class MBRL(Algorithm):
                  path='../results/mbrl/',
                  checkInterval=2,
                  evalPolicyInterval=100,
-                 warm_up=10000,
+                 warm_up_episodes=10,
                  dyn_lr=1e-3,
                  batch_size=512,
                  training_epochs=60,
@@ -36,8 +36,7 @@ class MBRL(Algorithm):
                  aggregation_interval=1,
                  fcost=None,
                  horizon=None,
-                 use_mpc_plan=True,
-                 use_feedback=True,
+                 use_mpc=False,
                  ilqr_print=False,
                  ilqr_save=False,
                  weight_decay=1e-3):
@@ -46,7 +45,7 @@ class MBRL(Algorithm):
         oDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax
-        if horizon == None or use_mpc_plan:
+        if horizon == None or not use_mpc:
             horizon = t
         self.dt = dt
 
@@ -64,7 +63,7 @@ class MBRL(Algorithm):
                                    path=path,
                                    fcost=fcost,
                                    fastForward=True,
-                                   maxIters=100,
+                                   maxIters=500,
                                    step_iterations=1,
                                    ilqr_print=ilqr_print,
                                    ilqr_save=ilqr_save,
@@ -78,13 +77,12 @@ class MBRL(Algorithm):
         self.evalPolicyInterval = evalPolicyInterval
         self.checkInterval = checkInterval  # checkpoint interval
         self.path = path
-        self.warm_up = warm_up
+        self.warm_up = warm_up_episodes*int(t/dt)
         self.batch_size = batch_size
         self.training_epochs = training_epochs
         self.data_ratio = data_ratio
         self.aggregation_interval = aggregation_interval
-        self.use_mpc_plan=use_mpc_plan
-        self.use_feedback = use_feedback
+        self.use_mpc = use_mpc
         self.dynamics_first_trained = False
 
         if not os.path.isdir(path):
@@ -103,7 +101,7 @@ class MBRL(Algorithm):
         rhs = 1/self.dt*self.nn_dynamics.ode(x, u)
         return rhs
 
-    def run_episode(self, reinit=True):
+    def run_episode(self):
         """ Run a training episode. If terminal state is reached, episode stops."""
 
         print('Started episode ', self.episode)
@@ -119,13 +117,11 @@ class MBRL(Algorithm):
         for i, t in enumerate(tt):
             # agent computes control/action
 
-            if self.use_mpc_plan:
-                if self.use_feedback:
-                    u = self.agent.take_action_plan_feedback(self.dt, self.environment.x, i)
-                else:
-                    u = self.agent.take_action_plan(self.dt, i)
-            else:
+            if self.use_mpc:
                 u = self.agent.take_action(self.dt, self.environment.x)
+            else:
+                u = self.agent.take_action_plan_feedback(self.dt, self.environment.x, i)
+
             # simulation of environment
             c = self.environment.step(u, self.dt)
             cost.append(c)
@@ -241,7 +237,7 @@ class MBRL(Algorithm):
                         self.train_dynamics()
                         self.run_episode()
                     else:
-                        self.run_episode(reinit=(not self.use_mpc_plan))
+                        self.run_episode()
 
             # plot environment after episode finished
             print('Samples: ', self.D_rand.data.__len__(), self.D_RL.data.__len__())
