@@ -32,7 +32,7 @@ class MBRL(Algorithm):
                  dyn_lr=1e-3,
                  batch_size=512,
                  training_epochs=60,
-                 data_ratio = 1,
+                 data_ratio = 5,
                  aggregation_interval=1,
                  fcost=None,
                  horizon=None,
@@ -64,12 +64,12 @@ class MBRL(Algorithm):
                                    path=path,
                                    fcost=fcost,
                                    fastForward=True,
-                                   maxIters=500,
+                                   maxIters=150,
                                    step_iterations=1,
                                    ilqr_print=ilqr_print,
                                    ilqr_save=ilqr_save,
                                    tolFun=1e-4,
-                                   save_interval=1,
+                                   save_interval=100,
                                    noise_gain=0.005)
         super(MBRL, self).__init__(environment, self.nmpc_algorithm.agent, t, dt)
         self.D_rand = DataSet(nData)
@@ -112,11 +112,7 @@ class MBRL(Algorithm):
         disc_cost = [] # discounted cost
         # reset environment/agent to initial state, delete history
         #if reinit or not self.use_mpc_plan:
-        if not self.use_mpc:
-            self.agent.traj_optimizer.run_disk(self.environment.x0)
-            self.agent.traj_optimizer.run_optim()
-        else:
-            self.agent.init_optim(self.environment.x0)
+        self.agent.init_optim(self.environment.x0)
         self.environment.reset(self.environment.x0)
         self.agent.reset()
 
