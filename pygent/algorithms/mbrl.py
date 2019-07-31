@@ -112,9 +112,14 @@ class MBRL(Algorithm):
         disc_cost = [] # discounted cost
         # reset environment/agent to initial state, delete history
         #if reinit or not self.use_mpc_plan:
-        self.agent.init_optim(self.environment.x0)
+        if not self.use_mpc:
+            self.agent.traj_optimizer.run_disk(self.environment.x0)
+            self.agent.traj_optimizer.run_optim()
+        else:
+            self.agent.init_optim(self.environment.x0)
         self.environment.reset(self.environment.x0)
         self.agent.reset()
+
 
         for i, t in enumerate(tt):
             # agent computes control/action
@@ -240,6 +245,8 @@ class MBRL(Algorithm):
                         self.run_episode()
                     else:
                         self.run_episode()
+                if not self.use_mpc:
+                    self.agent.traj_optimizer.save()
 
             # plot environment after episode finished
             print('Samples: ', self.D_rand.data.__len__(), self.D_RL.data.__len__())
@@ -297,7 +304,7 @@ class MBRL(Algorithm):
         # load data set
         if os.path.isfile(self.path + 'data/dataSet_D_RL.p'):
             self.D_RL.load(self.path + 'data/dataSet_D_RL.p')
-            print('Loaded data set D_rand!')
+            print('Loaded data set D_RL!')
         else:
             print('No data set found!')
 

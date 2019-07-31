@@ -318,12 +318,16 @@ class iLQR(Algorithm):
 
     def run_disk(self, x0):
         self.environment.reset(x0)
-        self.KK = np.load(self.path + 'data/K_.npy')
-        self.kk = np.load(self.path + 'data/k.npy')
-        self.uu = np.load(self.path + 'data/uu.npy')
-        self.xx = np.load(self.path + 'data/xx.npy')
-        self.current_alpha = np.load(self.path + 'data/alpha.npy')
-        self.xx, self.uu, self.cost, terminated = self.forward_pass(self.current_alpha)
+        if os.path.isfile(self.path + 'data/K_.npy'):
+            self.KK = np.load(self.path + 'data/K_.npy')
+            self.kk = np.load(self.path + 'data/k.npy')
+            self.uu = np.load(self.path + 'data/uu.npy')
+            self.xx = np.load(self.path + 'data/xx.npy')
+            self.current_alpha = np.load(self.path + 'data/alpha.npy')
+            self.xx, self.uu, self.cost, terminated = self.forward_pass(self.current_alpha)
+        else:
+            print("iLQR controller couldn't be loaded. Running initial trajectory.")
+            self.init_trajectory()
         pass
 
 
