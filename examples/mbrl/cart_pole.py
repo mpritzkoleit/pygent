@@ -10,7 +10,7 @@ import torch.nn as nn
 def c_k(x, u):
     x1, x2, x3, x4 = x
     u1, = u
-    c = .5*(20.*x1**2 + 20*x2**2 + .01*x3**2 + .01*x4**2) + 0.01*u1**2
+    c = 4*x1**2 + 2*x2**2 + .01*x3**2 + .01*x4**2 + 0.01*u1**2
     return c
 
 def c_N(x):
@@ -30,9 +30,9 @@ dt = 0.02 # time step-size
 
 env = CartPole(c_k, x0, dt)
 
-path = '../../../results/mbrl/'  # path, where results are saved
+path = '../../../results/mbrl/cart_pole/'  # path, where results are saved
 
-rl_algorithm = MBRL(env, t, dt, path=path, warm_up=1000, horizon=2., use_mpc_plan=False, ilqr_print=True) # instance of the DDPG algorithm
-#rl_algorithm.load()
+rl_algorithm = MBRL(env, t, dt, path=path, warm_up_episodes=5, horizon=2., use_mpc=False, ilqr_print=True) # instance of the DDPG algorithm
+rl_algorithm.load()
 rl_algorithm.run_learning(40)
 
