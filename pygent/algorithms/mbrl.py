@@ -40,7 +40,8 @@ class MBRL(Algorithm):
                  ilqr_print=False,
                  ilqr_save=False,
                  print_dyn_error=False,
-                 weight_decay=1e-3):
+                 weight_decay=1e-3,
+                 data_noise=1e-3):
 
         xDim = environment.xDim
         oDim = environment.oDim
@@ -64,7 +65,7 @@ class MBRL(Algorithm):
                                    path=path,
                                    fcost=fcost,
                                    fastForward=True,
-                                   maxIters=150,
+                                   maxIters=500,
                                    step_iterations=1,
                                    ilqr_print=ilqr_print,
                                    ilqr_save=ilqr_save,
@@ -86,6 +87,7 @@ class MBRL(Algorithm):
         self.use_mpc = use_mpc
         self.dynamics_first_trained = False
         self.print_dyn_error = print_dyn_error
+        self.data_noise = data_noise
 
         if not os.path.isdir(path):
             os.makedirs(path)
@@ -131,11 +133,11 @@ class MBRL(Algorithm):
             disc_cost.append(c)
 
             # store transition in data set (x_, u, x, c)
-            transition = ({'x_': self.environment.x_ + np.random.normal(0, 0.001, self.environment.xDim),
-                           'u': self.agent.u + np.random.normal(0, 0.001, self.environment.uDim),
-                           'x': self.environment.x + np.random.normal(0, 0.001, self.environment.xDim),
-                           'o_': self.environment.o_ + np.random.normal(0, 0.001, self.environment.oDim),
-                           'o': self.environment.o + np.random.normal(0, 0.001, self.environment.oDim),
+            transition = ({'x_': self.environment.x_ + np.random.normal(0, self.data_noise, self.environment.xDim),
+                           'u': self.agent.u + np.random.normal(0, self.data_noise, self.environment.uDim),
+                           'x': self.environment.x + np.random.normal(0, self.data_noise, self.environment.xDim),
+                           'o_': self.environment.o_ + np.random.normal(0, self.data_noise, self.environment.oDim),
+                           'o': self.environment.o + np.random.normal(0, self.data_noise, self.environment.oDim),
                            'c': [c],
                            't': [self.environment.terminated]})
 
@@ -173,11 +175,11 @@ class MBRL(Algorithm):
             disc_cost.append(c)
 
             # store transition in data set (x_, u, x, c)
-            transition = ({'x_': self.environment.x_ + np.random.normal(0, 0.001, self.environment.xDim),
-                           'u': self.agent.u + np.random.normal(0, 0.001, self.environment.uDim),
-                           'x': self.environment.x + np.random.normal(0, 0.001, self.environment.xDim),
-                           'o_': self.environment.o_+ np.random.normal(0, 0.001, self.environment.oDim),
-                           'o': self.environment.o + np.random.normal(0, 0.001, self.environment.oDim),
+            transition = ({'x_': self.environment.x_ + np.random.normal(0, self.data_noise, self.environment.xDim),
+                           'u': self.agent.u + np.random.normal(0, self.data_noise, self.environment.uDim),
+                           'x': self.environment.x + np.random.normal(0, self.data_noise, self.environment.xDim),
+                           'o_': self.environment.o_+ np.random.normal(0, self.data_noise, self.environment.oDim),
+                           'o': self.environment.o + np.random.normal(0, self.data_noise, self.environment.oDim),
                            'c': [c],
                            't': [self.environment.terminated]})
 
@@ -316,7 +318,6 @@ class MBRL(Algorithm):
         else:
             print('No learning curve data found!')
         #self.run_controller(self.environment.x0)
-        self.dynamics_first_trained = True
         pass
 
     def plot(self):
