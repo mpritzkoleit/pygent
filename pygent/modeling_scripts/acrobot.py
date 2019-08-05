@@ -94,7 +94,7 @@ def modeling(linearized=True):
 
     # replace generalized coordinates with states
     if linearized:
-        xu_subs = [(dq0_t, x3_t), (dq1_t, x4_t), (q0_t, x1_t), (q1_t, x2_t), (tau_a, u_t)]
+        xu_subs = [(dq0_t, x3_t), (dq1_t, x4_t), (q0_t, x1_t), (q1_t, x2_t), (a, u_t)]
     else:
         xu_subs = [(dq0_t, x3_t), (dq1_t, x4_t), (q0_t, x1_t), (q1_t, x2_t), (tau, u_t)]
 
@@ -143,7 +143,7 @@ def load_existing():
         print('Model loaded')
     except:
         print('Model could not be loaded! Rerunning model creation!')
-        dxdt = modeling()
+        dxdt = modeling(linearized=True)
     return dxdt
 
 if __name__ == "__main__":
