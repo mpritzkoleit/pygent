@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 def c_k(x, u):
     x1, x2, x3, x4, x5, x6, x7, x8 = x
     u1, = u
-    c = 15*x1**2 + 10*x2**2 + 10*(x3-np.pi)**2 + .1*u1**2
+    #c = 15*x1**2 + 10*x2**2 + 10*(x3-np.pi)**2 + .1*u1**2
+    c = 15 * x1 ** 2 + 10 * x2 ** 2  + .1 * u1 ** 2
     return c
 
 # define the final cost at step N
@@ -17,7 +18,7 @@ def c_N(x):
     return c
 
 # initial state value
-x0 = [0, np.pi, np.pi, np.pi, 0, 0, 0, 0]
+x0 = [0, 0, 0, 0, 0, 0, 0, 0]
 
 t = 3.5 # simulation time
 dt = 0.005 # time step-size
