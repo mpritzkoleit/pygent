@@ -28,7 +28,7 @@ class NMPC(Algorithm):
                  finite_diff=False,
                  ilqr_print=False,
                  ilqr_save=False,
-                 noise_gain=0.01,
+                 noise_gain=0.005,
                  add_noise=False):
         """
 
@@ -252,7 +252,7 @@ class MPCAgent(Agent):
         xN = self.traj_optimizer.xx[-1]
         c0 = self.traj_optimizer.environment.cost(x0, u0, x1, np)*dt
         cN = self.traj_optimizer.fcost_fnc(xN, np)*dt
-        self.traj_optimizer.cost -= c0  + cN
+        self.traj_optimizer.cost -= c0 + cN
 
         self.traj_optimizer.uu = np.roll(self.traj_optimizer.uu, -1, axis=0)
         self.traj_optimizer.uu[-1] = self.traj_optimizer.uu[-2]*0
@@ -262,7 +262,7 @@ class MPCAgent(Agent):
         u = self.traj_optimizer.uu[-1]
         c = self.traj_optimizer.environment.step(u)
         cN = self.traj_optimizer.fcost_fnc(self.traj_optimizer.environment.x, np)*dt
-        self.traj_optimizer.cost += c  + cN
+        self.traj_optimizer.cost += c + cN
         self.traj_optimizer.xx[-1] = self.traj_optimizer.environment.x
         pass
 
