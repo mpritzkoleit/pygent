@@ -174,8 +174,7 @@ class NNDynamics(nn.Module):
 
         self.layer1 = nn.Linear(self.oDim + self.uDim, 500)
         self.layer2 = nn.Linear(500, 500)
-        self.layer3 = nn.Linear(500, 500)
-        self.layer4 = nn.Linear(500, self.xDim)
+        self.layer3 = nn.Linear(500, self.xDim)
 
     def forward(self, o, u):
         # connect layers
@@ -184,9 +183,7 @@ class NNDynamics(nn.Module):
         h1_out = F.relu(h1)
         h2 = self.layer2(h1_out)
         h2_out = F.relu(h2)
-        h3 = self.layer3(h2_out)
-        h3_out = F.relu(h3)
-        y = self.layer4(h3_out)
+        y = self.layer3(h2_out)
         return y
 
     def ode(self, x, u):
