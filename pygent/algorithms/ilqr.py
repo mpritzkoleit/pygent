@@ -166,7 +166,7 @@ class iLQR(Algorithm):
         return c
 
 
-    def forward_pass(self, alpha):
+    def forward_pass(self, alpha, KK, kk):
         """
 
         Args:
@@ -183,7 +183,7 @@ class iLQR(Algorithm):
 
         cost = 0
         for i in range(self.steps):
-            u = self.KK[i] @ (self.environment.x - xx_[i]) + alpha*self.kk[i].T[0] + uu_[i] # eq. (7b)
+            u = KK[i] @ (self.environment.x - xx_[i]) + alpha*kk[i].T[0] + uu_[i] # eq. (7b)
 
             if self.constrained:
                 u = np.clip(u, -self.environment.uMax, self.environment.uMax)
@@ -226,8 +226,8 @@ class iLQR(Algorithm):
         dV1 = np.zeros((1, 1))
         dV2 = np.zeros((1, 1))
 
-        self.KK = []
-        self.kk = []
+        KK = []
+        kk = []
 
         V1 = [dV1]
         V2 = [dV2]
@@ -303,17 +303,17 @@ class iLQR(Algorithm):
             dV1 = kt.T@qu
 
             # save Kt, kt
-            self.KK.insert(0, Kt)
-            self.kk.insert(0, kt)
+            KK.insert(0, Kt)
+            kk.insert(0, kt)
 
             V1.insert(0, dV1)
             V2.insert(0, dV2)
 
-        return V1, V2, success
+        return V1, V2, success, KK, kk
 
     def run(self, x0):
         self.environment.reset(x0)
-        self.xx, self.uu, self.cost, terminated = self.forward_pass(1.)
+        self.xx, self.uu, self.cost, terminated = self.forward_pass(1., self.KK, self.kk)
         pass
 
     def run_disk(self, x0):
@@ -324,7 +324,7 @@ class iLQR(Algorithm):
             self.uu = np.load(self.path + 'data/uu.npy')
             self.xx = np.load(self.path + 'data/xx.npy')
             self.current_alpha = np.load(self.path + 'data/alpha.npy')
-            self.xx, self.uu, self.cost, terminated = self.forward_pass(self.current_alpha)
+            self.xx, self.uu, self.cost, terminated = self.forward_pass(self.current_alpha, self.KK, self.kk)
         else:
             print("iLQR controller couldn't be loaded. Running initial trajectory.")
             self.init_trajectory()
@@ -342,7 +342,7 @@ class iLQR(Algorithm):
         for _ in range(1, self.max_iters + 1):
             success_bw = False
             while not success_bw:
-                V1, V2, success_bw = self.backward_pass()
+                V1, V2, success_bw, KK, kk = self.backward_pass()
                 if not success_bw:
                     self.increase_mu()
                     break
@@ -351,20 +351,19 @@ class iLQR(Algorithm):
             if success_bw:
                 # check for gradient
                 g_norm = np.mean(
-                    np.max(np.abs(np.array(self.kk).reshape((len(self.kk), self.uDim)) / (np.abs(self.uu) + 1)),
+                    np.max(np.abs(np.array(kk).reshape((len(kk), self.uDim)) / (np.abs(self.uu) + 1)),
                            axis=0))
                 if g_norm < self.tolGrad and self.mu < 1e-5:
                     self.decrease_mu()
                     success_gradient = True
 
                 # Line-search
-                # todo: add parallel linesearch
                 x_list = []
                 u_list = []
                 cost_list = []
                 for a_index, alpha in enumerate(self.alphas):
                     #print('Linesearch:', a_index+1, '/', len(self.alphas))
-                    xx, uu, cost, sys_terminated = self.forward_pass(alpha)
+                    xx, uu, cost, sys_terminated = self.forward_pass(alpha, KK, kk)
                     x_list.append(xx)
                     u_list.append(uu)
                     cost_list.append(cost)
@@ -396,7 +395,8 @@ class iLQR(Algorithm):
                 self.xx = np.copy(x_list[best_idx])
                 self.uu = np.copy(u_list[best_idx])
                 self.current_alpha = self.alphas[best_idx]
-
+                self.kk = kk
+                self.KK = KK
                 # decrease mu
                 self.decrease_mu()
 
@@ -543,6 +543,8 @@ class iLQR(Algorithm):
         pass
 
     def plot(self):
+        self.environment.history = self.xx
+        self.agent.history[1:] = self.uu
         self.environment.plot()
         self.environment.save_history('environment', self.path + 'data/')
         plt.savefig(self.path + 'plots/'+self.file_prefix+'environment.pdf')
