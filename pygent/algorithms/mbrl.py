@@ -32,7 +32,7 @@ class MBRL(Algorithm):
                  dyn_lr=1e-3,
                  batch_size=512,
                  training_epochs=60,
-                 data_ratio = 5,
+                 data_ratio = 1,
                  aggregation_interval=1,
                  fcost=None,
                  horizon=None,
