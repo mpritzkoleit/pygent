@@ -11,15 +11,15 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--time_step", type=float, default=0.02)
 parser.add_argument("--use_mpc", type=bool, default=False)
 parser.add_argument("--warm_up_episodes",type=int,  default=3)
-parser.add_argument("--agg", type=int, default=3)
+parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
-parser.add_argument("--weight_decay", type=float, default=1e-4)
+parser.add_argument("--weight_decay", type=float, default=5e-4)
 args = parser.parse_args()
 
 def c_k(x, u):
     x1, x2, x3, x4 = x
     u1, = u
-    c = 2*x1**2 + 1*x2**2 + .01*x3**2 + .01*x4**2 + 0.01*u1**2
+    c = 2*x1**2 + 1*x2**2 + .01*x3**2 + .01*x4**2 + 0.1*u1**2
     return c
 
 def c_N(x):
@@ -39,7 +39,7 @@ dt = args.time_step # time step-size
 
 env = CartPole(c_k, p_x0, dt)
 
-path = '/scratch/p_da_reg/results/mbrl/cart_pole2/'+'mpc='+str(args.use_mpc)+'/'+'weight_decay='+str(args.weight_decay)+'/'
+path = '/scratch/p_da_reg/results/mbrl/cart_pole/'+'mpc='+str(args.use_mpc)+'/'+'weight_decay='+str(args.weight_decay)+'/'
 
 rl_algorithm = MBRL(env, t, dt,
                     path=path,

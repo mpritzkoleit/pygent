@@ -10,10 +10,10 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--time_step", type=float, default=0.03)
 parser.add_argument("--use_mpc", type=int, default=0)
-parser.add_argument("--warm_up_episodes",type=int,  default=3)
+parser.add_argument("--warm_up_episodes",type=int,  default=6)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
-parser.add_argument("--weight_decay", type=float, default=1e-4)
+parser.add_argument("--weight_decay", type=float, default=1e-3)
 parser.add_argument("--data_noise", type=float, default=1e-3)
 args = parser.parse_args()
 
@@ -22,7 +22,7 @@ args = parser.parse_args()
 def c_k(x, u):
     x1, x2, x3, x4 = x
     u1, = u
-    c = x1**2 + x2**2 + 0.01*x3**2 + 0.01*x4**2 + 0.05*u1**2
+    c = x1**2 + x2**2 + 0.01*x3**2 + 0.01*x4**2 + 0.001*u1**2
     return c
 
 # define the final cost at step N
@@ -41,6 +41,7 @@ t = 6 # time of an episode
 dt = args.time_step # time step-size
 
 env = Acrobot(c_k, p_x0, dt)
+env.uMax = env.uMax*20
 
 path = '/scratch/p_da_reg/results/mbrl/acrobot/'+'mpc='+str(args.use_mpc)+'/'+'weight_decay='+str(args.weight_decay)+'/'
 
@@ -50,7 +51,7 @@ rl_algorithm = MBRL(env, t, dt,
                     fcost=c_N,
                     warm_up_episodes=args.warm_up_episodes,
                     use_mpc=args.use_mpc,
-                    ilqr_print=False,
+                    ilqr_print=True,
                     ilqr_save=False,
                     aggregation_interval=args.agg,
                     training_epochs=args.epochs,
@@ -58,5 +59,5 @@ rl_algorithm = MBRL(env, t, dt,
                     data_noise=args.data_noise)
 
 rl_algorithm.load()
-rl_algorithm.run_learning(50)
+rl_algorithm.run_learning(500)
 

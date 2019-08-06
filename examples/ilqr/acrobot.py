@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 def c_k(x, u):
     x1, x2, x3, x4 = x
     u1, = u
-    c = x1**2 + x2**2 + 0.01*x3**2 + 0.01*x4**2 + 0.05*u1**2
+    c = x1**2 + x2**2 + 0.01*x3**2 + 0.01*x4**2 + 0.05/20*u1**2
     return c
 
 # define the final cost at step N
@@ -23,6 +23,7 @@ t = 6 # simulation time
 dt = 0.03 # time step-size
 
 env = Acrobot(c_k, x0, dt)
+env.uMax = env.uMax*20
 
 path = '../../../results/ilqr/acrobot/' # path, where results are saved
 
