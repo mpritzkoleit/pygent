@@ -9,7 +9,7 @@ matplotlib.use('Agg') # disable interactive display of figures on the HPC-cluste
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--time_step", type=float, default=0.02)
-parser.add_argument("--use_mpc", type=bool, default=True)
+parser.add_argument("--use_mpc", type=bool, default=False)
 parser.add_argument("--warm_up_episodes",type=int,  default=3)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
