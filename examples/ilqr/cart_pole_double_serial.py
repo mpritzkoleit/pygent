@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 def c_k(x, u):
     x1, x2, x3, x4, x5, x6 = x
     u1, = u
-    c = 15*x1**2 + 10*x2**2 + 10*x3**2 + .1*u1**2
+    #c = 15*x1**2 + 10*x2**2 + 10*x3**2 + .2*u1**2
+    c = 500*x1**2 + 900*x2**2 + 900*x3**2 + 20*x4**2 + 100*x5**2 + 100*x6**2 + 10*u1**2
     return c
 
 # define the final cost at step N
@@ -26,8 +27,8 @@ env = CartPoleDoubleSerial(c_k, x0, dt)
 
 path = '../../../results/ilqr/cart_pole_double_serial/'
 
-algorithm = iLQR(env, t, dt, constrained=True, fcost=c_N, path=path, maxIters=1000) # instance of the iLQR algorithm
-
+algorithm = iLQR(env, t, dt, constrained=True, fcost=None, path=path, maxIters=1000) # instance of the iLQR algorithm
+#algorithm.run_disk(x0)
 algorithm.run_optim() # run trajectory optimization
 
 # plot trajectories

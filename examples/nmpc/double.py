@@ -1,5 +1,5 @@
 from pygent.environments import CartPoleDoubleSerial
-from pygent.algorithms.mbrl import MPCAgent
+from pygent.algorithms.nmpc import MPCAgent
 import numpy as np
 import matplotlib.pyplot as plt
 

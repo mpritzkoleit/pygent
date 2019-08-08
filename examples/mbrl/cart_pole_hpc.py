@@ -9,11 +9,12 @@ matplotlib.use('Agg') # disable interactive display of figures on the HPC-cluste
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--time_step", type=float, default=0.02)
-parser.add_argument("--use_mpc", type=bool, default=False)
+parser.add_argument("--use_mpc", type=bool, default=True)
 parser.add_argument("--warm_up_episodes",type=int,  default=3)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
 parser.add_argument("--weight_decay", type=float, default=5e-4)
+parser.add_argument("--pred_err_bound", type=float, default=1e-3)
 args = parser.parse_args()
 
 def c_k(x, u):

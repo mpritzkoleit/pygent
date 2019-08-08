@@ -8,11 +8,11 @@ import time
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--time_step", type=float, default=0.02)
-parser.add_argument("--use_mpc", type=bool, default=False)
-parser.add_argument("--warm_up_episodes",type=int,  default=10)
+parser.add_argument("--use_mpc", type=bool, default=0)
+parser.add_argument("--warm_up_episodes",type=int,  default=3)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
-parser.add_argument("--weight_decay", type=float, default=1e-3)
+parser.add_argument("--weight_decay", type=float, default=5e-4)
 args = parser.parse_args()
 
 def c_k(x, u):

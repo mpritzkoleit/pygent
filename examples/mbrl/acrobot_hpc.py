@@ -10,10 +10,10 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--time_step", type=float, default=0.03)
 parser.add_argument("--use_mpc", type=int, default=0)
-parser.add_argument("--warm_up_episodes",type=int,  default=6)
+parser.add_argument("--warm_up_episodes",type=int,  default=3)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
-parser.add_argument("--weight_decay", type=float, default=1e-3)
+parser.add_argument("--weight_decay", type=float, default=5e-4)
 parser.add_argument("--data_noise", type=float, default=1e-3)
 args = parser.parse_args()
 
@@ -41,7 +41,7 @@ t = 6 # time of an episode
 dt = args.time_step # time step-size
 
 env = Acrobot(c_k, p_x0, dt)
-env.uMax = env.uMax*20
+env.uMax = env.uMax*10
 
 path = '/scratch/p_da_reg/results/mbrl/acrobot/'+'mpc='+str(args.use_mpc)+'/'+'weight_decay='+str(args.weight_decay)+'/'
 
