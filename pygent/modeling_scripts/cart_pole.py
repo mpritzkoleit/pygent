@@ -131,7 +131,7 @@ def modeling(linearized=True):
     print(dx_t_sym)
     # RHS as callable function
     try: # use c-code
-        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, u), dx_t_sym, cfilepath="c_files/cart_pole.c",
+        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, u), dx_t_sym, cfilepath="c_files\cart_pole.c",
                                   use_exisiting_so=False)
 
         dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]

@@ -128,7 +128,7 @@ def modeling(linearized=True):
     print(dx_t_sym)
     # RHS as callable function
     try: # use c-code
-        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), dx_t_sym, cfilepath="c_files/cart_pole_double_serial.c",
+        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), dx_t_sym, cfilepath="c_files\cart_pole_double_serial.c",
                                       use_exisiting_so=False)
         A_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), Asym,
                                       cfilepath="c_files/cart_pole_double_serial_A.c",
@@ -176,4 +176,5 @@ def load_existing():
 
 if __name__ == "__main__":
     # execute only if run as a script
+    modeling()
     load_existing()

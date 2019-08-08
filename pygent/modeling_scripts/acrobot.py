@@ -148,4 +148,5 @@ def load_existing():
 
 if __name__ == "__main__":
     # execute only if run as a script
-    modeling(linearized=True)
+    #modeling(linearized=True)
+    load_existing()
