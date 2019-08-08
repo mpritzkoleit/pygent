@@ -40,7 +40,7 @@ dt = args.time_step # time step-size
 
 env = CartPole(c_k, p_x0, dt)
 
-path = '/scratch/p_da_reg/results/mbrl/cart_pole/'+'mpc='+str(args.use_mpc)+'/'+'weight_decay='+str(args.weight_decay)+'/'
+path = '/scratch/p_da_reg/results/mbrl/cart_pole/'+'mpc='+str(args.use_mpc)+'/'+'weight_decay='+str(args.weight_decay)+'/'+'pred_error='+str(args.pred_err_bound)+'/'
 
 rl_algorithm = MBRL(env, t, dt,
                     path=path,
@@ -52,7 +52,8 @@ rl_algorithm = MBRL(env, t, dt,
                     ilqr_save=False,
                     aggregation_interval=args.agg,
                     training_epochs=args.epochs,
-                    weight_decay=args.weight_decay)
+                    weight_decay=args.weight_decay,
+                    prediction_error_bound=args.pred_err_bound)
 
 rl_algorithm.load()
 rl_algorithm.run_learning(50)
