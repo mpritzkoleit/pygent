@@ -163,23 +163,23 @@ class MBRL(Algorithm):
         pass
 
     def pred_loss(self, transition):
-        x_Inputs = transition['x_']
+        x_Inputs = torch.Tensor([transition['x_']])
         # x_Inputs_norm = (x_Inputs - self.nn_dynamics.xMean) / self.nn_dynamics.xVar
 
-        xInputs = transition['x']
+        xInputs = torch.Tensor([transition['x']])
         # xInputs_norm = (xInputs - self.nn_dynamics.xMean) / self.nn_dynamics.xVar
 
-        o_Inputs = transition['o_']
+        o_Inputs = torch.Tensor([transition['o_']])
         o_Inputs_norm = (o_Inputs - self.nn_dynamics.oMean) / self.nn_dynamics.oVar
 
-        uInputs = transition['u']
+        uInputs = torch.Tensor([transition['u']])
         uInputs_norm = (uInputs - self.nn_dynamics.uMean) / self.nn_dynamics.uVar
 
         dx = xInputs - x_Inputs
         dx_norm = (dx - self.nn_dynamics.dxMean) / self.nn_dynamics.dxVar
 
         fOutputs_norm = self.nn_dynamics(o_Inputs_norm, uInputs_norm)
-        prediction_loss = (fOutputs_norm-dx_norm)**2
+        prediction_loss = np.linalg.norm((fOutputs_norm-dx_norm).detach().numpy(), 2)
         return prediction_loss
 
     def run_random_episode(self):
