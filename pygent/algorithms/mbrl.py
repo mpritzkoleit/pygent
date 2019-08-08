@@ -41,7 +41,8 @@ class MBRL(Algorithm):
                  ilqr_save=False,
                  print_dyn_error=False,
                  weight_decay=1e-3,
-                 data_noise=1e-3):
+                 data_noise=1e-3,
+                 prediction_error_bound=1e-3):
 
         xDim = environment.xDim
         oDim = environment.oDim
@@ -65,7 +66,7 @@ class MBRL(Algorithm):
                                    path=path,
                                    fcost=fcost,
                                    fastForward=True,
-                                   maxIters=500,
+                                   maxIters=1000,
                                    step_iterations=1,
                                    ilqr_print=ilqr_print,
                                    ilqr_save=ilqr_save,
@@ -88,6 +89,7 @@ class MBRL(Algorithm):
         self.dynamics_first_trained = False
         self.print_dyn_error = print_dyn_error
         self.data_noise = data_noise
+        self.prediction_error_bound = prediction_error_bound
 
         if not os.path.isdir(path):
             os.makedirs(path)
@@ -141,8 +143,12 @@ class MBRL(Algorithm):
                            'c': [c],
                            't': [self.environment.terminated]})
 
+
+            prediction_loss = self.pred_loss(transition)
             # add sample to data set
-            self.D_RL.force_add_sample(transition)
+            if prediction_loss > self.prediction_error_bound:
+                # only add sample, if prediction error is higher than error-bound
+                self.D_RL.force_add_sample(transition)
 
             # check if environment terminated
             if self.environment.terminated:
@@ -155,6 +161,26 @@ class MBRL(Algorithm):
         self.episode_steps.append(i)
         self.episode += 1
         pass
+
+    def pred_loss(self, transition):
+        x_Inputs = transition['x_']
+        # x_Inputs_norm = (x_Inputs - self.nn_dynamics.xMean) / self.nn_dynamics.xVar
+
+        xInputs = transition['x']
+        # xInputs_norm = (xInputs - self.nn_dynamics.xMean) / self.nn_dynamics.xVar
+
+        o_Inputs = transition['o_']
+        o_Inputs_norm = (o_Inputs - self.nn_dynamics.oMean) / self.nn_dynamics.oVar
+
+        uInputs = transition['u']
+        uInputs_norm = (uInputs - self.nn_dynamics.uMean) / self.nn_dynamics.uVar
+
+        dx = xInputs - x_Inputs
+        dx_norm = (dx - self.nn_dynamics.dxMean) / self.nn_dynamics.dxVar
+
+        fOutputs_norm = self.nn_dynamics(o_Inputs_norm, uInputs_norm)
+        prediction_loss = (fOutputs_norm-dx_norm)**2
+        return prediction_loss
 
     def run_random_episode(self):
         print('Warmup. Started episode ', self.episode)
