@@ -2,6 +2,8 @@ from pygent.environments import Pendulum
 from pygent.algorithms.mbrl import MBRL
 import numpy as np
 import time
+import matplotlib
+matplotlib.use('Agg') # disable interactive display of figures on the HPC-cluster
 # define the incremental cost
 
 
@@ -12,7 +14,8 @@ parser.add_argument("--use_mpc", type=bool, default=0)
 parser.add_argument("--warm_up_episodes",type=int,  default=3)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
-parser.add_argument("--weight_decay", type=float, default=5e-4)
+parser.add_argument("--weight_decay", type=float, default=5e-4),
+parser.add_argument("--pred_err_bound", type=float, default=0.05)
 args = parser.parse_args()
 
 def c_k(x, u):
@@ -51,6 +54,7 @@ rl_algorithm = MBRL(env, t, dt,
                     ilqr_save=False,
                     aggregation_interval=args.agg,
                     training_epochs=args.epochs,
-                    weight_decay=args.weight_decay)
+                    weight_decay=args.weight_decay,
+                    prediction_error_bound=args.pred_err_bound)
 
 rl_algorithm.run_learning(50)
