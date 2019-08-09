@@ -13,6 +13,8 @@ except ImportError:
 import os
 import cvxopt as opt
 opt.solvers.options['show_progress'] = False
+import scipy as sci
+from scipy import linalg
 
 # pygent
 from pygent.helpers import c2d, system_linearization, fx, fu, fxx, fxu, fuu, fxN, fxxN
@@ -20,6 +22,7 @@ from pygent.agents import FeedBack, Agent
 from pygent.algorithms.core import Algorithm
 from pygent.helpers import mapAngles
 from pygent.data import DataSet
+
 
 class iLQR(Algorithm):
     """ iLQR - iterative linear-quadratic regulator with box control constraints.
@@ -181,9 +184,25 @@ class iLQR(Algorithm):
         self.environment.reset(self.environment.x0)
         self.agent.reset()
 
+        traj_length = len(KK) # length of the optimized
+        system_matrices = self.linearization(self.xx[-2], self.uu[-1])
+        A = system_matrices[0]
+        B = system_matrices[1]
+
+        cost_matrices = self.cost_lin(self.xx[-2], self.uu[-1])
+        Q = cost_matrices[0]
+        R = cost_matrices[1]
+
+        P = sci.linalg.solve_discrete_are(A, B, Q, R)
+        K = -1 / R * B.T.dot(P)
+
         cost = 0
         for i in range(self.steps):
-            u = KK[i] @ (self.environment.x - xx_[i]) + alpha*kk[i].T[0] + uu_[i] # eq. (7b)
+            if i >= traj_length:
+                #switch to LQR-Controller
+                u = K@self.environment.x
+            else:
+                u = KK[i] @ (self.environment.x - xx_[i]) + alpha*kk[i].T[0] + uu_[i] # eq. (7b)
 
             if self.constrained:
                 u = np.clip(u, -self.environment.uMax, self.environment.uMax)
