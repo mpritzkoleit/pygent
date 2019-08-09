@@ -123,7 +123,6 @@ class MBRL(Algorithm):
 
         for i, t in enumerate(tt):
             # agent computes control/action
-
             if self.use_mpc:
                 u = self.agent.take_action(self.dt, self.environment.x)
             else:
