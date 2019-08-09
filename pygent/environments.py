@@ -451,11 +451,12 @@ class CartPole(StateSpaceModel):
         self.oDim = len(self.o)  # observation dimensions
         self.o_ = self.o
         self.uMax = 10*np.ones(1)
+        self.x1Max = 1.5
 
 
     def terminate(self, x):
         x1, x2, x3, x4 = x
-        if np.abs(x1) > 1.5:
+        if np.abs(x1) > self.x1Max:
             return True
         else:
             return False
@@ -485,7 +486,7 @@ class CartPole(StateSpaceModel):
         ax.set_aspect('equal')
         ax.set(xlabel=r'$x_1$')
         plt.ylim((-.6, .6))
-        plt.xlim((min(-1.4, 1.2 * min(x_cart)), max(1.4, 1.2 * max(x_cart))))
+        plt.xlim((-self.xMax-0.1, self.xMax+0.1))
         plt.yticks([], [])
         plt.title('CartPole')
         time_template = 'time = %.1fs'
@@ -509,16 +510,17 @@ class CartPoleDoubleSerial(StateSpaceModel):
         self.o_ = self.o
         self.uMax = 20*np.ones(1)
         self.task = task
+        self.x1Max = 1.5
 
     def terminate(self, x):
         x1, x2, x3, x4, x5, x6 = x
         if self.task == 'swing_up':
-            if abs(x1) > 1.5 or abs(x5) > 25 or abs(x6) > 25:
+            if abs(x1) > self.x1Max or abs(x5) > 25 or abs(x6) > 25:
                 return True
             else:
                 return False
         elif self.task == 'balance':
-            if abs(x1) > 1.5 or abs(x2) > 1. or abs(x3) > 1. or abs(x5) > 25 or abs(x6) > 25:
+            if abs(x1) > self.x1Max or abs(x2) > 1. or abs(x3) > 1. or abs(x5) > 25 or abs(x6) > 25:
                 return True
             else: 
                 return False
@@ -558,7 +560,7 @@ class CartPoleDoubleSerial(StateSpaceModel):
             plt.title('CartPoleDoubleSerial')
             time_template = 'time = %.1fs'
             time_text = ax.text(0.0, 1.05, '', transform=ax.transAxes)
-            rail, = ax.plot([min(-1, 1.2 * min(x_cart)), max(1, 1.2 * max(x_cart))], [0, 0], 'ks-', zorder=0)
+            rail, = ax.plot([-(self.x1Max+0.1), self.x1Max+0.1], [0, 0], 'ks-', zorder=0)
             pole1, = ax.plot([], [], 'b-', zorder=1, lw=3)
             pole2, = ax.plot([], [], 'b-', zorder=1, lw=3)
             cart = patches.Rectangle((-0.1, -0.05), 0.2, 0.1, fc='b', zorder=1)
@@ -577,10 +579,11 @@ class CartPoleDoubleParallel(StateSpaceModel):
         self.oDim = len(self.o) #observation dimensions
         self.o_ = self.o
         self.uMax = 25*np.ones(1)
+        self.x1Max = 1.5
 
     def terminate(self, x):
         x1, x2, x3, x4, x5, x6 = x
-        if abs(x1) > 1.5 or abs(x5) > 25 or abs(x6) > 25:
+        if abs(x1) > self.x1Max or abs(x5) > 25 or abs(x6) > 25:
             return True
         else:
             return False
@@ -618,7 +621,7 @@ class CartPoleDoubleParallel(StateSpaceModel):
             plt.title('CartPoleDoubleParallel')
             time_template = 'time = %.1fs'
             time_text = ax.text(0.05, 1.05, '', transform=ax.transAxes)
-            rail, = ax.plot([min(-1, 1.2 * min(x_cart)), max(1, 1.2 * max(x_cart))], [0, 0], 'ks-', zorder=0)
+            rail, = ax.plot([-(self.x1Max+0.1), self.x1Max+0.1], [0, 0], 'ks-', zorder=0)
             pole1, = ax.plot([], [], 'b-', zorder=1, lw=3)
             pole2, = ax.plot([], [], 'b-', zorder=1, lw=3)
             cart = patches.Rectangle((-0.1, -0.05), 0.2, 0.1, fc='b', zorder=1)
@@ -637,10 +640,11 @@ class CartPoleTriple(StateSpaceModel):
         self.oDim = len(self.o) #observation dimensions
         self.o_ = self.o
         self.uMax = 20*np.ones(1)
+        self.x1Max = 1.5
 
     def terminate(self, x):
         x1, x2, x3, x4, x5, x6, x7, x8 = x
-        if abs(x1) > 1.5:
+        if abs(x1) > self.x1Max:
             return True
         else:
             return False
@@ -683,7 +687,7 @@ class CartPoleTriple(StateSpaceModel):
             plt.title('CartPoleTriple')
             time_template = 'time = %.1fs'
             time_text = ax.text(0.0, 1.05, '', transform=ax.transAxes)
-            rail, = ax.plot([min(-.8, 1.2 * min(x_cart)), max(.8, 1.2 * max(x_cart))], [0, 0], 'ks-', zorder=0)
+            rail, = ax.plot([-(self.x1Max+0.1), self.x1Max+0.1], [0, 0], 'ks-', zorder=0)
             pole1, = ax.plot([], [], 'b-', zorder=1, lw=3)
             pole2, = ax.plot([], [], 'b-', zorder=1, lw=3)
             pole3, = ax.plot([], [], 'b-', zorder=1, lw=3)
