@@ -126,55 +126,63 @@ def modeling(linearized=True):
 
     dx_t_sym = dx_t.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values) # replacing all symbolic functions with symbols
     print(dx_t_sym)
+    if linearized:
+        lin = '_lin'
+    else:
+        lin = ''
+    with open('c_files/cart_pole_double_serial' + lin + '_ode.p', 'wb') as opened_file:
+        pickle.dump(dx_t_sym, opened_file)
+    with open('c_files/cart_pole_double_serial' + lin + '_A.p', 'wb') as opened_file:
+        pickle.dump(Asym, opened_file)
+    with open('c_files/cart_pole_double_serial' + lin + '_B.p', 'wb') as opened_file:
+        pickle.dump(Bsym, opened_file)
     # RHS as callable function
-    try: # use c-code
-        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), dx_t_sym, cfilepath="c_files\cart_pole_double_serial.c",
-                                      use_exisiting_so=False)
-        A_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), Asym,
-                                      cfilepath="c_files/cart_pole_double_serial_A.c",
-                                      use_exisiting_so=False)
-        B_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), Bsym,
-                                     cfilepath="c_files/cart_pole_double_serial_B.c",
-                                     use_exisiting_so=False)
-        A_func = lambda x, u: A_c_func(*x, *u)
-        B_func = lambda x, u: B_c_func(*x, *u)
-        dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
-    except:
-        print('C-function of systems ODE could not be created')
-        dx_func = sp.lambdify((x1, x2, x3, x4, x5, x6, u), dx_t_sym[:], modules="numpy")  # creating a callable python function
-        dxdt = lambda t, x, u: np.array(dx_func(*x, *u))
-        # callable functions
-        A_func = lambda x, u: sp.lambdify((*x, *u), Asym, modules="numpy")
-        B_func = lambda x, u: sp.lambdify((*x, *u), Bsym, modules="numpy")
+    dxdt, A, B = load_existing()
 
-    return dxdt, A_func, B_func
+    return dxdt , A, B
 
-
-def load_existing():
+def load_existing(linearized=True):
+    if linearized:
+        lin = '_lin'
+    else:
+        lin = ''
+    path = os.path.dirname(os.path.abspath(__file__))
+    x1, x2, x3, x4, x5, x6, u = sp.symbols("x1, x2, x3, x4, x5, x6, u")
+    with open(path+'/c_files/cart_pole_double_serial' + lin + '_ode.p', 'rb') as opened_file:
+        dx_t_sym = pickle.load(opened_file)
+        print('Model loaded')
+    with open(path+'/c_files/cart_pole_double_serial' + lin + '_A.p', 'rb') as opened_file:
+        Asym = pickle.load(opened_file)
+        print('A matrix loaded')
+    with open(path+'/c_files/cart_pole_double_serial' + lin + '_B.p', 'rb') as opened_file:
+        Bsym = pickle.load(opened_file)
+        print('B matrix loaded')
     try:
-        x1, x2, x3, x4, x5, x6, u = sp.symbols("x1, x2, x3, x4, x5, x6, u")
-        dx_t_sym = sp.Matrix([[0], [0], [0], [0], [0], [0]])
-        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), dx_t_sym, cfilepath="c_files/cart_pole_double_serial.c",
-                                      use_exisiting_so=True)
-        Asym = sp.zeros(6, 6)
+        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), dx_t_sym,
+                                      cfilepath=path+'/c_files/cart_pole_double_serial' + lin + '.c',
+                                      use_exisiting_so=False)
         A_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), Asym,
-                                     cfilepath="c_files/cart_pole_double_serial_A.c",
-                                     use_exisiting_so=True)
-        Bsym = sp.zeros(6, 1)
+                                     cfilepath=path+'/c_files/cart_pole_double_serial' + lin + '_A.c',
+                                     use_exisiting_so=False)
         B_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), Bsym,
-                                     cfilepath="c_files/cart_pole_double_serial_B.c",
-                                     use_exisiting_so=True)
-        A_func = lambda x, u: A_c_func(*x, *u)
-        B_func = lambda x, u: B_c_func(*x, *u)
+                                     cfilepath=path+'/c_files/cart_pole_double_serial' + lin + '_B.c',
+                                     use_exisiting_so=False)
+        A = lambda x, u: A_c_func(*x, *u)
+        B = lambda x, u: B_c_func(*x, *u)
         dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
         assert(any(dxdt(0, [0, 0, 0, 1., 1., 1.], [0]) != [0., 0., 0., 0., 0., 0.]))
-        print('Model loaded!')
+        print('Using C-function')
     except:
-        print('Model could not be loaded! Rerunning model creation!')
-        dxdt, A_func, B_func = modeling()
-    return dxdt, A_func, B_func
+        A = lambda x, u: sp.lambdify((*x, *u), Asym, modules="numpy")
+        B = lambda x, u: sp.lambdify((*x, *u), Bsym, modules="numpy")
+
+        dx_func = sp.lambdify((x1, x2, x3, x4, x5, x6, u), dx_t_sym[:], modules="numpy")  # creating a callable python function
+        dxdt = lambda t, x, u: np.array(dx_func(*x, *u))
+        assert(any(dxdt(0, [0, 0, 0, 1., 1., 1.], [0]) != [0., 0., 0., 0., 0., 0.]))
+        print('Using lambdify')
+    return dxdt, A, B
 
 if __name__ == "__main__":
     # execute only if run as a script
-    modeling()
-    load_existing()
+    modeling(linearized=False)
+

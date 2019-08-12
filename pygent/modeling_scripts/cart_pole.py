@@ -1,6 +1,7 @@
 import os
 import sympy as sp
 import numpy as np
+import pickle
 from sympy import sin, cos, Function
 try:
     from sympy_to_c import sympy_to_c as sp2c
@@ -122,42 +123,60 @@ def modeling(linearized=True):
     # symbolic expressions of A and B with parameter values
     Asym = A.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values)
     Bsym = B.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values)
-
-    # callable functions
-    A_func = sp.lambdify((x1, x2, x3, x4, u), Asym, modules="numpy")
-    B_func = sp.lambdify((x1, x2, x3, x4, u), Bsym, modules="numpy")
-
     dx_t_sym = dx_t.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values) # replacing all symbolic functions with symbols
     print(dx_t_sym)
-    # RHS as callable function
-    try: # use c-code
-        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, u), dx_t_sym, cfilepath="c_files\cart_pole.c",
-                                  use_exisiting_so=False)
+    if linearized:
+        lin = '_lin'
+    else:
+        lin = ''
+    with open('c_files/cart_pole' + lin + '_ode.p', 'wb') as opened_file:
+        pickle.dump(dx_t_sym, opened_file)
+    with open('c_files/cart_pole' + lin + '_A.p', 'wb') as opened_file:
+        pickle.dump(Asym, opened_file)
+    with open('c_files/cart_pole' + lin + '_B.p', 'wb') as opened_file:
+        pickle.dump(Bsym, opened_file)
+    dxdt, A, B = load_existing()
+    return dxdt, A, B
 
+def load_existing(linearized=True):
+    if linearized:
+        lin = '_lin'
+    else:
+        lin = ''
+    path = os.path.dirname(os.path.abspath(__file__))
+    x1, x2, x3, x4, u = sp.symbols("x1, x2, x3, x4, u")
+    with open(path + '/c_files/cart_pole' + lin + '_ode.p', 'rb') as opened_file:
+        dx_t_sym = pickle.load(opened_file)
+        print('Model loaded')
+    with open(path + '/c_files/cart_pole' + lin + '_A.p', 'rb') as opened_file:
+        Asym = pickle.load(opened_file)
+        print('A matrix loaded')
+    with open(path + '/c_files/cart_pole' + lin + '_B.p', 'rb') as opened_file:
+        Bsym = pickle.load(opened_file)
+        print('B matrix loaded')
+    try:
+        A_c_func = sp2c.convert_to_c((x1, x2, x3, x4, u), Asym,
+                                     cfilepath=path + '/c_files/cart_pole' + lin + '_A.c',
+                                     use_exisiting_so=False)
+        B_c_func = sp2c.convert_to_c((x1, x2, x3, x4, u), Bsym,
+                                     cfilepath=path + '/c_files/cart_pole' + lin + '_B.c',
+                                     use_exisiting_so=False)
+        A = lambda x, u: A_c_func(*x, *u)
+        B = lambda x, u: B_c_func(*x, *u)
+        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, u), dx_t_sym,
+                                      cfilepath=path + '/c_files/cart_pole' + lin + '_ode.c',
+                                      use_exisiting_so=False)
         dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
-
+        assert (any(dxdt(0, [0, 0, 1., 1.], [0]) != [0., 0., 0., 0.]))
+        print('Using C-function')
     except:
-        print('C-function of systems ODE could not be created, using sympy expression!')
         dx_func = sp.lambdify((x1, x2, x3, x4, u), dx_t_sym[:], modules="numpy")  # creating a callable python function
         dxdt = lambda t, x, u: np.array(dx_func(*x, *u))
-    return dxdt
-
-def load_existing():
-    try:
-        x1, x2, x3, x4, u = sp.symbols("x1, x2, x3, x4, u")
-        dx_t_sym = sp.Matrix([[0], [0], [0], [0]])
-        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, u), dx_t_sym, cfilepath="c_files/cart_pole.c",
-                                      use_exisiting_so=True)
-        dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
-        assert(any(dxdt(0, [0, 0, 1., 1.], [0]) != [0., 0., 0., 0.]))
-        print('Model loaded')
-    except:
-        print('Model could not be loaded! Rerunning model creation!')
-        dxdt = modeling(linearized=True)
-    return dxdt
+        assert (any(dxdt(0, [0, 0, 1., 1.], [0]) != [0., 0., 0., 0.]))
+        print('Using lambdify')
+    return dxdt, A, B
 
 
 if __name__ == "__main__":
     # execute only if run as a script
-    #load_existing()
-    modeling(linearized=True)
+    modeling(linearized=False)

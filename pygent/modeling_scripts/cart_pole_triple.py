@@ -141,39 +141,57 @@ def modeling(linearized=True):
     Asym = A.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values)
     Bsym = B.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values)
 
-    # callable functions
-    A_func = sp.lambdify((x2, x3, x4, x5, x6, x7, x8, u), Asym, modules="numpy")
-    B_func = sp.lambdify((x2, x3), Bsym, modules="numpy")
 
     dx_t_sym = dx_t.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values) # replacing all symbolic functions with symbols
     print(dx_t_sym)
     # RHS as callable function
-    try: # use c-code
-        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym, cfilepath="c_files/cart_pole_triple.c",
-                                      use_exisiting_so=False)
-        dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
-
-    except:
-        print('C-function of systems ODE could not be created')
-        dx_func = sp.lambdify((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym[:], modules="numpy")  # creating a callable python function
-        dxdt = lambda t, x, u: np.array(dx_func(*x, *u))
-
-    return dxdt
+    with open('c_files/cart_pole_triple_ode.p', 'wb') as opened_file:
+        pickle.dump(dx_t_sym, opened_file)
+    with open('c_files/cart_pole_triple_A.p', 'wb') as opened_file:
+        pickle.dump(Asym, opened_file)
+    with open('c_files/cart_pole_triple_B.p', 'wb') as opened_file:
+        pickle.dump(Bsym, opened_file)
+    # RHS as callable function
+    dxdt, A, B = load_existing()
+    return dxdt, A, B
 
 def load_existing():
+    path = os.path.dirname(os.path.abspath(__file__))
+    x1, x2, x3, x4, x5, x6, x7, x8, u = sp.symbols("x1, x2, x3, x4, x5, x6, x7, x8, u")
+    with open(path+'/c_files/cart_pole_triple_ode.p', 'rb') as opened_file:
+        dx_t_sym = pickle.load(opened_file)
+        print('Model loaded')
+    with open(path+'/c_files/cart_pole_triple_A.p', 'rb') as opened_file:
+        Asym = pickle.load(opened_file)
+        print('A matrix loaded')
+    with open(path+'/c_files/cart_pole_triple_B.p', 'rb') as opened_file:
+        Bsym = pickle.load(opened_file)
+        print('B matrix loaded')
     try:
-        x1, x2, x3, x4, x5, x6, x7, x8, u = sp.symbols("x1, x2, x3, x4, x5, x6, x7, x8, u")
-        dx_t_sym = sp.Matrix([[0], [0], [0], [0], [0], [0], [0], [0]])
-        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym, cfilepath="c_files/cart_pole_triple.c",
-                                      use_exisiting_so=True)
+        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym,
+                                      cfilepath=path+'/c_files/cart_pole_triple.c',
+                                      use_exisiting_so=False)
+        A_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), Asym,
+                                     cfilepath=path+'/_files/cart_pole_triple_A.c',
+                                     use_exisiting_so=False)
+        B_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), Bsym,
+                                     cfilepath=path+'/c_files/cart_pole_triple_A.c',
+                                     use_exisiting_so=False)
+        A = lambda x, u: A_c_func(*x, *u)
+        B = lambda x, u: B_c_func(*x, *u)
         dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
         assert(any(dxdt(0, [0, 0, 0, 0, 1., 1., 1., 1.], [0]) != [0., 0., 0., 0., 0., 0., 0., 0.]))
-        print('Model loaded')
+        print('Using C-function')
     except:
-        print('Model could not be loaded! Rerunning model creation!')
-        dxdt = modeling()
-    return dxdt
+        A = lambda x, u: sp.lambdify((*x, *u), Asym, modules="numpy")
+        B = lambda x, u: sp.lambdify((*x, *u), Bsym, modules="numpy")
+
+        dx_func = sp.lambdify((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym[:], modules="numpy")  # creating a callable python function
+        dxdt = lambda t, x, u: np.array(dx_func(*x, *u))
+        assert(any(dxdt(0, [0, 0, 0, 0, 1., 1., 1., 1.], [0]) != [0., 0., 0., 0., 0., 0., 0., 0.]))
+        print('Using lambdify')
+    return dxdt, A, B
 
 if __name__ == "__main__":
     # execute only if run as a script
-    modeling()
+    modeling(linearized=True)
