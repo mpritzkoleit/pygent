@@ -116,6 +116,8 @@ class iLQR(Algorithm):
             self.cost_init()
         self.reset_mu = reset_mu # reset mu when running optimization
         self.init = init
+        self.xx = []
+        self.uu = []
         if init:
             self.init_trajectory()
         self.current_alpha = 1
@@ -149,11 +151,11 @@ class iLQR(Algorithm):
     def reset(self):
         self.KK = []
         self.kk = []
-        self.cost = 0.
         self.mu = 1.
         self.mu_d = 1.
-        if self.init:
+        if self.init or self.uu.__len__()==0:
             self.init_trajectory()
+        pass
 
     def cost_fnc(self, x, u, mod):
         """
@@ -169,7 +171,7 @@ class iLQR(Algorithm):
         return c
 
 
-    def forward_pass(self, alpha, KK, kk):
+    def forward_pass(self, alpha, KK, kk, optim=True):
         """
 
         Args:
@@ -193,12 +195,13 @@ class iLQR(Algorithm):
         Q = cost_matrices[0]
         R = cost_matrices[1]
 
-        P = sci.linalg.solve_discrete_are(A, B, Q, R)
-        K = -1 / R * B.T.dot(P)
+        if not optim:
+            P = sci.linalg.solve_discrete_are(A, B, Q, R)
+            K = -1 / R * B.T.dot(P)
 
         cost = 0
         for i in range(self.steps):
-            if i >= traj_length:
+            if i >= traj_length and not optim:
                 #switch to LQR-Controller
                 u = K@self.environment.x
             else:
@@ -343,7 +346,7 @@ class iLQR(Algorithm):
             self.uu = np.load(self.path + 'data/uu.npy')
             self.xx = np.load(self.path + 'data/xx.npy')
             self.current_alpha = np.load(self.path + 'data/alpha.npy')
-            self.xx, self.uu, self.cost, terminated = self.forward_pass(self.current_alpha, self.KK, self.kk)
+            self.xx, self.uu, self.cost, terminated = self.forward_pass(self.current_alpha, self.KK, self.kk, optim=False)
         else:
             print("iLQR controller couldn't be loaded. Running initial trajectory.")
             self.init_trajectory()
