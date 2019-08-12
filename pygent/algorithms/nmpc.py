@@ -12,6 +12,7 @@ from shutil import copyfile
 from pygent.agents import Agent
 from pygent.algorithms.core import Algorithm
 from pygent.algorithms.ilqr import iLQR
+from pygent.helpers import OUnoise
 
 class NMPC(Algorithm):
     def __init__(self, environment, mpc_environment, t, dt, horizon,
@@ -157,15 +158,18 @@ class MPCAgent(Agent):
             self.init_optim(environment.x)
         self.noise_gain = noise_gain
         self.add_noise = add_noise
+        self.action_noise = OUnoise(self.uDim, dt, theta=5, sigma=0.5)
+
+
 
         #self.traj_optimizer.plot()
 
-    def init_optim(self, x0):
+    def init_optim(self, x0, init=True):
         self.traj_optimizer.reset_mu = True
         self.traj_optimizer.environment.reset(x0)
         self.traj_optimizer.environment.x0 = x0
+        self.traj_optimizer.init = init
         self.traj_optimizer.reset()
-        self.traj_optimizer.init_trajectory()
         self.traj_optimizer.max_iters = self.init_iterations
         print('Running inital optimization.')
         self.traj_optimizer.run_optim()
@@ -229,7 +233,6 @@ class MPCAgent(Agent):
             Returns:
                 u (ndarray): control/action
         """
-
         kk = self.traj_optimizer.kk[i].T[0]
         KK = self.traj_optimizer.KK[i]
         uu = self.traj_optimizer.uu[i]
@@ -266,7 +269,7 @@ class MPCAgent(Agent):
         self.traj_optimizer.xx[-1] = self.traj_optimizer.environment.x
         pass
 
-    def take_random_action(self, dt):
+    def take_random_action(self, dt, ou_noise=True):
         """ Compute a random control/action (actor).
 
             Args:
@@ -276,8 +279,11 @@ class MPCAgent(Agent):
             Returns:
                 u (ndarray): noisy control/action
         """
-
-        self.u = np.random.uniform(-self.uMax, self.uMax, self.uDim)
+        if ou_noise:
+            u = self.action_noise.sample()*self.uMax
+            self.u = np.clip(u, -self.uMax, self.uMax)
+        else:
+            self.u = np.random.uniform(-self.uMax, self.uMax, self.uDim)
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         return self.u
