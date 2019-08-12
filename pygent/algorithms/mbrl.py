@@ -20,6 +20,7 @@ from pygent.algorithms.core import Algorithm
 from pygent.algorithms.nmpc import NMPC
 from pygent.nn_models import NNDynamics
 
+
 class MBRL(Algorithm):
 
     def __init__(self, environment, t, dt,
@@ -91,6 +92,7 @@ class MBRL(Algorithm):
         self.data_noise = data_noise
         self.prediction_error_bound = prediction_error_bound
 
+
         if not os.path.isdir(path):
             os.makedirs(path)
         if not os.path.isdir(path + 'plots/'):
@@ -107,16 +109,17 @@ class MBRL(Algorithm):
         rhs = 1/self.dt*self.nn_dynamics.ode(x, u)
         return rhs
 
-    def run_episode(self):
+    def run_episode(self, reinit=True):
         """ Run a training episode. If terminal state is reached, episode stops."""
 
         print('Started episode ', self.episode)
         tt = np.arange(0, self.t, self.dt)
         cost = []  # list of incremental costs
         disc_cost = [] # discounted cost
-        # reset environment/agent to initial state, delete history
-        #if reinit or not self.use_mpc_plan:
-        self.agent.init_optim(self.environment.x0)
+        if self.use_mpc:
+            self.agent.init_optim(self.environment.x0)
+        else:
+            self.agent.init_optim(self.environment.x0, init=True)
         self.environment.reset(self.environment.x0)
         self.agent.reset()
 
