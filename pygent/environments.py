@@ -752,9 +752,9 @@ class Acrobot(StateSpaceModel):
         self.oDim = len(self.o)  # observation dimensions
         self.o_ = self.o
         if linearized:
-            self.uMax = 5*np.ones(1)
-        else:
             self.uMax = 50*np.ones(1)
+        else:
+            self.uMax = 5*np.ones(1)
 
 
     def terminate(self, x):

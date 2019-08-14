@@ -170,6 +170,10 @@ def load_existing(linearized=True):
         assert (any(dxdt(0, [0, 0, 1., 1.], [0]) != [0., 0., 0., 0.]))
         print('Using C-function')
     except:
+        A_func = sp.lambdify((x1, x2, x3, x4, u), Asym, modules="numpy")
+        B_func = sp.lambdify((x1, x2, x3, x4, u), Bsym, modules="numpy")
+        A = lambda x, u: A_func(*x, *u)
+        B = lambda x, u: B_func(*x, *u)
         dx_func = sp.lambdify((x1, x2, x3, x4, u), dx_t_sym[:], modules="numpy")  # creating a callable python function
         dxdt = lambda t, x, u: np.array(dx_func(*x, *u))
         assert (any(dxdt(0, [0, 0, 1., 1.], [0]) != [0., 0., 0., 0.]))
