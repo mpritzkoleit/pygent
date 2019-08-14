@@ -43,7 +43,10 @@ class MBRL(Algorithm):
                  print_dyn_error=False,
                  weight_decay=1e-3,
                  data_noise=1e-3,
-                 prediction_error_bound=1e-3):
+                 prediction_error_bound=1e-3,
+                 ou_theta=1,
+                 ou_sigma=0.2,
+                 maxIters=500):
 
         xDim = environment.xDim
         oDim = environment.oDim
@@ -67,13 +70,15 @@ class MBRL(Algorithm):
                                    path=path,
                                    fcost=fcost,
                                    fastForward=True,
-                                   maxIters=1000,
+                                   maxIters=maxIters,
                                    step_iterations=1,
                                    ilqr_print=ilqr_print,
                                    ilqr_save=ilqr_save,
                                    tolFun=1e-4,
                                    save_interval=100,
-                                   noise_gain=0.005)
+                                   noise_gain=0.005,
+                                   ou_theta=ou_theta,
+                                   ou_sigma=ou_sigma)
         super(MBRL, self).__init__(environment, self.nmpc_algorithm.agent, t, dt)
         self.D_rand = DataSet(nData)
         self.D_RL = DataSet(nData)
@@ -467,19 +472,26 @@ class MBRL(Algorithm):
         # simulate dynamics
         env = copy.deepcopy(self.environment)
         nn_env = copy.deepcopy(self.nn_environment)
+        nn_env2 = copy.deepcopy(self.nn_environment)
         env.reset(x0)
         nn_env.reset(x0)
+        loss = []
         for u in self.agent.history[1:]:
-            #u = np.random.uniform(-env.uMax, env.uMax)
             env.step(u, self.dt)
             nn_env.fast_step(u, self.dt)
-        plt.plot(nn_env.tt, env.history)
-        plt.plot(nn_env.tt, nn_env.history)
-        plt.plot(self.agent.tt, self.agent.history)
+            nn_env2.reset(env.x_)
+            nn_env2.fast_step(u, self.dt)
+            loss.append((env.x - nn_env2.x)**2)
+
+        fig, ax = plt.subplots(2,1)
+        ax[0].plot(nn_env.tt, env.history)
+        ax[0].plot(nn_env.tt, nn_env.history)
+        ax[1].plot(self.agent.tt, self.agent.history)
         mse = (nn_env.history - env.history) ** 2
-        plt.savefig(self.path + 'plots/test_'+str(self.episode)+'.pdf')
+        plt.savefig(self.path + 'plots/'+str(self.episode)+'_test.pdf')
         plt.close('all')
-        print('Prediction Error: ', np.mean(mse))
+        print('Trajectory Prediction Error: ', np.mean(mse))
+        print('One Step Prediction Error: ', np.mean(loss))
 
 
     def pointcloud(self):
@@ -495,7 +507,7 @@ class MBRL(Algorithm):
         ax.set_xlabel(r'$x_1$')
         ax.set_ylabel(r'$x_2$')
         ax.set_zlabel(r'$u_1$')
-        plt.savefig(self.path + 'plots/data_'+str(self.episode)+'.pdf')
+        plt.savefig(self.path + 'plots/'+str(self.episode)+'_data.pdf')
         plt.close('all')
         pass
 

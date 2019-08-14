@@ -30,7 +30,9 @@ class NMPC(Algorithm):
                  ilqr_print=False,
                  ilqr_save=False,
                  noise_gain=0.005,
-                 add_noise=False):
+                 add_noise=False,
+                 ou_theta=0.15,
+                 ou_sigma=0.2):
         """
 
         Args:
@@ -72,7 +74,9 @@ class NMPC(Algorithm):
                          finite_diff=finite_diff,
                          noise_gain=noise_gain,
                          add_noise=add_noise,
-                         save_interval=save_interval)
+                         save_interval=save_interval,
+                         ou_sigma=ou_sigma,
+                         ou_theta=ou_theta)
 
         super(NMPC, self).__init__(environment, agent, t, dt)
         self.save_interval = save_interval
@@ -134,7 +138,9 @@ class MPCAgent(Agent):
                  init_optim = True,
                  finite_diff=True,
                  noise_gain=0.05,
-                 add_noise=False):
+                 add_noise=False,
+                 ou_theta=0.15,
+                 ou_sigma=0.2):
         super(MPCAgent, self).__init__(environment.uDim)
         self.traj_optimizer = iLQR(environment, horizon, dt,
                                    path=path,
@@ -158,7 +164,7 @@ class MPCAgent(Agent):
             self.init_optim(environment.x)
         self.noise_gain = noise_gain
         self.add_noise = add_noise
-        self.action_noise = OUnoise(self.uDim, dt, theta=5, sigma=0.5)
+        self.action_noise = OUnoise(self.uDim, dt, theta=ou_theta, sigma=ou_sigma)
 
 
 
