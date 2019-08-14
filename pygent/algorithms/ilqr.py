@@ -468,7 +468,11 @@ class iLQR(Algorithm):
 
         Args:
             """
-        A, B = system_linearization(lambda xx, uu: self.environment.ode(None, xx, uu), x, u)
+        if hasattr(self.environment, 'A') and hasattr(self.environment, 'B'):
+            A = self.environment.A(x, u)
+            B = self.environment.B(x, u)
+        else:
+            A, B = system_linearization(lambda xx, uu: self.environment.ode(None, xx, uu), x, u)
 
         # Ad, Bd = c2d(A, B, self.dt)
         Ad = A*self.dt + np.eye(self.xDim)
