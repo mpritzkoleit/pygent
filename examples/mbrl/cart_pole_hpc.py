@@ -14,13 +14,13 @@ parser.add_argument("--warm_up_episodes",type=int,  default=3)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
 parser.add_argument("--weight_decay", type=float, default=5e-4)
-parser.add_argument("--pred_err_bound", type=float, default=1e-3)
+parser.add_argument("--pred_err_bound", type=float, default=1e-2)
 args = parser.parse_args()
 
 def c_k(x, u):
     x1, x2, x3, x4 = x
     u1, = u
-    c = 2*x1**2 + 1*x2**2 + .01*x3**2 + .01*x4**2 + 0.1*u1**2
+    c = 1*x1**2 + 5*x2**2 + .01*x3**2 + .01*x4**2 + 0.1*u1**2
     return c
 
 def c_N(x):
@@ -45,7 +45,7 @@ path = '/scratch/p_da_reg/results/mbrl/cart_pole/'+'mpc='+str(args.use_mpc)+'/'+
 rl_algorithm = MBRL(env, t, dt,
                     path=path,
                     horizon=2.,
-                    fcost=c_N,
+                    fcost=None,
                     warm_up_episodes=args.warm_up_episodes,
                     use_mpc=args.use_mpc,
                     ilqr_print=True,
@@ -55,6 +55,6 @@ rl_algorithm = MBRL(env, t, dt,
                     weight_decay=args.weight_decay,
                     prediction_error_bound=args.pred_err_bound)
 
-rl_algorithm.load()
+#rl_algorithm.load()
 rl_algorithm.run_learning(50)
 
