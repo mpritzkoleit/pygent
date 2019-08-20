@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 def c_k(x, u):
     x1, x2, x3, x4 = x
     u1, = u
-    c = x1**2 + x2**2 + 0.01*x3**2 + 0.01*x4**2 + 0.005*u1**2
+    c = 5*x1**2 + x2**2 + 0.01*x3**2 + 0.01*x4**2 + 0.005*u1**2
     return c
 
 # define the final cost at step N
@@ -23,9 +23,9 @@ t = 6 # simulation time
 dt = 0.03 # time step-size
 
 env = Acrobot(c_k, x0, dt)
-env.uMax = env.uMax*14
+env.uMax = env.uMax*0.7
 
-path = '../../../results/ilqr/acrobot/' # path, where results are saved
+path = '../../../results/ilqr/acrobot2/' # path, where results are saved
 
 algorithm = iLQR(env, t, dt, fcost=c_N, path=path, constrained=True) # instance of the iLQR algorithm
 

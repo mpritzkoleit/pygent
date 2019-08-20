@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 def c_k(x, u):
     x1, x2, x3, x4 = x
     u1, = u
-    c = 0.5*x1**2 + x2**2  + 0.02*x3**2 + 0.05*x4**2 + 0.05*u1**2
+    c = 0.5*x1**2 + 3*x2**2  + 0.02*x3**2 + 0.05*x4**2 + 0.05*u1**2
     return c
 
 # define the final cost at step N
@@ -19,16 +19,16 @@ def c_N(x):
 # initial state value
 x0 = [0, np.pi, 0, 0]
 
-t = 25 # simulation time
+t = 5 # simulation time
 dt = 0.02 # time step-size
 
 env = CartPole(c_k, x0, dt)
 
 path = '../../../results/ilqr/cart_pole/' # path, where results are saved
 
-algorithm = iLQR(env, t, dt, path=path, fcost=c_N, constrained=True, finite_diff=True) # instance of the iLQR algorithm
-algorithm.run_disk(x0)
-#algorithm.run_optim() # run trajectory optimization
+algorithm = iLQR(env, t, dt, path=path, fcost=None, constrained=True, finite_diff=False) # instance of the iLQR algorithm
+#algorithm.run_disk(x0)
+algorithm.run_optim() # run trajectory optimization
 
 # plot trajectories
 algorithm.plot()

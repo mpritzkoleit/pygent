@@ -21,7 +21,7 @@ args = parser.parse_args()
 def c_k(x, u):
     x1, x2, x3, x4, x5, x6 = x
     u1, = u
-    c = 15*x1**2 + 10*x2**2 + 10*x3**2 + .1*u1**2
+    c = 2*x1**2 + 3*x2**2 + 2*x3**2 + 0.02*x4**2 + 0.03*x5**2 + 0.03*x6**2 + 0.01*u1**2
     return c
 
 # define the final cost at step N
