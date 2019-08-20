@@ -32,7 +32,7 @@ env = CartPoleDoubleSerial(c_k, x0, dt)
 
 path = '../../../results/ilqr/cart_pole_double_serial2/'
 
-algorithm = iLQR(env, t, dt, constrained=True, fcost=c_N, path=path, maxIters=1000, finite_diff=True) # instance of the iLQR algorithm
+algorithm = iLQR(env, t, dt, constrained=True, fcost=c_N, path=path, maxIters=1000) # instance of the iLQR algorithm
 #algorithm.run_disk(x0)
 algorithm.run_optim() # run trajectory optimization
 
