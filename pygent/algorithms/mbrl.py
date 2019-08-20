@@ -201,7 +201,7 @@ class MBRL(Algorithm):
 
         for i, t in enumerate(tt):
             # agent computes control/action
-            u = self.agent.take_random_action(self.dt)
+            u = self.agent.take_random_action(self.dt, ou_noise=False)
             # simulation of environment
             c = self.environment.step(u, self.dt)
             cost.append(c)
