@@ -512,7 +512,7 @@ class CartPoleDoubleSerial(StateSpaceModel):
         self.oDim = len(self.o) #observation dimensions
         self.o_ = self.o
         if linearized:
-            self.uMax = 20*np.ones(1)
+            self.uMax = 15*np.ones(1)
         else:
             self.uMax = 100*np.ones(1)
         self.task = task
