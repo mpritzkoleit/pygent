@@ -68,7 +68,8 @@ class iLQR(Algorithm):
                  file_prefix = '',
                  init=True,
                  reset_mu=True,
-                 saving=True):
+                 saving=True,
+                 parallel=False):
         """
 
         Args:
@@ -142,7 +143,7 @@ class iLQR(Algorithm):
         self.lims = self.environment.uMax
         self.regType = regType
         self.save_interval = save_interval
-        self.parallel = False
+        self.parallel = parallel
         self.log_data = log_data
         self.R = DataSet(dataset_size)
         self.KK = []
