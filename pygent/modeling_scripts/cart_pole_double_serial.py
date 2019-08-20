@@ -121,10 +121,10 @@ def modeling(linearized=True):
     B = dx_t.diff(u_t)
 
     # symbolic expressions of A and B with parameter values
-    Asym = A.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values)
-    Bsym = B.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values)
+    Asym = A.subs(list(zip(x_t, xx))).subs(u_t, u)
+    Bsym = B.subs(list(zip(x_t, xx))).subs(u_t, u)
 
-    dx_t_sym = dx_t.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values) # replacing all symbolic functions with symbols
+    dx_t_sym = dx_t.subs(list(zip(x_t, xx))).subs(u_t, u)# replacing all symbolic functions with symbols
     print(dx_t_sym)
     if linearized:
         lin = '_lin'
@@ -137,7 +137,7 @@ def modeling(linearized=True):
     with open('c_files/cart_pole_double_serial' + lin + '_B.p', 'wb') as opened_file:
         pickle.dump(Bsym, opened_file)
     # RHS as callable function
-    dxdt, A, B = load_existing()
+    dxdt, A, B = load_existing(linearized=linearized)
 
     return dxdt , A, B
 
@@ -157,6 +157,17 @@ def load_existing(linearized=True):
     with open(path+'/c_files/cart_pole_double_serial' + lin + '_B.p', 'rb') as opened_file:
         Bsym = pickle.load(opened_file)
         print('B matrix loaded')
+
+    params = sp.symbols('m0, m1, m2, J1, J2, a1, a2, l1, l2, g, d0, d1, d2')  # system parameters
+    m0, m1, m2, J1, J2, a1, a2, l1, l2, g, d0, d1, d2 = params
+    params_values = [(m0, 3.34), (m1, 0.876), (m2, 0.938), (J1, 0.013), (J2, 0.024),
+                     (a1, 0.215), (a2, 0.269), (l1, 0.323), (l2, 0.419), (g, 9.81),
+                     (d0, 0.1), (d1, 0.215), (d2, 0.002)]
+
+    dx_t_sym = dx_t_sym.subs(params_values)
+    Asym = Asym.subs(params_values)
+    Bsym = Bsym.subs(params_values)
+
     try:
         dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, u), dx_t_sym,
                                       cfilepath=path+'/c_files/cart_pole_double_serial' + lin + '.c',
@@ -186,5 +197,5 @@ def load_existing(linearized=True):
 
 if __name__ == "__main__":
     # execute only if run as a script
-    modeling(linearized=False)
+    modeling(linearized=True)
 

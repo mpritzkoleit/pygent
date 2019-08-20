@@ -15,15 +15,7 @@ def modeling(linearized=True):
     t = sp.Symbol('t') # time
     params = sp.symbols('m0, m1, m2, m3, J1, J2, J3, a1, a2, a3, l1, l2, l3, g, d0, d1, d2, d3') # system parameters
     m0, m1, m2, m3, J1, J2, J3, a1, a2, a3, l1, l2, l3, g, d0, d1, d2, d3 = params
-    params_values = [(m0, 3.34), (m1, 0.876), (m2,  0.938), (m3,  0.553), (J1, 0.013), (J2, 0.024),
-                     (J3, 0.018), (a1, 0.215), (a2, 0.269), (a3, 0.226), (l1, 0.323), (l2, 0.419), (l3, 0.484), (g, 9.81),
-                     (d0, 0.1), (d1, 0.215), (d2, 0.002), (d3, 0.002)]
 
-    # parameters of the test bench at the Institute of Control Theory, TU Dresden
-    params_values = [(m0, 3.34), (m1, 0.852), (m2, 0.8973), (m3, 0.5519), (J1, 0.01980194), (J2, 0.02105375),
-                     (J3, 0.01818537), (a1, 0.20001517), (a2, 0.26890449), (a3, 0.21666087), (l1, 0.32), (l2, 0.419), (l3, 0.485),
-                     (g, 9.81),
-                     (d0, 0.1), (d1, 0.00715294), (d2, 1.9497e-06), (d3, 0.00164642)]
     # force
     F = sp.Symbol('F')
 
@@ -131,18 +123,19 @@ def modeling(linearized=True):
         xu_subs = [(dq0_t, x5_t), (dq1_t, x6_t), (dq2_t, x7_t), (dq3_t, x8_t),
                    (q0_t, x1_t), (q1_t, x2_t), (q2_t, x3_t), (q3_t, x4_t), (F, u_t)]
     # first order ODE (right hand side)
-    dx_t = sp.Matrix([x5_t, x6_t, x7_t, x8, ddq[ddq0_t], ddq[ddq1_t], ddq[ddq2_t], ddq[ddq3_t]])
+    dx_t = sp.Matrix([x5_t, x6_t, x7_t, x8_t, ddq[ddq0_t], ddq[ddq1_t], ddq[ddq2_t], ddq[ddq3_t]])
     dx_t = dx_t.subs(xu_subs)
+
     # linearized dynamics
     A = dx_t.jacobian(x_t)
     B = dx_t.diff(u_t)
 
     # symbolic expressions of A and B with parameter values
-    Asym = A.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values)
-    Bsym = B.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values)
+    Asym = A.subs(list(zip(x_t, xx))).subs(u_t, u)
+    Bsym = B.subs(list(zip(x_t, xx))).subs(u_t, u)
 
 
-    dx_t_sym = dx_t.subs(list(zip(x_t, xx))).subs(u_t, u).subs(params_values) # replacing all symbolic functions with symbols
+    dx_t_sym = dx_t.subs(list(zip(x_t, xx))).subs(u_t, u) # replacing all symbolic functions with symbols
     print(dx_t_sym)
     if linearized:
         lin = '_lin'
@@ -175,6 +168,25 @@ def load_existing(linearized=True):
     with open(path+'/c_files/cart_pole_triple' + lin + '_B.p', 'rb') as opened_file:
         Bsym = pickle.load(opened_file)
         print('B matrix loaded')
+
+    params = sp.symbols('m0, m1, m2, m3, J1, J2, J3, a1, a2, a3, l1, l2, l3, g, d0, d1, d2, d3')  # system parameters
+    m0, m1, m2, m3, J1, J2, J3, a1, a2, a3, l1, l2, l3, g, d0, d1, d2, d3 = params
+    params_values = [(m0, 3.34), (m1, 0.876), (m2, 0.938), (m3, 0.553), (J1, 0.013), (J2, 0.024),
+                     (J3, 0.018), (a1, 0.215), (a2, 0.269), (a3, 0.226), (l1, 0.323), (l2, 0.419), (l3, 0.484),
+                     (g, 9.81),
+                     (d0, 0.1), (d1, 0.215), (d2, 0.002), (d3, 0.002)]
+
+    # parameters of the test bench at the Institute of Control Theory, TU Dresden
+    params_values = [(m0, 3.34), (m1, 0.852), (m2, 0.8973), (m3, 0.5519), (J1, 0.01980194), (J2, 0.02105375),
+                     (J3, 0.01818537), (a1, 0.20001517), (a2, 0.26890449), (a3, 0.21666087), (l1, 0.32), (l2, 0.419),
+                     (l3, 0.485),
+                     (g, 9.81),
+                     (d0, 0.1), (d1, 0.00715294), (d2, 1.9497e-06), (d3, 0.00164642)]
+
+    dx_t_sym = dx_t_sym.subs(params_values)
+    Asym = Asym.subs(params_values)
+    Bsym = Bsym.subs(params_values)
+
     try:
         dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym,
                                       cfilepath=path+'/c_files/cart_pole_triple' + lin + '.c',
@@ -204,5 +216,4 @@ def load_existing(linearized=True):
 
 if __name__ == "__main__":
     # execute only if run as a script
-    #modeling(linearized=True)
-    modeling(linearized=False)
+    modeling(linearized=True)
