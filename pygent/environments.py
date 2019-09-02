@@ -203,19 +203,35 @@ class StateSpaceModel(Environment):
                  terminal_cost=0.):
         super(StateSpaceModel, self).__init__(x0, uDim, dt)
         self.ode = ode
-        cost_args = inspect.signature(cost).parameters.__len__()
+        params = inspect.signature(cost).parameters
+        cost_args = params.__len__()
         if cost_args == 1:
-            self.cost = lambda x_, u_, x, mod: cost(x_)
-        if cost_args == 2:
-            self.cost = lambda x_, u_, x, mod: cost(x_, u_)
-        elif cost_args == 3 and 'mod' in inspect.signature(cost).parameters:
-            self.cost = lambda x_, u_, x, mod: cost(x_, u_, mod)
-        elif cost_args == 3 and 'mod' not in inspect.signature(cost).parameters:
-            self.cost = lambda x_, u_, x, mod: cost(x_, u_, x)
+            self.cost = lambda x_, u_, x, t, mod: cost(x_)
+        elif cost_args == 2:
+            if 'mod' in params:
+                self.cost = lambda x_, u_, x, t, mod: cost(x_, mod)
+            elif 't' in params:
+                self.cost = lambda x_, u_, x, t, mod: cost(x_, t)
+            else:
+                self.cost = lambda x_, u_, x, t, mod: cost(x_, u_)
+        elif cost_args == 3:
+            if 'mod' in params:
+                self.cost = lambda x_, u_, x, t, mod: cost(x_, u_, mod)
+            elif 't' in params:
+                self.cost = lambda x_, u_, x, t, mod: cost(x_, u_, t)
+            else:
+                self.cost = lambda x_, u_, x, t, mod: cost(x_, u_, x)
         elif cost_args == 4:
+            if 'mod' in params and 't' in params:
+                self.cost = lambda x_, u_, x, t, mod: cost(x_, u_, t, mod)
+            elif 'mod' in params and not 't' in params:
+                self.cost = lambda x_, u_, x, t, mod: cost(x_, u_, x, mod)
+            else:
+                self.cost = lambda x_, u_, x, t, mod: cost(x_, u_, x, t)
+        elif cost_args == 5:
             self.cost = cost
         else:
-            print('Cost function must to be of the form c(x), c(x, u), c(x_, u_, x), c(x, u, mod) or c(x_, u_, x, mod), where mod is a placeholder for numpy/sympy.')
+            print('Cost function must to be of the form c(x_, u_, x, t, mod), where mod is numpy/sympy.')
             assert(True)
         self.xIsAngle = np.zeros([len(self.x_)], dtype=bool)
         self.o = self.x
@@ -255,7 +271,8 @@ class StateSpaceModel(Environment):
         #x_2pi = mapAngles(self.xIsAngle, self.x_)
         #x2pi = mapAngles(self.xIsAngle, self.x)
         #c = (self.cost(x_2pi, u, x2pi, np) + self.terminal_cost*self.terminated)*dt
-        c = (self.cost(self.x_, u, self.x, np) + self.terminal_cost * self.terminated) * dt
+        t = self.tt[-1]
+        c = (self.cost(self.x_, u, self.x, t, np) + self.terminal_cost * self.terminated) * dt
         return c
 
     def terminate(self, x):
@@ -300,9 +317,8 @@ class StateSpaceModel(Environment):
         self.history = np.concatenate((self.history, np.array([self.x])))  # save current state
         self.tt.extend([self.tt[-1] + dt])  # increment simulation time
         self.terminated = self.terminate(self.x)
-        x_2pi = mapAngles(self.xIsAngle, self.x_)
-        x2pi = mapAngles(self.xIsAngle, self.x)
-        c = (self.cost(x_2pi, u, x2pi, np) + self.terminal_cost*self.terminated)*dt
+        t = self.tt[-1]
+        c = (self.cost(self.x_, u, self.x, t, np) + self.terminal_cost*self.terminated)*dt
         return c
 
     def observe(self, x):

@@ -110,7 +110,7 @@ class iLQR(Algorithm):
         self.finite_diff = finite_diff
         self.cost = 0.
         if fcost == None:
-            self.fcost_fnc = lambda x, mod: self.cost_fnc(x, np.zeros((1, self.uDim)), mod)
+            self.fcost_fnc = lambda x, mod: self.cost_fnc(x, np.zeros((1, self.uDim)), t, mod)
         else:
             if inspect.signature(fcost).parameters.__len__() == 1:
                 self.fcost_fnc = lambda x, mod: fcost(x)  # final cost
@@ -153,6 +153,7 @@ class iLQR(Algorithm):
         self.R = DataSet(dataset_size)
         self.KK = []
         self.kk = []
+        self.tt = np.arange(0, self.t, self.dt)
 
     def reset(self):
         self.KK = []
@@ -163,7 +164,7 @@ class iLQR(Algorithm):
             self.init_trajectory()
         pass
 
-    def cost_fnc(self, x, u, mod):
+    def cost_fnc(self, x, u, t, mod):
         """
 
         Args:
@@ -173,7 +174,7 @@ class iLQR(Algorithm):
         Returns:
 
         """
-        c = self.environment.cost(x, u, None, mod)*self.dt
+        c = self.environment.cost(x, u, None, t, mod)*self.dt
         return c
 
 
@@ -200,7 +201,7 @@ class iLQR(Algorithm):
             A = system_matrices[0]
             B = system_matrices[1]
 
-            cost_matrices = self.cost_lin(self.xx[-2], self.uu[-1])
+            cost_matrices = self.cost_lin(self.xx[-2], self.uu[-1], self.tt[-1])
             Q = cost_matrices[0]
             R = cost_matrices[1]
             N = cost_matrices[2]
@@ -243,7 +244,7 @@ class iLQR(Algorithm):
     def backward_pass(self):
         x = self.xx[-1]
         system_matrices = [self.linearization(x, u) for x, u in zip(self.xx[:-1], self.uu)]
-        cost_matrices = [self.cost_lin(x, u) for x, u in zip(self.xx[:-1], self.uu)]
+        cost_matrices = [self.cost_lin(x, u, t) for x, u, t in zip(self.xx[:-1], self.uu, self.tt)]
 
         # DARE in Vt, vt
         if self.finite_diff:
@@ -270,7 +271,6 @@ class iLQR(Algorithm):
 
             # expanded cost
             Cxx, Cuu, Cxu, cx, cu = cost_matrices[i]
-
             # expanded system dynamics
             Ad, Bd, ft = system_matrices[i]
 
@@ -527,8 +527,9 @@ class iLQR(Algorithm):
 
         xx = sp.symbols('x1:' + str(self.xDim + 1))
         uu = sp.symbols('u1:' + str(self.uDim + 1))
+        t = sp.Symbol('t')
 
-        c = self.cost_fnc(xx, uu, sp)
+        c = self.cost_fnc(xx, uu, t, sp)
         cc = sp.Matrix([[c]])
         cx = cc.jacobian(xx)
         cu = cc.jacobian(uu)
@@ -543,16 +544,16 @@ class iLQR(Algorithm):
         Cfxx = cfx.jacobian(xx)
 
         try:
-            cx_func = sp2c.convert_to_c((*xx, *uu), cx.T, cfilepath=self.path + 'c_files/cx.c', use_exisiting_so=False)
-            self.cx = lambda x, u: cx_func(*x, *u)
-            cu_func = sp2c.convert_to_c((*xx, *uu), cu.T, cfilepath=self.path + 'c_files/cu.c', use_exisiting_so=False)
-            self.cu = lambda x, u: cu_func(*x, *u)
-            Cxx_func = sp2c.convert_to_c((*xx, *uu), Cxx, cfilepath=self.path + 'c_files/Cxx.c', use_exisiting_so=False)
-            self.Cxx = lambda x, u: Cxx_func(*x, *u)
-            Cuu_func = sp2c.convert_to_c((*xx, *uu), Cuu, cfilepath=self.path + 'c_files/Cuu.c', use_exisiting_so=False)
-            self.Cuu = lambda x, u: Cuu_func(*x, *u)
-            Cxu_func = sp2c.convert_to_c((*xx, *uu), Cxu, cfilepath=self.path + 'c_files/Cxu.c', use_exisiting_so=False)
-            self.Cxu = lambda x, u: Cxu_func(*x, *u)
+            cx_func = sp2c.convert_to_c((*xx, *uu, t), cx.T, cfilepath=self.path + 'c_files/cx.c', use_exisiting_so=False)
+            self.cx = lambda x, u, t: cx_func(*x, *u, t)
+            cu_func = sp2c.convert_to_c((*xx, *uu, t), cu.T, cfilepath=self.path + 'c_files/cu.c', use_exisiting_so=False)
+            self.cu = lambda x, u, t: cu_func(*x, *u, t)
+            Cxx_func = sp2c.convert_to_c((*xx, *uu, t), Cxx, cfilepath=self.path + 'c_files/Cxx.c', use_exisiting_so=False)
+            self.Cxx = lambda x, u, t: Cxx_func(*x, *u, t)
+            Cuu_func = sp2c.convert_to_c((*xx, *uu, t), Cuu, cfilepath=self.path + 'c_files/Cuu.c', use_exisiting_so=False)
+            self.Cuu = lambda x, u, t: Cuu_func(*x, *u, t)
+            Cxu_func = sp2c.convert_to_c((*xx, *uu, t), Cxu, cfilepath=self.path + 'c_files/Cxu.c', use_exisiting_so=False)
+            self.Cxu = lambda x, u, t: Cxu_func(*x, *u, t)
             cfx_func = sp2c.convert_to_c((*xx,), cfx.T, cfilepath=self.path + 'c_files/cfx.c', use_exisiting_so=False)
             self.cfx = lambda x: cfx_func(*x,)
             Cfxx_func = sp2c.convert_to_c((*xx,), Cfxx, cfilepath=self.path + 'c_files/Cfxx.c', use_exisiting_so=False)
@@ -582,19 +583,19 @@ class iLQR(Algorithm):
         self.Bd = sp.lambdify((xx, uu), Bd)
         pass
 
-    def cost_lin(self, x, u):
+    def cost_lin(self, x, u, t):
         if self.finite_diff:
-            Cxx = fxx(lambda x, u: self.cost_fnc(x, u, np), x, u)
-            Cuu = fuu(lambda x, u: self.cost_fnc(x, u, np), x, u)
-            Cxu = fxu(lambda x, u: self.cost_fnc(x, u, np), x, u)
-            cx = fx(lambda x, u: self.cost_fnc(x, u, np), x, u).T
-            cu = fu(lambda x, u: self.cost_fnc(x, u, np), x, u).T
+            Cxx = fxx(lambda x, u: self.cost_fnc(x, u, t, np), x, u)
+            Cuu = fuu(lambda x, u: self.cost_fnc(x, u, t, np), x, u)
+            Cxu = fxu(lambda x, u: self.cost_fnc(x, u, t, np), x, u)
+            cx = fx(lambda x, u: self.cost_fnc(x, u, t, np), x, u).T
+            cu = fu(lambda x, u: self.cost_fnc(x, u, t, np), x, u).T
         else:
-            Cxx = self.Cxx(x, u)
-            Cuu = self.Cuu(x, u)
-            Cxu = self.Cxu(x, u)
-            cx = self.cx(x, u)
-            cu = self.cu(x, u)
+            Cxx = self.Cxx(x, u, t)
+            Cuu = self.Cuu(x, u, t)
+            Cxu = self.Cxu(x, u, t)
+            cx = self.cx(x, u, t)
+            cu = self.cu(x, u, t)
         return Cxx, Cuu, Cxu, cx, cu
 
     def decrease_mu(self):
