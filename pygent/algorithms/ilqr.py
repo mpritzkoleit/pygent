@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import time
 import copy
 import inspect
+import pickle
 from shutil import copyfile
 import sympy as sp
 try:
@@ -15,6 +16,7 @@ import cvxopt as opt
 opt.solvers.options['show_progress'] = False
 import scipy as sci
 from scipy import linalg
+from scipy.interpolate import interp1d
 
 # pygent
 from pygent.helpers import c2d, system_linearization, fx, fu, fxx, fxu, fuu, fxN, fxxN
@@ -69,7 +71,8 @@ class iLQR(Algorithm):
                  init=True,
                  reset_mu=True,
                  saving=True,
-                 parallel=False):
+                 parallel=False,
+                 final_backpass=True):
         """
 
         Args:
@@ -125,6 +128,7 @@ class iLQR(Algorithm):
         self.printing = printing
         self.file_prefix = file_prefix
         self.saving = saving
+        self.final_backpass = final_backpass
         # todo: mu to eta
 
         # algorithm parameters
@@ -134,7 +138,8 @@ class iLQR(Algorithm):
         self.mu_max = 1e10
         self.mu_d0 = 1.6
         self.mu_d = 1.
-        self.mu = 1.
+        self.mu = 1e-6
+        self.mu0 = 1.e-6
         self.alphas = 10 ** np.linspace(0, -3, 11)
         self.zmin = 0.
         self.tolGrad = tolGrad
@@ -152,7 +157,7 @@ class iLQR(Algorithm):
     def reset(self):
         self.KK = []
         self.kk = []
-        self.mu = 1.
+        self.mu = 1e-6
         self.mu_d = 1.
         if self.init or self.uu.__len__()==0:
             self.init_trajectory()
@@ -188,17 +193,19 @@ class iLQR(Algorithm):
         self.agent.reset()
 
         traj_length = len(KK) # length of the optimized
-        system_matrices = self.linearization(self.xx[-2], self.uu[-1])
-        A = system_matrices[0]
-        B = system_matrices[1]
 
-        cost_matrices = self.cost_lin(self.xx[-2], self.uu[-1])
-        Q = cost_matrices[0]
-        R = cost_matrices[1]
 
         if not optim:
-            P = sci.linalg.solve_discrete_are(A, B, Q, R)
-            K = -1 / R * B.T.dot(P)
+            system_matrices = self.linearization(self.xx[-2], self.uu[-1])
+            A = system_matrices[0]
+            B = system_matrices[1]
+
+            cost_matrices = self.cost_lin(self.xx[-2], self.uu[-1])
+            Q = cost_matrices[0]
+            R = cost_matrices[1]
+            N = cost_matrices[2]
+            P = sci.linalg.solve_discrete_are(A, B, Q, R,s=N)
+            K = -np.linalg.inv(R + B.T@P@B)@(N.T + B.T@P@A)
 
         cost = 0
         for i in range(self.steps):
@@ -331,7 +338,6 @@ class iLQR(Algorithm):
 
             V1.insert(0, dV1)
             V2.insert(0, dV2)
-
         return V1, V2, success, KK, kk
 
     def run(self, x0):
@@ -340,15 +346,45 @@ class iLQR(Algorithm):
         pass
 
     def run_disk(self, x0):
-        self.environment.reset(x0)
-        if os.path.isfile(self.path + 'data/K_.npy'):
-            self.KK = np.load(self.path + 'data/K_.npy')
-            self.kk = np.load(self.path + 'data/k.npy')
-            self.uu = np.load(self.path + 'data/uu.npy')
-            self.xx = np.load(self.path + 'data/xx.npy')
+        if os.path.isfile(self.path + 'data/K_.npy') and os.path.isfile(self.path + 'data/time_info.p'):
+            with open(self.path + 'data/time_info.p', 'rb') as opened_file:
+                tt = pickle.load(opened_file)
+            t0 = tt[0]
+            dt = tt[1] - t0
+            tf = tt[-1]
+            tt = np.arange(t0, tf, dt)
+            KK = np.load(self.path + 'data/K_.npy')
+            kk = np.load(self.path + 'data/k.npy')
+            uu = np.load(self.path + 'data/uu.npy')
+            xx = np.load(self.path + 'data/xx.npy')
+            if self.dt == dt:
+                self.KK = KK
+                self.kk = kk
+                self.uu = uu
+                self.xx = xx
+            else:
+                interp_method = 'previous'
+                tt_new = np.arange(t0, tf - dt, self.dt)
+                KK_f = interp1d(tt, KK, axis=0, kind=interp_method)
+                self.KK = KK_f(tt_new)
+
+                kk_f = interp1d(tt, kk, axis=0, kind=interp_method)
+                self.kk = kk_f(tt_new)
+
+                uu_f = interp1d(tt, uu, axis=0, kind=interp_method)
+                self.uu = uu_f(tt_new)
+
+                xx_f = interp1d(tt, xx[:-1], axis=0, kind=interp_method)
+                xx_new = xx_f(tt_new)
+                self.environment.reset(xx_new[-1])
+                self.environment.step(self.uu[-1])
+                self.xx = np.concatenate((xx_new, np.array([self.environment.x])), axis=0)
             self.current_alpha = np.load(self.path + 'data/alpha.npy')
-            self.xx, self.uu, self.cost, terminated = self.forward_pass(self.current_alpha, self.KK, self.kk, optim=False)
+            self.environment.reset(x0)
+            self.xx, self.uu, self.cost, terminated = self.forward_pass(self.current_alpha, self.KK, self.kk,
+                                                                        optim=False)
         else:
+            self.environment.reset(x0)
             print("iLQR controller couldn't be loaded. Running initial trajectory.")
             self.init_trajectory()
         pass
@@ -358,7 +394,7 @@ class iLQR(Algorithm):
         """ Trajectory optimization. """
         start_time = time.time()
         if self.reset_mu:
-            self.mu = 1.0
+            self.mu = self.mu0
             self.mu_d = 1.
         success_gradient = False
         # later run_episode
@@ -405,7 +441,7 @@ class iLQR(Algorithm):
                     else:
                         z = np.sign(dcost)
                         print('non-positive expected reduction')
-                        self.increase_mu() # todo: probably delete this line, if something's not working!
+                        #self.increase_mu() # todo: probably delete this line, if something's not working!
                     if z > self.zmin:
                         self.success_fw = True
                         if not self.parallel:
@@ -441,7 +477,11 @@ class iLQR(Algorithm):
                     if self.printing:
                         print('Diverged: no improvement')
                     break
-
+        # final backpass
+        if self.final_backpass:
+            print('final_back')
+            self.mu = self.mu0
+            V1, V2, success_bw, self.KK, self.kk = self.backward_pass()
         print('Iterations: %d | Final Cost-to-Go: %.2f | Runtime: %.2f min.' % (_, self.cost, (time.time() - start_time) / 60))
         if self.saving:
             self.save() # save controller
@@ -451,7 +491,7 @@ class iLQR(Algorithm):
         """ Initial trajectory, with u=0. """
         self.agent.reset()
         for _ in range(self.steps):
-            u = np.random.uniform(-0.001, 0.001, self.uDim)
+            u = 0*np.random.uniform(-0.001, 0.001, self.uDim)
             u = self.agent.control(self.dt, u)
             # necessary to store control in agents history
             if self.fastForward:
@@ -595,5 +635,8 @@ class iLQR(Algorithm):
         np.save(self.path + 'data/uu', self.uu)
         np.save(self.path + 'data/xx', self.xx)
         np.save(self.path + 'data/alpha', self.current_alpha)
+        with open(self.path + 'data/time_info.p', 'wb') as opened_file:
+            time_info = self.environment.tt
+            pickle.dump(time_info, opened_file)
         if self.printing:
             self.plot()
