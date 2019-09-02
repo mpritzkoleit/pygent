@@ -20,16 +20,14 @@ def c_N(x):
 x0 = [0, np.pi, 0, 0]
 
 t = 5 # simulation time
-dt = 0.02 # time step-size
-
+dt = 0.01 # time step-size
 env = CartPole(c_k, x0, dt)
 
-path = '../../../results/ilqr/cart_pole/' # path, where results are saved
+path = '../../../results/ilqr/cart_pole2/' # path, where results are saved
 
-algorithm = iLQR(env, t, dt, path=path, fcost=None, constrained=True, finite_diff=False) # instance of the iLQR algorithm
-#algorithm.run_disk(x0)
-algorithm.run_optim() # run trajectory optimization
-
+algorithm = iLQR(env, t, dt, path=path, fcost=None, constrained=True, finite_diff=False, fastForward=True) # instance of the iLQR algorithm
+algorithm.run_disk(x0)
+#algorithm.run_optim() # run trajectory optimization
 # plot trajectories
 algorithm.plot()
 plt.show()
