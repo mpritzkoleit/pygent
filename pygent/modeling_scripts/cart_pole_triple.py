@@ -159,13 +159,13 @@ def load_existing(linearized=True):
         lin = ''
     path = os.path.dirname(os.path.abspath(__file__))
     x1, x2, x3, x4, x5, x6, x7, x8, u = sp.symbols("x1, x2, x3, x4, x5, x6, x7, x8, u")
-    with open(path+'/c_files/cart_pole_triple' + lin + '_ode.p', 'rb') as opened_file:
+    with open(path + '/c_files/cart_pole_triple' + lin + '_ode.p', 'rb') as opened_file:
         dx_t_sym = pickle.load(opened_file)
         print('Model loaded')
-    with open(path+'/c_files/cart_pole_triple' + lin + '_A.p', 'rb') as opened_file:
+    with open(path + '/c_files/cart_pole_triple' + lin + '_A.p', 'rb') as opened_file:
         Asym = pickle.load(opened_file)
         print('A matrix loaded')
-    with open(path+'/c_files/cart_pole_triple' + lin + '_B.p', 'rb') as opened_file:
+    with open(path + '/c_files/cart_pole_triple' + lin + '_B.p', 'rb') as opened_file:
         Bsym = pickle.load(opened_file)
         print('B matrix loaded')
 
@@ -177,7 +177,7 @@ def load_existing(linearized=True):
                      (d0, 0.1), (d1, 0.215), (d2, 0.002), (d3, 0.002)]
 
     # parameters of the test bench at the Institute of Control Theory, TU Dresden
-    params_values = [(m0, 3.34), (m1, 0.852), (m2, 0.8973), (m3, 0.5519), (J1, 0.01980194), (J2, 0.02105375),
+    params_values = [(m0, 3.34), (m1, 0.8512), (m2, 0.8973), (m3, 0.5519), (J1, 0.01980194), (J2, 0.02105375),
                      (J3, 0.01818537), (a1, 0.20001517), (a2, 0.26890449), (a3, 0.21666087), (l1, 0.32), (l2, 0.419),
                      (l3, 0.485),
                      (g, 9.81),
@@ -188,29 +188,28 @@ def load_existing(linearized=True):
     Bsym = Bsym.subs(params_values)
 
     try:
-        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym,
-                                      cfilepath=path+'/c_files/cart_pole_triple' + lin + '.c',
-                                      use_exisiting_so=False)
         A_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), Asym,
-                                     cfilepath=path+'/_files/cart_pole_triple' + lin + '_A.c',
+                                     cfilepath=path + '/c_files/cart_pole_triple' + lin + '_A.c',
                                      use_exisiting_so=False)
         B_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), Bsym,
-                                     cfilepath=path+'/c_files/cart_pole_triple' + lin + '_A.c',
+                                     cfilepath=path + '/c_files/cart_pole_triple' + lin + '_B.c',
                                      use_exisiting_so=False)
         A = lambda x, u: A_c_func(*x, *u)
         B = lambda x, u: B_c_func(*x, *u)
+        dx_c_func = sp2c.convert_to_c((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym,
+                                      cfilepath=path + '/c_files/cart_pole_triple' + lin + '_ode.c',
+                                      use_exisiting_so=False)
         dxdt = lambda t, x, u: dx_c_func(*x, *u).T[0]
-        assert(any(dxdt(0, [0, 0, 0, 0, 1., 1., 1., 1.], [0]) != [0., 0., 0., 0., 0., 0., 0., 0.]))
+        assert (any(dxdt(0, [0, 0, 0, 0, 1., 1., 1., 1.], [0]) != [0., 0., 0., 0., 0., 0., 0., 0.]))
         print('Using C-function')
     except:
         A_func = sp.lambdify((x1, x2, x3, x4, x5, x6, x7, x8, u), Asym, modules="numpy")
         B_func = sp.lambdify((x1, x2, x3, x4, x5, x6, x7, x8, u), Bsym, modules="numpy")
         A = lambda x, u: A_func(*x, *u)
         B = lambda x, u: B_func(*x, *u)
-
         dx_func = sp.lambdify((x1, x2, x3, x4, x5, x6, x7, x8, u), dx_t_sym[:], modules="numpy")  # creating a callable python function
         dxdt = lambda t, x, u: np.array(dx_func(*x, *u))
-        assert(any(dxdt(0, [0, 0, 0, 0, 1., 1., 1., 1.], [0]) != [0., 0., 0., 0., 0., 0., 0., 0.]))
+        assert (any(dxdt(0, [0, 0, 0, 0, 1., 1., 1., 1.], [0]) != [0., 0., 0., 0., 0., 0., 0., 0.]))
         print('Using lambdify')
     return dxdt, A, B
 

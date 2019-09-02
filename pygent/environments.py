@@ -244,7 +244,7 @@ class StateSpaceModel(Environment):
             dt = self.dt
 
         # system simulation
-        sol = solve_ivp(lambda t, x: self.ode(t, x, u), (0, dt), self.x_)
+        sol = solve_ivp(lambda t, x: self.ode(t, x, u), (0, dt), self.x_, 'RK45')
         # todo: only output value of the last timestep
         y = list(sol.y[:, -1])  # extract simulation result
         self.x = y
