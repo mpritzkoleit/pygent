@@ -8,26 +8,30 @@ matplotlib.use('Agg') # disable interactive display of figures on the HPC-cluste
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--time_step", type=float, default=0.02)
+parser.add_argument("--exp_id", type=str, default='')
+parser.add_argument("--time_step", type=float, default=0.002)
 parser.add_argument("--use_mpc", type=int, default=0)
 parser.add_argument("--warm_up_episodes",type=int,  default=3)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
 parser.add_argument("--weight_decay", type=float, default=1e-4)
 parser.add_argument("--data_noise", type=float, default=1e-3)
+parser.add_argument("--path", type=float, default=1e-3)
+parser.add_argument("--data_set", type=str, default='')
+parser.add_argument("--episodes", type=int, default=50)
 args = parser.parse_args()
 
 # define the incremental cost
 def c_k(x, u, mod):
     x1, x2, x3, x4, x5, x6, x7, x8 = x
     u1, = u
-    c = 15*x1**2 + 10*(x2-mod.pi)**2 + 10*(x3-mod.pi)**2 + 10*(x4-mod.pi)**2 + .1*u1**2
+    c = 15*(x1-0.5)**2 + 10*(x2-mod.pi)**2 + 10*(x3-mod.pi)**2 + 10*(x4-mod.pi)**2 + .1*u1**2
     return c
 
 # define the final cost at step N
 def c_N(x, mod):
     x1, x2, x3, x4, x5, x6, x7, x8 = x
-    c = 100*x1**2 + 100*(x2-mod.pi)**2 + 100*(x3-mod.pi)**2 + 100*(x4-mod.pi)**2 + 10*x5**2 + 10*x6**2 + 10*x7**2 + 10*x8**2
+    c = 100*(x1-0.5)**2 + 100*(x2-mod.pi)**2 + 100*(x3-mod.pi)**2 + 100*(x4-mod.pi)**2 + 10*x5**2 + 10*x6**2 + 10*x7**2 + 10*x8**2
     return c
 
 # initial state value
@@ -35,19 +39,15 @@ x0 = [0, np.pi, np.pi, np.pi, 0, 0, 0, 0]
 
 # define the function, that represents the initial value distribution p(x_0)
 def p_x0():
-    x0 = [np.random.uniform(-0.01, 0.01),
-          np.random.uniform(0.99*np.pi, 1.01*np.pi),
-          np.random.uniform(0.99*np.pi, 1.01*np.pi),
-          np.random.uniform(0.99*np.pi, 1.01*np.pi),
-          0, 0, 0, 0]
+    x0 = [np.random.uniform(-0.005, 0.005), 0, 0, 0, 0, 0, 0, 0]
     return x0
 
-t = 5 # time of an episode
+t = 3.0 # time of an episode
 dt = args.time_step # time step-size
 
 env = CartPoleTriple(c_k, p_x0, dt)
 
-path = '/scratch/p_da_reg/results/mbrl/cart_pole_double/'+'time_step='+str(args.time_step)+'/'+'weight_decay='+str(args.weight_decay)+'/'
+path = args.path + str(args.id)
 
 rl_algorithm = MBRL(env, t, dt,
                     path=path,
@@ -62,6 +62,7 @@ rl_algorithm = MBRL(env, t, dt,
                     weight_decay=args.weight_decay,
                     data_noise=args.data_noise)
 
-rl_algorithm.load()
-rl_algorithm.run_learning(50)
+if args.data_set != '':
+    rl_algorithm.D_rand.load(args.data_set)
+rl_algorithm.run_learning(args.episodes)
 
