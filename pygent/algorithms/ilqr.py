@@ -194,27 +194,10 @@ class iLQR(Algorithm):
         self.agent.reset()
 
         traj_length = len(KK) # length of the optimized
-
-
-        if not optim:
-            system_matrices = self.linearization(self.xx[-2], self.uu[-1])
-            A = system_matrices[0]
-            B = system_matrices[1]
-
-            cost_matrices = self.cost_lin(self.xx[-2], self.uu[-1], self.tt[-1])
-            Q = cost_matrices[0]
-            R = cost_matrices[1]
-            N = cost_matrices[2]
-            P = sci.linalg.solve_discrete_are(A, B, Q, R,s=N)
-            K = -np.linalg.inv(R + B.T@P@B)@(N.T + B.T@P@A)
-
         cost = 0
         for i in range(self.steps):
-            if i >= traj_length and not optim:
-                #switch to LQR-Controller
-                u = K@self.environment.x
-            else:
-                u = KK[i] @ (self.environment.x - xx_[i]) + alpha*kk[i].T[0] + uu_[i] # eq. (7b)
+            j = min(traj_length-1, i)
+            u = KK[j] @ (self.environment.x - xx_[j]) + alpha*kk[j].T[0] + uu_[j] # eq. (7b)
 
             if self.constrained:
                 u = np.clip(u, -self.environment.uMax, self.environment.uMax)
@@ -241,18 +224,32 @@ class iLQR(Algorithm):
 
         return xx, uu, cost, self.environment.terminated
 
-    def backward_pass(self):
+    def backward_pass(self, final=False):
         x = self.xx[-1]
         system_matrices = [self.linearization(x, u) for x, u in zip(self.xx[:-1], self.uu)]
         cost_matrices = [self.cost_lin(x, u, t) for x, u, t in zip(self.xx[:-1], self.uu, self.tt)]
 
         # DARE in Vt, vt
-        if self.finite_diff:
-            vx = fxN(lambda xx: self.fcost_fnc(xx, np), x).T*self.dt
-            Vxx = fxxN(lambda xx: self.fcost_fnc(xx, np), x)*self.dt
+        if not final:
+            if self.finite_diff:
+                vx = fxN(lambda xx: self.fcost_fnc(xx, np), x).T*self.dt
+                Vxx = fxxN(lambda xx: self.fcost_fnc(xx, np), x)*self.dt
+            else:
+                vx = self.cfx(x)*self.dt
+                Vxx = self.Cfxx(x)*self.dt
         else:
-            vx = self.cfx(x)*self.dt
-            Vxx = self.Cfxx(x)*self.dt
+            sys_mat = system_matrices[-1]
+            A = sys_mat[0]
+            B = sys_mat[1]
+
+            cost_mat = cost_matrices[-1]
+            Q = cost_mat[0]
+            R = cost_mat[1]
+            N = cost_mat[2]
+            P = sci.linalg.solve_discrete_are(A, B, Q, R, s=N)
+
+            vx = P@x.reshape(len(x), 1)*0
+            Vxx = P
 
         dV1 = np.zeros((1, 1))
         dV2 = np.zeros((1, 1))
@@ -363,6 +360,7 @@ class iLQR(Algorithm):
                 self.uu = uu
                 self.xx = xx
             else:
+                print('interpolating controller')
                 interp_method = 'previous'
                 tt_new = np.arange(t0, tf - dt, self.dt)
                 KK_f = interp1d(tt, KK, axis=0, kind=interp_method)
@@ -480,11 +478,16 @@ class iLQR(Algorithm):
         # final backpass
         if self.final_backpass:
             print('final_back')
-            self.mu = self.mu0
-            V1, V2, success_bw, self.KK, self.kk = self.backward_pass()
+            self.mu = 0.
+            V1, V2, success_bw, KK, kk = self.backward_pass(final=True)
+            if success_bw:
+                print('final back successfull')
+                self.kk = kk
+                self.KK = KK
         print('Iterations: %d | Final Cost-to-Go: %.2f | Runtime: %.2f min.' % (_, self.cost, (time.time() - start_time) / 60))
         if self.saving:
             self.save() # save controller
+            print('Controller saved.')
         return self.xx, self.uu, self.cost
 
     def init_trajectory(self):
@@ -561,11 +564,11 @@ class iLQR(Algorithm):
             print('Using C functions for taylor expansion of the cost function!')
         except:
             print('Could not use C functions for taylor expansion of the cost function!')
-            self.cx = sp.lambdify((xx, uu), cx.T)
-            self.cu = sp.lambdify((xx, uu), cu.T)
-            self.Cxx = sp.lambdify((xx, uu), Cxx)
-            self.Cuu = sp.lambdify((xx, uu), Cuu)
-            self.Cxu = sp.lambdify((xx, uu), Cxu)
+            self.cx = sp.lambdify((xx, uu, t), cx.T)
+            self.cu = sp.lambdify((xx, uu, t), cu.T)
+            self.Cxx = sp.lambdify((xx, uu, t), Cxx)
+            self.Cuu = sp.lambdify((xx, uu, t), Cuu)
+            self.Cxu = sp.lambdify((xx, uu, t), Cxu)
             self.cfx = sp.lambdify((xx,), cfx.T)
             self.Cfxx = sp.lambdify((xx,), Cfxx)
 
