@@ -118,7 +118,7 @@ class MBRL(Algorithm):
         """ Run a training episode. If terminal state is reached, episode stops."""
 
         print('Started episode ', self.episode)
-        tt = np.arange(0, self.t, self.dt)
+        tt = np.arange(0, self.t+1, self.dt)
         cost = []  # list of incremental costs
         disc_cost = [] # discounted cost
         if self.use_mpc:
@@ -287,7 +287,7 @@ class MBRL(Algorithm):
                 self.save()
                 # if self.meanCost[-1] < 0.01: # goal reached
             self.plot()
-            self.animation()
+            #self.animation()
         pass
 
     def save(self):
@@ -401,7 +401,7 @@ class MBRL(Algorithm):
         pass
 
     def train_dynamics(self):
-        self.pointcloud()
+        #self.pointcloud()
         training_data_set = copy.deepcopy(self.D_rand)
         for _ in range(self.data_ratio):
             training_data_set.data += self.D_RL.data
