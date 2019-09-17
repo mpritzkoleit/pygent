@@ -40,6 +40,7 @@ class MBRL(Algorithm):
                  use_mpc=False,
                  ilqr_print=False,
                  ilqr_save=False,
+                 ilqr_save_interval=100,
                  print_dyn_error=False,
                  weight_decay=1e-3,
                  data_noise=1e-3,
@@ -75,7 +76,7 @@ class MBRL(Algorithm):
                                    ilqr_print=ilqr_print,
                                    ilqr_save=ilqr_save,
                                    tolFun=1e-4,
-                                   save_interval=100,
+                                   save_interval=ilqr_save_interval,
                                    noise_gain=0.005,
                                    ou_theta=ou_theta,
                                    ou_sigma=ou_sigma)
