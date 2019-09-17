@@ -1,5 +1,3 @@
-from pygent.environments import CartPole
-from pygent.algorithms.mbrl import MBRL
 
 import numpy as np
 import matplotlib
