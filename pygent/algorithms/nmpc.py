@@ -239,6 +239,7 @@ class MPCAgent(Agent):
             Returns:
                 u (ndarray): control/action
         """
+        i = min(self.traj_optimizer.KK.__len__()-1, i)
         kk = self.traj_optimizer.kk[i].T[0]
         KK = self.traj_optimizer.KK[i]
         uu = self.traj_optimizer.uu[i]
