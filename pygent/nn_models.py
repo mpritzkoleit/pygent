@@ -150,31 +150,35 @@ class Actor(nn.Module):
         return y
 
 class NNDynamics(nn.Module):
-    def __init__(self, xDim, uDim, oDim=None, xIsAngle=None):
+    def __init__(self, xDim, uDim, dxDim=None, oDim=None, xIsAngle=None):
         super(NNDynamics, self).__init__()
         self.xDim = xDim
         if oDim == None:
             self.oDim = xDim
         else:
             self.oDim = oDim
+        if dxDim == None: 
+            self.dxDim = xDim
+        else:
+            self.dxDim = int(dxDim)
         self.uDim = uDim
         if xIsAngle == None:
             self.xIsAngle = [False]*xDim
         else:
             self.xIsAngle = xIsAngle
         # mean/var values
-        self.uMean = torch.zeros((1, uDim))
-        self.uVar = torch.ones((1, uDim))
-        self.oMean = torch.zeros((1, oDim))
-        self.oVar = torch.ones((1, oDim))
-        self.xMean = torch.zeros((1, xDim))
-        self.xVar = torch.ones((1, xDim))
-        self.dxMean = torch.zeros((1, xDim))
-        self.dxVar = torch.ones((1, xDim))
+        self.uMean = torch.zeros((1, self.uDim))
+        self.uVar = torch.ones((1, self.uDim))
+        self.oMean = torch.zeros((1, self.oDim))
+        self.oVar = torch.ones((1, self.oDim))
+        self.xMean = torch.zeros((1, self.xDim))
+        self.xVar = torch.ones((1, self.xDim))
+        self.dxMean = torch.zeros((1, self.dxDim))
+        self.dxVar = torch.ones((1, self.dxDim))
 
         self.layer1 = nn.Linear(self.oDim + self.uDim, 500)
         self.layer2 = nn.Linear(500, 500)
-        self.layer3 = nn.Linear(500, self.xDim)
+        self.layer3 = nn.Linear(500, self.dxDim)
 
     def forward(self, o, u):
         # connect layers

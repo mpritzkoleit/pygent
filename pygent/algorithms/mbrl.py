@@ -47,18 +47,24 @@ class MBRL(Algorithm):
                  prediction_error_bound=1e-3,
                  ou_theta=1,
                  ou_sigma=0.2,
-                 maxIters=500):
-
+                 maxIters=500,
+                 sparse_dyn=True):
+        self.sparse_dyn = sparse_dyn
         xDim = environment.xDim
         oDim = environment.oDim
         uDim = environment.uDim
         uMax = environment.uMax
+        if self.sparse_dyn:
+            dxDim = 0.5*xDim
+        else:
+            dxDim = xDim
         if horizon == None or not use_mpc:
             horizon = t
         self.dt = dt
 
         self.nn_dynamics = NNDynamics(xDim, uDim,
                                       oDim=oDim,
+                                      dxDim = dxDim,
                                       xIsAngle=environment.xIsAngle) # neural network dynamics
         self.optim = torch.optim.Adam(self.nn_dynamics.parameters(),
                                       lr=dyn_lr,
@@ -112,7 +118,10 @@ class MBRL(Algorithm):
         self.episode_steps = []
 
     def ode(self, t, x, u):
-        rhs = 1/self.dt*self.nn_dynamics.ode(x, u)
+        if self.sparse_dyn:
+            rhs = np.concatenate((x[int(len(x) / 2):], 1 / self.dt * self.nn_dynamics.ode(x, u)))
+        else:
+            rhs = 1/self.dt*self.nn_dynamics.ode(x, u)
         return rhs
 
     def run_episode(self, reinit=True):
@@ -183,6 +192,8 @@ class MBRL(Algorithm):
         uInputs_norm = (uInputs - self.nn_dynamics.uMean) / self.nn_dynamics.uVar
 
         dx = xInputs - x_Inputs
+        if self.sparse_dyn:
+            dx = dx.split(int(dx.ndim/2), 1)[1]
         dx_norm = (dx - self.nn_dynamics.dxMean) / self.nn_dynamics.dxVar
 
         fOutputs_norm = self.nn_dynamics(o_Inputs_norm, uInputs_norm)
@@ -410,7 +421,6 @@ class MBRL(Algorithm):
         for _ in range(self.data_ratio):
             training_data_set.data += self.D_RL.data
         self.training(training_data_set)
-        torch.save(self.nn_dynamics.state_dict(), self.path + self.episode + '.pth')
         # update models in NMPC controller
         if self.print_dyn_error:
             self.dynamics_error()
@@ -451,6 +461,8 @@ class MBRL(Algorithm):
         uInputs_norm = (uInputs - self.nn_dynamics.uMean) / self.nn_dynamics.uVar
 
         dx = xInputs - x_Inputs
+        if self.sparse_dyn:
+            dx = dx.split(int(dx.shape[1]/2), 1)[1]
         dx_norm =  (dx - self.nn_dynamics.dxMean) / self.nn_dynamics.dxVar
 
         fOutputs_norm = self.nn_dynamics(o_Inputs_norm, uInputs_norm)
@@ -461,7 +473,9 @@ class MBRL(Algorithm):
         self.nn_dynamics.xMean = x_Inputs.mean(dim=0, keepdim=True)
         self.nn_dynamics.xVar = x_Inputs.std(dim=0, keepdim=True)
         xInputs = torch.Tensor([sample['x'] for sample in dataset.data])
-        dx = xInputs-x_Inputs
+        dx = xInputs - x_Inputs
+        if self.sparse_dyn:
+            dx = dx.split(int(dx.ndim/2), 1)[1]
         self.nn_dynamics.dxMean = dx.mean(dim=0, keepdim=True)
         self.nn_dynamics.dxVar = dx.std(dim=0, keepdim=True)
         o_Inputs = torch.Tensor([sample['o_'] for sample in dataset.data])
