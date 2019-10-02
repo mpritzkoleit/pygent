@@ -15,7 +15,7 @@ import os
 import cvxopt as opt
 opt.solvers.options['show_progress'] = False
 import scipy as sci
-from scipy import linalg
+from scipy import linalg, optimize
 from scipy.interpolate import interp1d
 
 # pygent
@@ -238,11 +238,13 @@ class iLQR(Algorithm):
                 vx = self.cfx(x)*self.dt
                 Vxx = self.Cfxx(x)*self.dt
         else:
-            sys_mat = system_matrices[-1]
+            f = lambda x: self.fcost_fnc(x, np)
+            equil = sci.optimize.minimize(f, x)
+            x = equil.x
+            sys_mat = self.linearization(x, self.uu[-1]*0)
+            cost_mat = self.cost_lin(x, self.uu[-1]*0, self.tt[-1])
             A = sys_mat[0]
             B = sys_mat[1]
-
-            cost_mat = cost_matrices[-1]
             Q = cost_mat[0]
             R = cost_mat[1]
             N = cost_mat[2]
