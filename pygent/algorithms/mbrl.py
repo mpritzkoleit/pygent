@@ -119,7 +119,7 @@ class MBRL(Algorithm):
         """ Run a training episode. If terminal state is reached, episode stops."""
 
         print('Started episode ', self.episode)
-        tt = np.arange(0, self.t+1, self.dt)
+        tt = np.arange(0, self.t+5, self.dt)
         cost = []  # list of incremental costs
         disc_cost = [] # discounted cost
         if self.use_mpc:
@@ -150,7 +150,6 @@ class MBRL(Algorithm):
                            'o': self.environment.o + np.random.normal(0, self.data_noise, self.environment.oDim),
                            'c': [c],
                            't': [self.environment.terminated]})
-
 
             prediction_loss = self.pred_loss(transition)
             # add sample to data set
@@ -295,13 +294,15 @@ class MBRL(Algorithm):
         """ Save neural network parameters and data set. """
 
         # save network parameters
+        torch.save({'nn_dynamics': self.nn_dynamics.state_dict()}, self.path + 'data/checkpoint'+ str(self.episode - 1)+'.pth')
         torch.save({'nn_dynamics': self.nn_dynamics.state_dict()}, self.path + 'data/checkpoint.pth')
 
-        self.nn_dynamics.save_moments(self.path)
+        self.nn_dynamics.save_moments(str(self.episode - 1), self.path)
 
         # save data set
         self.D_rand.save(self.path + 'data/dataSet_D_rand.p')
         self.D_RL.save(self.path + 'data/dataSet_D_RL.p')
+        self.D_RL.save(self.path + 'data/dataSet_D_RL'+ str(self.episode - 1) + '.p')
         # save learning curve data
         learning_curve_dict = {'totalCost': self.totalCost, 'meanCost':self.meanCost,
                                'expCost': self.expCost, 'episode_steps': self.episode_steps}
@@ -358,8 +359,10 @@ class MBRL(Algorithm):
         """ Plots the environment's and agent's history. """
 
         self.environment.plot()
+        self.environment.save_history('env'+ str(self.episode - 1) , self.path + 'data/')
         plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_environment.pdf')
         self.agent.plot()
+        self.agent.save_history('agent'+ str(self.episode - 1) , self.path + 'data/')
         plt.savefig(self.path + 'plots/' + str(self.episode - 1) + '_agent.pdf')
         plt.close('all')
         pass
@@ -407,7 +410,7 @@ class MBRL(Algorithm):
         for _ in range(self.data_ratio):
             training_data_set.data += self.D_RL.data
         self.training(training_data_set)
-        torch.save(self.nn_dynamics.state_dict(), self.path + '.pth')
+        torch.save(self.nn_dynamics.state_dict(), self.path + self.episode + '.pth')
         # update models in NMPC controller
         if self.print_dyn_error:
             self.dynamics_error()
@@ -490,48 +493,9 @@ class MBRL(Algorithm):
         ax[1].plot(self.agent.tt, self.agent.history)
         mse = (nn_env.history - env.history) ** 2
         plt.savefig(self.path + 'plots/'+str(self.episode)+'_test.pdf')
+        env.save_history('test_env'+ str(self.episode - 1) , self.path + 'data/')
+        nn_env.save_history('test_nn_env'+ str(self.episode - 1) , self.path + 'data/')
         plt.close('all')
         print('Trajectory Prediction Error: ', np.mean(mse))
         print('One Step Prediction Error: ', np.mean(loss))
-
-
-    def pointcloud(self):
-        datasets = [self.D_RL, self.D_rand]
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        for dataset in datasets:
-            if len(dataset.data)>0:
-                x = np.array([sample['x'] for sample in dataset.data])
-                u = np.array([sample['u'] for sample in dataset.data])
-                ax.scatter(x[:,0], x[:,1], u[:,0], marker='o')
-        ax.scatter(0,0,0,marker='o',color='r')
-        ax.set_xlabel(r'$x_1$')
-        ax.set_ylabel(r'$x_2$')
-        ax.set_zlabel(r'$u_1$')
-        plt.savefig(self.path + 'plots/'+str(self.episode)+'_data.pdf')
-        plt.close('all')
-        pass
-
-
-    def dynamics_error(self):
-        dim = 21
-        fig, axes = plt.subplots(3, 2)
-        xx1 = np.linspace(-np.pi, np.pi, dim)
-        xx2 = np.linspace(-10, 10, dim)
-        uu1 = np.linspace(-5, 5, dim)
-
-        X1, X2 = np.meshgrid(xx1, xx2)
-        for k, ax in enumerate(axes.flat):
-            L = np.zeros((dim, dim))
-            for i, x1 in enumerate(xx1):
-                for j, x2 in enumerate(xx2):
-                    fhat = self.ode(0, [x1, x2], [uu1[k]])
-                    f = self.environment.ode(0, [x1, x2], [uu1[k]])
-                    l = np.mean((f - fhat)**2)
-                    L[j, i] = l
-            im = ax.pcolormesh(X1, X2, L, norm=colors.LogNorm(vmin=1e-6, vmax=3e1), rasterized=True)
-        fig.colorbar(im, ax=axes.ravel().tolist(), )
-        plt.savefig(self.path + 'plots/dyn_error_'+str(self.episode)+'.pdf')
-        plt.close('all')
-        pass
 

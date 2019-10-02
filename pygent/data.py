@@ -142,5 +142,5 @@ class DataSet(object):
                 path (string): 'directory/filename.p'
             """
         with open(path, 'rb') as opened_file:
-            self.data = pickle.load(opened_file)
+            self.data += pickle.load(opened_file)
         pass

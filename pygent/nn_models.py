@@ -197,7 +197,7 @@ class NNDynamics(nn.Module):
         dxdt = (dxdt*self.dxVar + self.dxMean).numpy()
         return dxdt[0]
 
-    def save_moments(self, path):
+    def save_moments(self, filename, path):
         moments_dict = {'xMean': self.xMean,
                 'xVar': self.xVar,
                 'uMean': self.uMean,
@@ -207,6 +207,8 @@ class NNDynamics(nn.Module):
                 'dxMean': self.dxMean,
                 'dxVar': self.dxVar}
         with open(path + 'data/moments_dict.p', 'wb') as opened_file:
+            pickle.dump(moments_dict, opened_file)
+        with open(path + 'data/moments_dict' + filename +'.p', 'wb') as opened_file:
             pickle.dump(moments_dict, opened_file)
         pass
 
