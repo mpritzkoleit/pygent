@@ -193,7 +193,7 @@ class MBRL(Algorithm):
 
         dx = xInputs - x_Inputs
         if self.sparse_dyn:
-            dx = dx.split(int(dx.ndim/2), 1)[1]
+            dx = dx.split(int(dx.shape[1]/2), 1)[1]
         dx_norm = (dx - self.nn_dynamics.dxMean) / self.nn_dynamics.dxVar
 
         fOutputs_norm = self.nn_dynamics(o_Inputs_norm, uInputs_norm)
@@ -475,7 +475,7 @@ class MBRL(Algorithm):
         xInputs = torch.Tensor([sample['x'] for sample in dataset.data])
         dx = xInputs - x_Inputs
         if self.sparse_dyn:
-            dx = dx.split(int(dx.ndim/2), 1)[1]
+            dx = dx.split(int(dx.shape[1]/2), 1)[1]
         self.nn_dynamics.dxMean = dx.mean(dim=0, keepdim=True)
         self.nn_dynamics.dxVar = dx.std(dim=0, keepdim=True)
         o_Inputs = torch.Tensor([sample['o_'] for sample in dataset.data])
