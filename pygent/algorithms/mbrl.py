@@ -128,7 +128,7 @@ class MBRL(Algorithm):
         """ Run a training episode. If terminal state is reached, episode stops."""
 
         print('Started episode ', self.episode)
-        tt = np.arange(0, self.t+5, self.dt)
+        tt = np.arange(0, self.t, self.dt)
         cost = []  # list of incremental costs
         disc_cost = [] # discounted cost
         if self.use_mpc:
