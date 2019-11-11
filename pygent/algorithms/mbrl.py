@@ -322,18 +322,18 @@ class MBRL(Algorithm):
         print('Network parameters, data set and learning curve saved.')
         pass
 
-    def load(self):
+    def load(self, episode=''):
         """ Load neural network parameters and data set. """
 
         # load network parameters
-        if os.path.isfile(self.path + 'data/checkpoint.pth'):
-            checkpoint = torch.load(self.path + 'data/checkpoint.pth')
+        if os.path.isfile(self.path + 'data/checkpoint'+episode+'.pth'):
+            checkpoint = torch.load(self.path + 'data/checkpoint'+episode+'.pth')
             self.nn_dynamics.load_state_dict(checkpoint['nn_dynamics'])
             print('Loaded neural network parameters!')
         else:
             print('Could not load neural network parameters!')
 
-        if os.path.isfile(self.path + 'data/moments_dict.p'):
+        if os.path.isfile(self.path + 'data/moments_dict'+episode+'.p'):
             self.nn_dynamics.load_moments(self.path)
             print('Loaded neural network moments!')
         else:
@@ -346,8 +346,8 @@ class MBRL(Algorithm):
             print('No data set found!')
 
         # load data set
-        if os.path.isfile(self.path + 'data/dataSet_D_RL.p'):
-            self.D_RL.load(self.path + 'data/dataSet_D_RL.p')
+        if os.path.isfile(self.path + 'data/dataSet_D_RL'+episode+'.p'):
+            self.D_RL.load(self.path + 'data/dataSet_D_RL'+episode+'.p')
             print('Loaded data set D_RL!')
         else:
             print('No data set found!')

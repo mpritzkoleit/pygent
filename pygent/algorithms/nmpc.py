@@ -260,7 +260,7 @@ class MPCAgent(Agent):
         x0 = self.traj_optimizer.xx[0]
         x1 = self.traj_optimizer.xx[1]
         xN = self.traj_optimizer.xx[-1]
-        c0 = self.traj_optimizer.environment.cost(x0, u0, x1, np)*dt
+        c0 = self.traj_optimizer.environment.cost(x0, u0, x1, None, np)*dt
         cN = self.traj_optimizer.fcost_fnc(xN, np)*dt
         self.traj_optimizer.cost -= c0 + cN
 
