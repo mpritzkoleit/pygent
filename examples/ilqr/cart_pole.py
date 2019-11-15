@@ -20,7 +20,7 @@ def c_N(x):
 x0 = [0, np.pi, 0, 0]
 
 t = 10 # simulation time
-dt = 0.01 # time step-size
+dt = 0.02 # time step-size
 env = CartPole(c_k, x0, dt)
 
 path = '../../../results/ilqr/cart_pole5/' # path, where results are saved
