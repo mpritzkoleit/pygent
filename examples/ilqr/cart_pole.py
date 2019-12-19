@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 def c_k(x, u, t, mod):
     x1, x2, x3, x4 = x
     u1, = u
-    c = 0.5*x1**2 + 3*x2**2  + 0.02*x3**2 + 0.05*x4**2 + 0.05*(1000*mod.exp(-t*5)+ 1)*u1**2
+    c = 0.5*x1**2 + 3*x2**2  + 0.02*x3**2 + 0.05*x4**2 + 0.05*u1**2
     return c
 
 # define the final cost at step N
