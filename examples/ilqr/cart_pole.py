@@ -19,7 +19,7 @@ def c_N(x):
 # initial state value
 x0 = [0, np.pi, 0, 0]
 
-t = 10 # simulation time
+t = 5 # simulation time
 dt = 0.02 # time step-size
 env = CartPole(c_k, x0, dt)
 
