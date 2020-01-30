@@ -16,13 +16,13 @@ parser.add_argument("--use_mpc", type=int, default=0)
 parser.add_argument("--warm_up_episodes",type=int,  default=10)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
+<<<<<<< HEAD
 parser.add_argument("--weight_decay", type=float, default=1e-3)
 parser.add_argument("--data_noise", type=float, default=1e-3)
 parser.add_argument("--path", type=str, default='./')
 parser.add_argument("--data_set", type=str, default='')
 parser.add_argument("--episodes", type=int, default=50)
 parser.add_argument("--pred_err_bound", type=float, default=0.01)
-
 args = parser.parse_args()
 
 def c_k(x, u):
@@ -43,9 +43,15 @@ def p_x0():
 
 
 x0 = [np.pi, 0]
+<<<<<<< HEAD
 
 
 t = args.t # time of an episode
+||||||| merged common ancestors
+t = 6 # time of an episode
+=======
+t = 5 # time of an episode
+>>>>>>> master
 dt = args.time_step # time step-size
 
 env = Pendulum(c_k, p_x0, dt)
@@ -54,13 +60,19 @@ path = args.path + str(args.exp_id)+'/'
 
 rl_algorithm = MBRL(env, t, dt,
                     path=path,
+<<<<<<< HEAD
                     horizon=2.,
+||||||| merged common ancestors
+                    horizon=3.,
+=======
+                    horizon=5.,
+>>>>>>> master
                     fcost=c_N,
                     test_t=args.test_t,
                     warm_up_episodes=args.warm_up_episodes,
                     use_mpc=args.use_mpc,
                     ilqr_print=False,
-                    ilqr_save=False,
+                    ilqr_save=True,
                     aggregation_interval=args.agg,
                     training_epochs=args.epochs,
                     weight_decay=args.weight_decay,
