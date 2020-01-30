@@ -24,6 +24,7 @@ from pygent.nn_models import NNDynamics
 class MBRL(Algorithm):
 
     def __init__(self, environment, t, dt,
+                 test_t=0.,
                  plotInterval=1,
                  nData=int(1e6),
                  path='../results/mbrl/',
@@ -89,6 +90,7 @@ class MBRL(Algorithm):
         super(MBRL, self).__init__(environment, self.nmpc_algorithm.agent, t, dt)
         self.D_rand = DataSet(nData)
         self.D_RL = DataSet(nData)
+        self.test_t = test_t
         self.plotInterval = plotInterval  # inter
         self.evalPolicyInterval = evalPolicyInterval
         self.checkInterval = checkInterval  # checkpoint interval
@@ -128,7 +130,7 @@ class MBRL(Algorithm):
         """ Run a training episode. If terminal state is reached, episode stops."""
 
         print('Started episode ', self.episode)
-        tt = np.arange(0, self.t+5, self.dt)
+        tt = np.arange(0, self.t+self.test_t, self.dt)
         cost = []  # list of incremental costs
         disc_cost = [] # discounted cost
         if self.use_mpc:
@@ -245,7 +247,7 @@ class MBRL(Algorithm):
         """ Run an episode, where the policy network is evaluated. """
 
         print('Started episode ', self.episode)
-        tt = np.arange(0, self.t, self.dt)
+        tt = np.arange(0, self.t+self.test_t, self.dt)
         cost = []  # list of incremental costs
 
         # reset environment/agent to initial state, delete history
@@ -274,7 +276,7 @@ class MBRL(Algorithm):
         """
 
         for steps in range(1, int(n) + 1):
-            if self.D_rand.data.__len__()<self.warm_up:#self.batch_size:
+            if self.D_rand.data.__len__()<max(self.batch_size, self.warm_up):#self.batch_size:
                 self.run_random_episode()
             else:
                 if not self.dynamics_first_trained:
