@@ -16,6 +16,8 @@ parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
 parser.add_argument("--weight_decay", type=float, default=5e-4)
 parser.add_argument("--pred_err_bound", type=float, default=1e-3)
+parser.add_argument("--exp_id", type=int, default=0)
+parser.add_argument("--test_t", type=float, default=0.0)
 args = parser.parse_args()
 
 def c_k(x, u, mod):
@@ -26,7 +28,7 @@ def c_k(x, u, mod):
 
 def c_N(x, mod):
     x1, x2, x3, x4 = x
-    c = 100*(x1)**2 + 100*x2**2 + 100*x3**2 + 100*x4**2
+    c = 100*x1**2 + 100*x2**2 + 100*x3**2 + 100*x4**2
     return c
 
 # define the function, that represents the initial value distribution p(x_0)
@@ -41,11 +43,10 @@ dt = args.time_step # time step-size
 
 env = CartPole(c_k, p_x0, dt)
 
-#path = '../../../results/mbrl/cp2/'  # path, where results are saved'
-path = '/lustre/ssd/ws/s3369153-mbrl/cartpole/'+str(args.use_mpc)+'/'+str(args.pred_err_bound)+'/'
-
+path = args.path + '/' +str(arg.exp_id)
 
 rl_algorithm = MBRL(env, t, dt,
+                    test_t=args.test_t,
                     path=path,
                     horizon=2.,
                     fcost=None,
@@ -58,7 +59,5 @@ rl_algorithm = MBRL(env, t, dt,
                     weight_decay=args.weight_decay,
                     prediction_error_bound=args.pred_err_bound)
 
-#rl_algorithm.load()
-#rl_algorithm.D_rand.load('/home/pritzkoleit/dev/cartpole/data.p')
 rl_algorithm.run_learning(50)
 

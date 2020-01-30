@@ -58,8 +58,6 @@ def modeling(linearized=True):
 
     # lagrangian L
     L = T - V
-    L = L.expand()
-    L = sp.trigsimp(L)
 
     # Lagrange equations of the second kind
     # d/dt(dL/d(dq_i/dt)) - dL/dq_i = Q_i
