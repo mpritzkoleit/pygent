@@ -27,13 +27,13 @@ args = parser.parse_args()
 def c_k(x, u, mod):
     x1, x2, x3, x4, x5, x6, x7, x8 = x
     u1, = u
-    c = 25*(x1-0.8)**2 + 10*(x2-mod.pi)**2 + 10*(x3-mod.pi)**2 + 10*(x4-mod.pi)**2 + .01*x5**2 +  .01*x6**2 + .01*x7**2 + .01*x8**2 + .05*u1**2
+    c = 15*(x1-0.8)**2 + 10*(x2-mod.pi)**2 + 10*(x3-mod.pi)**2 + 10*(x4-mod.pi)**2 + .05*u1**2
     return c
 
 # define the final cost at step N
 def c_N(x, mod):
     x1, x2, x3, x4, x5, x6, x7, x8 = x
-    c = 250*(x1-0.8)**2 + 100*(x2-mod.pi)**2 + 100*(x3-mod.pi)**2 + 100*(x4-mod.pi)**2 + 10*x5**2 + 10*x6**2 + 10*x7**2 + 10*x8**2
+    c = 100*(x1-0.8)**2 + 100*(x2-mod.pi)**2 + 100*(x3-mod.pi)**2 + 100*(x4-mod.pi)**2 + 10*x5**2 + 10*x6**2 + 10*x7**2 + 10*x8**2
     return c
 
 # initial state value
