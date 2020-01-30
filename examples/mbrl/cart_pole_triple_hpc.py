@@ -18,7 +18,7 @@ parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
 parser.add_argument("--weight_decay", type=float, default=1e-4)
 parser.add_argument("--data_noise", type=float, default=1e-3)
-parser.add_argument("--path", type=str, default=1e-3)
+parser.add_argument("--path", type=str, default='./')
 parser.add_argument("--data_set", type=str, default='')
 parser.add_argument("--episodes", type=int, default=50)
 args = parser.parse_args()
@@ -58,7 +58,7 @@ rl_algorithm = MBRL(env, t, dt,
                     test_t=args.test_t,
                     warm_up_episodes=args.warm_up_episodes,
                     use_mpc=args.use_mpc,
-                    ilqr_print=False,
+                    ilqr_print=True,
                     ilqr_save=False,
                     aggregation_interval=args.agg,
                     training_epochs=args.epochs,
@@ -68,5 +68,6 @@ rl_algorithm = MBRL(env, t, dt,
 if args.data_set != '':
     rl_algorithm.D_rand.load(args.data_set)
 #rl_algorithm.load()
+print('LOADED D')
 rl_algorithm.run_learning(args.episodes)
 
