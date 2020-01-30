@@ -44,7 +44,7 @@ dt = args.time_step # time step-size
 
 env = CartPole(c_k, x0, dt)
 
-path = args.path +str(args.exp_id)
+path = args.path + str(args.exp_id) + '/'
 
 rl_algorithm = MBRL(env, t, dt,
                     test_t=args.test_t,

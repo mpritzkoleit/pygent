@@ -13,7 +13,7 @@ parser.add_argument("--t", type=float, default=3.5)
 parser.add_argument("--exp_id", type=int, default=0)
 parser.add_argument("--time_step", type=float, default=0.002)
 parser.add_argument("--use_mpc", type=int, default=0)
-parser.add_argument("--warm_up_episodes",type=int,  default=3)
+parser.add_argument("--warm_up_episodes",type=int,  default=0)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
 parser.add_argument("--weight_decay", type=float, default=1e-4)
@@ -27,7 +27,7 @@ args = parser.parse_args()
 def c_k(x, u, mod):
     x1, x2, x3, x4, x5, x6, x7, x8 = x
     u1, = u
-    c = 15*(x1-0.8)**2 + 10*(x2-mod.pi)**2 + 10*(x3-mod.pi)**2 + 10*(x4-mod.pi)**2 + .05*u1**2
+    c = 15*(x1-0.8)**2 + 10*(x2-mod.pi)**2 + 10*(x3-mod.pi)**2 + 10*(x4-mod.pi)**2 + .1*u1**2
     return c
 
 # define the final cost at step N
