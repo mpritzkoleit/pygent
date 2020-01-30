@@ -101,7 +101,7 @@ class DataSet(object):
         idxs = np.arange(self.data.__len__())
         np.random.shuffle(idxs)
         batches = []
-        for i in range(int(self.data.__len__()/n)):
+        for i in range(max(1, int(self.data.__len__()/n))):
             idx = idxs[i*n:(i+1)*n]
             batch = [self.data[id] for id in idx]
             batches.append(batch)
