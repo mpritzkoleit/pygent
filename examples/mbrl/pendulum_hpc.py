@@ -15,7 +15,7 @@ parser.add_argument("--warm_up_episodes",type=int,  default=3)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
 parser.add_argument("--weight_decay", type=float, default=5e-4),
-parser.add_argument("--pred_err_bound", type=float, default=0.05)
+parser.add_argument("--pred_err_bound", type=float, default=0.01)
 args = parser.parse_args()
 
 def c_k(x, u):
@@ -36,7 +36,7 @@ def p_x0():
 
 
 x0 = [np.pi, 0]
-t = 6 # time of an episode
+t = 5 # time of an episode
 dt = args.time_step # time step-size
 
 env = Pendulum(c_k, x0, dt)
@@ -46,12 +46,12 @@ env.uMax = env.uMax
 path = '../../../results/mbrl_'+str(int(time.time()))+'/'  # path, where results are saved
 rl_algorithm = MBRL(env, t, dt,
                     path=path,
-                    horizon=3.,
+                    horizon=5.,
                     fcost=c_N,
                     warm_up_episodes=args.warm_up_episodes,
                     use_mpc=args.use_mpc,
                     ilqr_print=False,
-                    ilqr_save=False,
+                    ilqr_save=True,
                     aggregation_interval=args.agg,
                     training_epochs=args.epochs,
                     weight_decay=args.weight_decay,
