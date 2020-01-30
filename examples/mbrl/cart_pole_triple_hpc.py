@@ -8,6 +8,8 @@ matplotlib.use('Agg') # disable interactive display of figures on the HPC-cluste
 
 import argparse
 parser = argparse.ArgumentParser()
+parser.add_argument("--test_t", type=float, default=0.)
+parser.add_argument("--t", type=float, default=3.5)
 parser.add_argument("--exp_id", type=int, default=0)
 parser.add_argument("--time_step", type=float, default=0.002)
 parser.add_argument("--use_mpc", type=int, default=0)
@@ -25,13 +27,13 @@ args = parser.parse_args()
 def c_k(x, u, mod):
     x1, x2, x3, x4, x5, x6, x7, x8 = x
     u1, = u
-    c = 15*(x1)**2 + 10*(x2-mod.pi)**2 + 10*(x3-mod.pi)**2 + 10*(x4-0*mod.pi)**2 + .1*u1**2
+    c = 25*(x1-0.8)**2 + 10*(x2-mod.pi)**2 + 10*(x3-mod.pi)**2 + 10*(x4-mod.pi)**2 + .01*x5**2 +  .01*x6**2 + .01*x7**2 + .01*x8**2 + .05*u1**2
     return c
 
 # define the final cost at step N
 def c_N(x, mod):
     x1, x2, x3, x4, x5, x6, x7, x8 = x
-    c = 100*(x1)**2 + 100*(x2-mod.pi)**2 + 100*(x3-mod.pi)**2 + 100*(x4-0*mod.pi)**2 + 10*x5**2 + 10*x6**2 + 10*x7**2 + 10*x8**2
+    c = 250*(x1-0.8)**2 + 100*(x2-mod.pi)**2 + 100*(x3-mod.pi)**2 + 100*(x4-mod.pi)**2 + 10*x5**2 + 10*x6**2 + 10*x7**2 + 10*x8**2
     return c
 
 # initial state value
@@ -42,7 +44,7 @@ def p_x0():
     x0 = [np.random.uniform(-0.005, 0.005), np.pi, np.pi, np.pi, 0, 0, 0, 0]
     return x0
 
-t = 3.5 # time of an episode
+t = args.t # time of an episode
 dt = args.time_step # time step-size
 
 env = CartPoleTriple(c_k, p_x0, dt)
@@ -53,6 +55,7 @@ rl_algorithm = MBRL(env, t, dt,
                     path=path,
                     horizon=2.,
                     fcost=c_N,
+                    test_t=args.test_t,
                     warm_up_episodes=args.warm_up_episodes,
                     use_mpc=args.use_mpc,
                     ilqr_print=False,
@@ -64,5 +67,6 @@ rl_algorithm = MBRL(env, t, dt,
 
 if args.data_set != '':
     rl_algorithm.D_rand.load(args.data_set)
+#rl_algorithm.load()
 rl_algorithm.run_learning(args.episodes)
 

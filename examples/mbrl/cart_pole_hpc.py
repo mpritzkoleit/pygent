@@ -11,27 +11,27 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--time_step", type=float, default=0.02)
 parser.add_argument("--use_mpc", type=int, default=0)
-parser.add_argument("--warm_up_episodes",type=int,  default=0)
+parser.add_argument("--warm_up_episodes",type=int,  default=3)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
 parser.add_argument("--weight_decay", type=float, default=5e-4)
-parser.add_argument("--pred_err_bound", type=float, default=1e-2)
+parser.add_argument("--pred_err_bound", type=float, default=1e-3)
 args = parser.parse_args()
 
-def c_k(x, u):
+def c_k(x, u, mod):
     x1, x2, x3, x4 = x
     u1, = u
     c = 2*x1**2 + 5*x2**2 + .01*x3**2 + .01*x4**2 + 0.1*u1**2
     return c
 
-def c_N(x):
+def c_N(x, mod):
     x1, x2, x3, x4 = x
     c = 100*(x1)**2 + 100*x2**2 + 100*x3**2 + 100*x4**2
     return c
 
 # define the function, that represents the initial value distribution p(x_0)
 def p_x0():
-    x0 = [np.random.uniform(-0.01, 0.01), np.random.uniform(0.99*np.pi, 1.01*np.pi), 0, 0]
+    x0 = [np.random.uniform(-0.005, 0.005), np.pi, 0, 0]
     return x0
 
 
@@ -41,7 +41,9 @@ dt = args.time_step # time step-size
 
 env = CartPole(c_k, p_x0, dt)
 
-path = '../../../results/mbrl/cp2/'  # path, where results are saved'
+#path = '../../../results/mbrl/cp2/'  # path, where results are saved'
+path = '/lustre/ssd/ws/s3369153-mbrl/cartpole/'+str(args.use_mpc)+'/'+str(args.pred_err_bound)+'/'
+
 
 rl_algorithm = MBRL(env, t, dt,
                     path=path,
@@ -57,6 +59,6 @@ rl_algorithm = MBRL(env, t, dt,
                     prediction_error_bound=args.pred_err_bound)
 
 #rl_algorithm.load()
-rl_algorithm.D_rand.load('/home/pritzkoleit/dev/cartpole/data.p')
+#rl_algorithm.D_rand.load('/home/pritzkoleit/dev/cartpole/data.p')
 rl_algorithm.run_learning(50)
 

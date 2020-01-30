@@ -1,4 +1,4 @@
-frofrom pygent.environments import CartPoleDouble
+from pygent.environments import CartPoleDoubleSerial
 from pygent.algorithms.mbrl import MBRL
 import numpy as np
 import matplotlib
@@ -22,15 +22,15 @@ args = parser.parse_args()
 
 # define the incremental cost
 def c_k(x, u, mod):
-    x1, x2, x3, x4, x5, x6, x7, x8 = x
+    x1, x2, x3, x4, x5, x6 = x
     u1, = u
-    c = 10*x1**2 + 5*x2**2 + 5*x3**2 + .01*x4**2 + .01*x5**2 + .01*x6**2 + .1*u1**2
+    c = 10*x1**2 + 8*x2**2 + 6*x3**2 + .01*x4**2 + .01*x5**2 + .01*x6**2 + .1*u1**2
     return c
 
 # define the final cost at step N
 def c_N(x, mod):
-    x1, x2, x3, x4, x5, x6, x7, x8 = x
-    c = 1000*x1**2 + 1000*x2**2 + 1000*x3**2 + 1000*x4**2 + 1000*x5**2 + 1000*x6**2 
+    x1, x2, x3, x4, x5, x6 = x
+    c = 1000*x1**2 + 1000*x2**2 + 1000*x3**2 + 100*x4**2 + 100*x5**2 + 100*x6**2 
     return c
 
 # initial state value
@@ -44,7 +44,7 @@ def p_x0():
 t = 3.5 # time of an episode
 dt = args.time_step # time step-size
 
-env = CartPoleDouble(c_k, p_x0, dt)
+env = CartPoleDoubleSerial(c_k, p_x0, dt)
 
 path = args.path + str(args.exp_id)+'/' 
 
@@ -59,10 +59,12 @@ rl_algorithm = MBRL(env, t, dt,
                     aggregation_interval=args.agg,
                     training_epochs=args.epochs,
                     weight_decay=args.weight_decay,
-                    data_noise=args.data_noise)
+                    data_noise=args.data_noise,
+		    maxIters=500)
 
 if args.data_set != '':
     rl_algorithm.D_rand.load(args.data_set)
+rl_algorithm.load()
 rl_algorithm.run_learning(args.episodes)
 
 
