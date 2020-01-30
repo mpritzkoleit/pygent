@@ -58,7 +58,7 @@ class iLQR(Algorithm):
                  tolGrad=1e-4,
                  tolFun=1e-7,
                  fastForward=False,
-                 path='../results/ilqr/',
+                 path=None,
                  fcost=None,
                  constrained=False,
                  save_interval=10,
@@ -90,18 +90,25 @@ class iLQR(Algorithm):
 
         self.uDim = environment.uDim
         self.xDim = environment.xDim
-        self.path = path
-        if not os.path.isdir(path):
-            os.makedirs(path)
-        if not os.path.isdir(path + 'plots/'):
-            os.makedirs(path + 'plots/')
-        if not os.path.isdir(path + 'animations/'):
-            os.makedirs(path + 'animations/')
-        if not os.path.isdir(path + 'data/'):
-            os.makedirs(path + 'data/')
-        if not os.path.isdir(path + 'c_files/'):
-            os.makedirs(path + 'c_files/')
-        copyfile(inspect.stack()[-1][1], path + 'exec_script.py')
+
+        if path is None:
+            self.saving = False
+        else:
+            self.saving = True
+        if self.saving:
+            self.path = path
+            if not os.path.isdir(path):
+                os.makedirs(path)
+            if not os.path.isdir(path + 'plots/'):
+                os.makedirs(path + 'plots/')
+            if not os.path.isdir(path + 'animations/'):
+                os.makedirs(path + 'animations/')
+            if not os.path.isdir(path + 'data/'):
+                os.makedirs(path + 'data/')
+            if not os.path.isdir(path + 'c_files/'):
+                os.makedirs(path + 'c_files/')
+            copyfile(inspect.stack()[-1][1], path + 'exec_script.py')
+
         self.fastForward = fastForward  # if True use Eulers Method instead of ODE solver
         agent = FeedBack(None, self.uDim) 
         super(iLQR, self).__init__(environment, agent, t, dt)
@@ -127,7 +134,6 @@ class iLQR(Algorithm):
         self.current_alpha = 1
         self.printing = printing
         self.file_prefix = file_prefix
-        self.saving = saving
         self.final_backpass = final_backpass
         # todo: mu to eta
 
@@ -619,16 +625,18 @@ class iLQR(Algorithm):
         self.environment.history = self.xx
         self.agent.history[1:] = self.uu
         self.environment.plot()
-        self.environment.save_history('environment', self.path + 'data/')
-        plt.savefig(self.path + 'plots/'+self.file_prefix+'environment.pdf')
+        if self.saving:
+            self.environment.save_history('environment', self.path + 'data/')
+            plt.savefig(self.path + 'plots/'+self.file_prefix+'environment.pdf')
         self.agent.plot()
-        self.agent.save_history('agent', self.path + 'data/')
-        plt.savefig(self.path + 'plots/'+self.file_prefix+'controller.pdf')
+        if self.saving:
+            self.agent.save_history('agent', self.path + 'data/')
+            plt.savefig(self.path + 'plots/'+self.file_prefix+'controller.pdf')
         plt.close('all')
 
     def animation(self):
         ani = self.environment.animation()
-        if ani != None:
+        if ani != None and self.saving:
             try:
                 ani.save(self.path + 'animations/'+self.file_prefix+'animation.mp4', fps=1 / self.dt)
             except:
