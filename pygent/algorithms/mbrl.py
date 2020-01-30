@@ -440,7 +440,7 @@ class MBRL(Algorithm):
         # update models in NMPC controller
         if self.print_dyn_error:
             self.dynamics_error()
-        training_time.append((time.time() - start_time))
+        self.training_time.append((time.time() - start_time))
 
     def training(self, dataSet):
         # loss function (mean squared error)
