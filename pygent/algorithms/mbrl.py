@@ -11,6 +11,7 @@ import pickle
 import inspect
 from shutil import copyfile
 import copy
+import time
 
 # pygent
 from pygent.agents import Agent
@@ -105,6 +106,8 @@ class MBRL(Algorithm):
         self.print_dyn_error = print_dyn_error
         self.data_noise = data_noise
         self.prediction_error_bound = prediction_error_bound
+        self.training_time = []
+        self.optim_time = []
 
 
         if not os.path.isdir(path):
@@ -133,10 +136,12 @@ class MBRL(Algorithm):
         tt = np.arange(0, self.t+self.test_t, self.dt)
         cost = []  # list of incremental costs
         disc_cost = [] # discounted cost
+        start_time = time.time()
         if self.use_mpc:
             self.agent.init_optim(self.environment.x0)
         else:
             self.agent.init_optim(self.environment.x0, init=True)
+        self.optim_time.append((time.time() - start_time))
         self.environment.reset(self.environment.x0)
         self.agent.reset()
 
@@ -320,8 +325,14 @@ class MBRL(Algorithm):
         learning_curve_dict = {'totalCost': self.totalCost, 'meanCost':self.meanCost,
                                'expCost': self.expCost, 'episode_steps': self.episode_steps}
 
-        pickle.dump(learning_curve_dict, open(self.path + 'data/learning_curve.p', 'wb'))
+        with open(self.path + 'data/learning_curve.p', 'wb') as open_file:
+            pickle.dump(learning_curve_dict, open_file)
         print('Network parameters, data set and learning curve saved.')
+        with open(self.path + 'data/training_time.p', 'wb') as open_file:
+            pickle.dump(self.training_time, open_file)
+        with open(self.path + 'data/optim_time.p', 'wb') as open_file:
+            pickle.dump(self.optim_time, open_file)
+        print('Time logging saved.')
         pass
 
     def load(self, episode=''):
@@ -356,7 +367,8 @@ class MBRL(Algorithm):
 
         # load learning curve
         if os.path.isfile(self.path + 'data/learning_curve.p'):
-            learning_curve_dict = pickle.load(open(self.path + 'data/learning_curve.p', 'rb'))
+            with open(self.path + 'data/learning_curve.p', 'rb') as open_file:
+                learning_curve_dict = pickle.load(open_file)
             self.meanCost = learning_curve_dict['meanCost']
             self.totalCost = learning_curve_dict['totalCost']
             self.expCost = learning_curve_dict['expCost']
@@ -366,6 +378,8 @@ class MBRL(Algorithm):
         else:
             print('No learning curve data found!')
         #self.run_controller(self.environment.x0)
+        if os.path.isfile(self.path + 'data/training_time.p'):
+            self.training_time = pick
         pass
 
     def plot(self):
@@ -418,7 +432,7 @@ class MBRL(Algorithm):
         pass
 
     def train_dynamics(self):
-        #self.pointcloud()
+        start_time = time.time()
         training_data_set = copy.deepcopy(self.D_rand)
         for _ in range(self.data_ratio):
             training_data_set.data += self.D_RL.data
@@ -426,6 +440,7 @@ class MBRL(Algorithm):
         # update models in NMPC controller
         if self.print_dyn_error:
             self.dynamics_error()
+        training_time.append((time.time() - start_time))
 
     def training(self, dataSet):
         # loss function (mean squared error)
