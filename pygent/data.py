@@ -106,9 +106,10 @@ class DataSet(object):
             batch = [self.data[id] for id in idx]
             batches.append(batch)
         # add last batch of size < n
-        idx = idxs[(i+1)* n::]
-        batch = [self.data[id] for id in idx]
-        batches.append(batch)
+        if self.data.__len__() % n != 0:
+            idx = idxs[(i+1)* n::]
+            batch = [self.data[id] for id in idx]
+            batches.append(batch)
         return batches
 
     def batches(self, n):
