@@ -29,7 +29,7 @@ def c_k(x, u, mod):
 
 def c_N(x, mod):
     x1, x2, x3, x4 = x
-    c = 1000*x1**2 + 1000*x2**2 + 1000*x3**2 + 1000*x4**2
+    c = 100*x1**2 + 100*x2**2 + 10*x3**2 + 10*x4**2
     return c
 
 # define the function, that represents the initial value distribution p(x_0)
@@ -60,5 +60,6 @@ rl_algorithm = MBRL(env, t, dt,
                     weight_decay=args.weight_decay,
                     prediction_error_bound=args.pred_err_bound)
 
+rl_algorithm.load()
 rl_algorithm.run_learning(50)
 

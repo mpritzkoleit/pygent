@@ -65,9 +65,9 @@ rl_algorithm = MBRL(env, t, dt,
                     weight_decay=args.weight_decay,
                     data_noise=args.data_noise)
 
+rl_algorithm.load()
 if args.data_set != '':
     rl_algorithm.D_rand.load(args.data_set)
-#rl_algorithm.load()
-print('LOADED D')
+
 rl_algorithm.run_learning(args.episodes)
 
