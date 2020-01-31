@@ -379,7 +379,11 @@ class MBRL(Algorithm):
             print('No learning curve data found!')
         #self.run_controller(self.environment.x0)
         if os.path.isfile(self.path + 'data/training_time.p'):
-            self.training_time = pick
+            with open(self.path + 'data/training_time.p', 'rb') as open_file:
+            	self.training_time = pickle.load(open_file)
+        if os.path.isfile(self.path + 'data/optim_time.p'):       
+            with open(self.path + 'data/optim_time.p', 'rb') as open_file:
+                self.otim_time = pickle.load(open_file)
         pass
 
     def plot(self):
