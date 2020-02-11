@@ -68,7 +68,7 @@ class MBRL(Algorithm):
                                       oDim=oDim,
                                       dxDim = dxDim,
                                       xIsAngle=environment.xIsAngle) # neural network dynamics
-        self.optim = torch.optim.Adam(self.nn_dynamics.parameters(),
+        self.optim = torch.optim.Adagrad(self.nn_dynamics.parameters(),
                                       lr=dyn_lr,
                                       weight_decay=weight_decay)
         self.nn_environment = StateSpaceModel(self.ode, environment.cost, environment.x0, uDim, dt)
@@ -383,7 +383,7 @@ class MBRL(Algorithm):
             	self.training_time = pickle.load(open_file)
         if os.path.isfile(self.path + 'data/optim_time.p'):       
             with open(self.path + 'data/optim_time.p', 'rb') as open_file:
-                self.otim_time = pickle.load(open_file)
+                self.optim_time = pickle.load(open_file)
         pass
 
     def plot(self):
@@ -464,7 +464,7 @@ class MBRL(Algorithm):
                 self.optim.step()  # gradient descent step
                 running_loss += loss.item()
                 # self.eval() # eval mode on (batch normalization)
-        print('NN dynamics training loss:', running_loss / max(1, iter))
+            print('NN dynamics training loss:', running_loss / max(1, iter))
         pass
 
 
