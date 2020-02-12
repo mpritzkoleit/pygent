@@ -301,7 +301,7 @@ class iLQR(Algorithm):
                 success = False
                 break
 
-            if self.constrained:  # solve QP, eq. (11), paper 2)
+            if self.constrained and not final:  # solve QP, eq. (11), paper 2)
                 # convert matrices
                 QuuOpt = opt.matrix(QuuReg)
                 quOpt = opt.matrix(qu)
