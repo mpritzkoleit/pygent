@@ -159,19 +159,20 @@ class MBRL(Algorithm):
             disc_cost.append(c)
 
             # store transition in data set (x_, u, x, c)
-            transition = ({'x_': self.environment.x_ + np.random.normal(0, self.data_noise, self.environment.xDim),
-                           'u': self.agent.u + np.random.normal(0, self.data_noise, self.environment.uDim),
-                           'x': self.environment.x + np.random.normal(0, self.data_noise, self.environment.xDim),
-                           'o_': self.environment.o_ + np.random.normal(0, self.data_noise, self.environment.oDim),
-                           'o': self.environment.o + np.random.normal(0, self.data_noise, self.environment.oDim),
-                           'c': [c],
-                           't': [self.environment.terminated]})
+            if t < self.t:
+                transition = ({'x_': self.environment.x_ + np.random.normal(0, self.data_noise, self.environment.xDim),
+                               'u': self.agent.u + np.random.normal(0, self.data_noise, self.environment.uDim),
+                               'x': self.environment.x + np.random.normal(0, self.data_noise, self.environment.xDim),
+                               'o_': self.environment.o_ + np.random.normal(0, self.data_noise, self.environment.oDim),
+                               'o': self.environment.o + np.random.normal(0, self.data_noise, self.environment.oDim),
+                               'c': [c],
+                               't': [self.environment.terminated]})
 
-            prediction_loss = self.pred_loss(transition)
-            # add sample to data set
-            if prediction_loss > self.prediction_error_bound:
-                # only add sample, if prediction error is higher than error-bound
-                self.D_RL.force_add_sample(transition)
+                prediction_loss = self.pred_loss(transition)
+                # add sample to data set
+                if prediction_loss > self.prediction_error_bound:
+                    # only add sample, if prediction error is higher than error-bound
+                    self.D_RL.force_add_sample(transition)
 
             # check if environment terminated
             if self.environment.terminated:
