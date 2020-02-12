@@ -168,6 +168,7 @@ class MBRL(Algorithm):
                            't': [self.environment.terminated]})
 
             prediction_loss = self.pred_loss(transition)
+            print(prediction_loss)
             # add sample to data set
             if prediction_loss > self.prediction_error_bound:
                 # only add sample, if prediction error is higher than error-bound

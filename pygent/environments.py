@@ -470,12 +470,13 @@ class CartPole(StateSpaceModel):
             self.uMax = 10*np.ones(1) # max. acceleration
         else:
             self.uMax = 100*np.ones(1) # max. force
-        self.x1Max = 1.5
+        self.x1Max = 1.2
+        self.x3Max = 4.0
 
 
     def terminate(self, x):
         x1, x2, x3, x4 = x
-        if np.abs(x1) > self.x1Max:
+        if np.abs(x1) > self.x1Max or np.abs(x3)> self.x3Max:
             return True
         else:
             return False
