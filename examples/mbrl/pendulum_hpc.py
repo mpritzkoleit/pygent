@@ -16,18 +16,17 @@ parser.add_argument("--use_mpc", type=int, default=0)
 parser.add_argument("--warm_up_episodes",type=int,  default=1)
 parser.add_argument("--agg", type=int, default=1)
 parser.add_argument("--epochs", type=int, default=60)
-parser.add_argument("--weight_decay", type=float, default=1e-2)
+parser.add_argument("--weight_decay", type=float, default=5e-4)
 parser.add_argument("--data_noise", type=float, default=1e-3)
 parser.add_argument("--path", type=str, default='./')
-parser.add_argument("--data_set", type=str, default='')
 parser.add_argument("--episodes", type=int, default=50)
-parser.add_argument("--pred_err_bound", type=float, default=0.02)
+parser.add_argument("--pred_err_bound", type=float, default=0.0)
 args = parser.parse_args()
 
-def c_k(x, u):
+def c_k(x, u, t, mod):
     x1, x2 = x
     u1, = u
-    c = x1**2 + .1*x2**2 + 0.1*u1**2
+    c = x1**2 + .01*x2**2 + 0.5*(1000*mod.exp(-t*15)+ 1)*u1**2
     return c
 
 def c_N(x):
@@ -70,9 +69,6 @@ rl_algorithm = MBRL(env, t, dt,
                     maxIters=100,
                     sparse_dyn=True)
 
-#if args.data_set != '':
-#    rl_algorithm.D_rand.load(args.data_set)
-#rl_algorithm.load()
 rl_algorithm.run_learning(args.episodes)
 
 
