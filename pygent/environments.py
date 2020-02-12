@@ -473,7 +473,6 @@ class CartPole(StateSpaceModel):
         self.x1Max = 1.2
         self.x3Max = 5.0
 
-
     def terminate(self, x):
         x1, x2, x3, x4 = x
         if np.abs(x1) > self.x1Max or np.abs(x3) > self.x3Max:

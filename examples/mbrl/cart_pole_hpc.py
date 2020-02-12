@@ -58,8 +58,9 @@ rl_algorithm = MBRL(env, t, dt,
                     aggregation_interval=args.agg,
                     training_epochs=args.epochs,
                     weight_decay=args.weight_decay,
-                    prediction_error_bound=args.pred_err_bound)
+                    prediction_error_bound=args.pred_err_bound,
+                    dyn_lr=1e-5)
 
-rl_algorithm.load()
+#rl_algorithm.load()
 rl_algorithm.run_learning(50)
 
