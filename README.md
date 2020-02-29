@@ -22,4 +22,4 @@ Installation:
 
   run: python setup.py install
 
-For now please have a look at the 'examples' folder.
+If you want to reproduce the results of the paper 'at-beitrag', please run the examples 'cart_pole_hpc.py' and 'pendulum_hpc.py'.
