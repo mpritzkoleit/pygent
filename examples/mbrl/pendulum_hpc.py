@@ -66,9 +66,7 @@ rl_algorithm = MBRL(env, t, dt,
                     weight_decay=args.weight_decay,
                     data_noise=args.data_noise,
                     prediction_error_bound=args.pred_err_bound,
-                    maxIters=100,
-                    sparse_dyn=True)
-
+                    maxIters=100)
 rl_algorithm.run_learning(args.episodes)
 
 
