@@ -7,6 +7,7 @@ import time
 import os
 import inspect
 from shutil import copyfile
+import scipy as sci
 
 # pygent
 from pygent.agents import Agent
@@ -239,14 +240,21 @@ class MPCAgent(Agent):
             Returns:
                 u (ndarray): control/action
         """
-        i = min(self.traj_optimizer.KK.__len__()-1, i)
-        kk = self.traj_optimizer.kk[i].T[0]
-        KK = self.traj_optimizer.KK[i]
-        uu = self.traj_optimizer.uu[i]
-        xx = self.traj_optimizer.xx[i]
-        alpha = self.traj_optimizer.current_alpha
-
-        u = KK@(x - xx)+ uu + alpha*kk + self.add_noise*self.noise()
+        if i < self.traj_optimizer.KK.__len__()-1:
+            kk = self.traj_optimizer.kk[i].T[0]
+            KK = self.traj_optimizer.KK[i]
+            uu = self.traj_optimizer.uu[i]
+            xx = self.traj_optimizer.xx[i]
+            alpha = self.traj_optimizer.current_alpha
+            u = KK@(x - xx)+ uu + alpha*kk + self.add_noise*self.noise()
+        else:
+            KK = self.traj_optimizer.KK[-1]
+            uu = self.traj_optimizer.uu[-1]
+            # determine x_ref from final cost
+            f = lambda x: self.traj_optimizer.environment.cost(x, 0*uu, None, None, np)
+            equil = sci.optimize.minimize(f, x)
+            xx = equil.x
+            u = KK@(x - xx) + uu 
         self.u = np.clip(u, -self.uMax, self.uMax)
 
         self.history = np.concatenate((self.history, np.array([self.u])))  # save current action in history

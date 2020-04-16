@@ -58,10 +58,10 @@ class iLQR(Algorithm):
                  tolGrad=1e-4,
                  tolFun=1e-7,
                  fastForward=False,
-                 path='../results/ilqr/',
+                 path=None,
                  fcost=None,
                  constrained=False,
-                 save_interval=10,
+                 save_interval=1000,
                  printing=True,
                  log_data=False,
                  dataset_size=1e6,
@@ -70,9 +70,9 @@ class iLQR(Algorithm):
                  file_prefix = '',
                  init=True,
                  reset_mu=True,
-                 saving=True,
+                 saving=False ,
                  parallel=False,
-                 final_backpass=True):
+                 final_backpass=False):
         """
 
         Args:
@@ -90,18 +90,25 @@ class iLQR(Algorithm):
 
         self.uDim = environment.uDim
         self.xDim = environment.xDim
-        self.path = path
-        if not os.path.isdir(path):
-            os.makedirs(path)
-        if not os.path.isdir(path + 'plots/'):
-            os.makedirs(path + 'plots/')
-        if not os.path.isdir(path + 'animations/'):
-            os.makedirs(path + 'animations/')
-        if not os.path.isdir(path + 'data/'):
-            os.makedirs(path + 'data/')
-        if not os.path.isdir(path + 'c_files/'):
-            os.makedirs(path + 'c_files/')
-        copyfile(inspect.stack()[-1][1], path + 'exec_script.py')
+
+        if path is None:
+            self.saving = False
+        else:
+            self.saving = True
+        if self.saving:
+            self.path = path
+            if not os.path.isdir(path):
+                os.makedirs(path)
+            if not os.path.isdir(path + 'plots/'):
+                os.makedirs(path + 'plots/')
+            if not os.path.isdir(path + 'animations/'):
+                os.makedirs(path + 'animations/')
+            if not os.path.isdir(path + 'data/'):
+                os.makedirs(path + 'data/')
+            if not os.path.isdir(path + 'c_files/'):
+                os.makedirs(path + 'c_files/')
+            copyfile(inspect.stack()[-1][1], path + 'exec_script.py')
+
         self.fastForward = fastForward  # if True use Eulers Method instead of ODE solver
         agent = FeedBack(None, self.uDim) 
         super(iLQR, self).__init__(environment, agent, t, dt)
@@ -127,7 +134,6 @@ class iLQR(Algorithm):
         self.current_alpha = 1
         self.printing = printing
         self.file_prefix = file_prefix
-        self.saving = saving
         self.final_backpass = final_backpass
         # todo: mu to eta
 
@@ -139,7 +145,7 @@ class iLQR(Algorithm):
         self.mu_d0 = 1.6
         self.mu_d = 1.
         self.mu = 1e-6
-        self.mu0 = 1.e-6
+        self.mu0 = 1e-6
         self.alphas = 10 ** np.linspace(0, -3, 11)
         self.zmin = 0.
         self.tolGrad = tolGrad
@@ -295,7 +301,7 @@ class iLQR(Algorithm):
                 success = False
                 break
 
-            if self.constrained:  # solve QP, eq. (11), paper 2)
+            if self.constrained and not final:  # solve QP, eq. (11), paper 2)
                 # convert matrices
                 QuuOpt = opt.matrix(QuuReg)
                 quOpt = opt.matrix(qu)
@@ -415,6 +421,7 @@ class iLQR(Algorithm):
                 if g_norm < self.tolGrad and self.mu < 1e-5:
                     self.decrease_mu()
                     success_gradient = True
+                    break
 
                 # Line-search
                 x_list = []
@@ -566,13 +573,13 @@ class iLQR(Algorithm):
             print('Using C functions for taylor expansion of the cost function!')
         except:
             print('Could not use C functions for taylor expansion of the cost function!')
-            self.cx = sp.lambdify((xx, uu, t), cx.T)
-            self.cu = sp.lambdify((xx, uu, t), cu.T)
-            self.Cxx = sp.lambdify((xx, uu, t), Cxx)
-            self.Cuu = sp.lambdify((xx, uu, t), Cuu)
-            self.Cxu = sp.lambdify((xx, uu, t), Cxu)
-            self.cfx = sp.lambdify((xx,), cfx.T)
-            self.Cfxx = sp.lambdify((xx,), Cfxx)
+            self.cx = sp.lambdify((xx, uu, t), cx.T*self.dt)
+            self.cu = sp.lambdify((xx, uu, t), cu.T*self.dt)
+            self.Cxx = sp.lambdify((xx, uu, t), Cxx*self.dt)
+            self.Cuu = sp.lambdify((xx, uu, t), Cuu*self.dt)
+            self.Cxu = sp.lambdify((xx, uu, t), Cxu*self.dt)
+            self.cfx = sp.lambdify((xx,), cfx.T*self.dt)
+            self.Cfxx = sp.lambdify((xx,), Cfxx*self.dt)
 
         pass
 
@@ -619,16 +626,18 @@ class iLQR(Algorithm):
         self.environment.history = self.xx
         self.agent.history[1:] = self.uu
         self.environment.plot()
-        self.environment.save_history('environment', self.path + 'data/')
-        plt.savefig(self.path + 'plots/'+self.file_prefix+'environment.pdf')
+        if self.saving:
+            self.environment.save_history('environment', self.path + 'data/')
+            plt.savefig(self.path + 'plots/'+self.file_prefix+'environment.pdf')
         self.agent.plot()
-        self.agent.save_history('agent', self.path + 'data/')
-        plt.savefig(self.path + 'plots/'+self.file_prefix+'controller.pdf')
+        if self.saving:
+            self.agent.save_history('agent', self.path + 'data/')
+            plt.savefig(self.path + 'plots/'+self.file_prefix+'controller.pdf')
         plt.close('all')
 
     def animation(self):
         ani = self.environment.animation()
-        if ani != None:
+        if ani != None and self.saving:
             try:
                 ani.save(self.path + 'animations/'+self.file_prefix+'animation.mp4', fps=1 / self.dt)
             except:

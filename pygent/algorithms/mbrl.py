@@ -11,6 +11,7 @@ import pickle
 import inspect
 from shutil import copyfile
 import copy
+import time
 
 # pygent
 from pygent.agents import Agent
@@ -24,6 +25,7 @@ from pygent.nn_models import NNDynamics
 class MBRL(Algorithm):
 
     def __init__(self, environment, t, dt,
+                 test_t=0.,
                  plotInterval=1,
                  nData=int(1e6),
                  path='../results/mbrl/',
@@ -66,7 +68,7 @@ class MBRL(Algorithm):
                                       oDim=oDim,
                                       dxDim = dxDim,
                                       xIsAngle=environment.xIsAngle) # neural network dynamics
-        self.optim = torch.optim.Adam(self.nn_dynamics.parameters(),
+        self.optim = torch.optim.Adagrad(self.nn_dynamics.parameters(),
                                       lr=dyn_lr,
                                       weight_decay=weight_decay)
         self.nn_environment = StateSpaceModel(self.ode, environment.cost, environment.x0, uDim, dt)
@@ -89,6 +91,7 @@ class MBRL(Algorithm):
         super(MBRL, self).__init__(environment, self.nmpc_algorithm.agent, t, dt)
         self.D_rand = DataSet(nData)
         self.D_RL = DataSet(nData)
+        self.test_t = test_t
         self.plotInterval = plotInterval  # inter
         self.evalPolicyInterval = evalPolicyInterval
         self.checkInterval = checkInterval  # checkpoint interval
@@ -103,6 +106,8 @@ class MBRL(Algorithm):
         self.print_dyn_error = print_dyn_error
         self.data_noise = data_noise
         self.prediction_error_bound = prediction_error_bound
+        self.training_time = []
+        self.optim_time = []
 
 
         if not os.path.isdir(path):
@@ -128,13 +133,15 @@ class MBRL(Algorithm):
         """ Run a training episode. If terminal state is reached, episode stops."""
 
         print('Started episode ', self.episode)
-        tt = np.arange(0, self.t, self.dt)
+        tt = np.arange(0, self.t+self.test_t, self.dt)
         cost = []  # list of incremental costs
         disc_cost = [] # discounted cost
+        start_time = time.time()
         if self.use_mpc:
             self.agent.init_optim(self.environment.x0)
         else:
             self.agent.init_optim(self.environment.x0, init=True)
+        self.optim_time.append((time.time() - start_time))
         self.environment.reset(self.environment.x0)
         self.agent.reset()
 
@@ -161,8 +168,9 @@ class MBRL(Algorithm):
                            't': [self.environment.terminated]})
 
             prediction_loss = self.pred_loss(transition)
+            print(prediction_loss)
             # add sample to data set
-            if prediction_loss > self.prediction_error_bound:
+            if prediction_loss > self.prediction_error_bound and t <= self.t:
                 # only add sample, if prediction error is higher than error-bound
                 self.D_RL.force_add_sample(transition)
 
@@ -245,7 +253,7 @@ class MBRL(Algorithm):
         """ Run an episode, where the policy network is evaluated. """
 
         print('Started episode ', self.episode)
-        tt = np.arange(0, self.t, self.dt)
+        tt = np.arange(0, self.t+self.test_t, self.dt)
         cost = []  # list of incremental costs
 
         # reset environment/agent to initial state, delete history
@@ -274,7 +282,7 @@ class MBRL(Algorithm):
         """
 
         for steps in range(1, int(n) + 1):
-            if self.D_rand.data.__len__()<self.warm_up:#self.batch_size:
+            if self.D_rand.data.__len__()<max(self.batch_size, self.warm_up):#self.batch_size:
                 self.run_random_episode()
             else:
                 if not self.dynamics_first_trained:
@@ -318,8 +326,14 @@ class MBRL(Algorithm):
         learning_curve_dict = {'totalCost': self.totalCost, 'meanCost':self.meanCost,
                                'expCost': self.expCost, 'episode_steps': self.episode_steps}
 
-        pickle.dump(learning_curve_dict, open(self.path + 'data/learning_curve.p', 'wb'))
+        with open(self.path + 'data/learning_curve.p', 'wb') as open_file:
+            pickle.dump(learning_curve_dict, open_file)
         print('Network parameters, data set and learning curve saved.')
+        with open(self.path + 'data/training_time.p', 'wb') as open_file:
+            pickle.dump(self.training_time, open_file)
+        with open(self.path + 'data/optim_time.p', 'wb') as open_file:
+            pickle.dump(self.optim_time, open_file)
+        print('Time logging saved.')
         pass
 
     def load(self, episode=''):
@@ -354,7 +368,8 @@ class MBRL(Algorithm):
 
         # load learning curve
         if os.path.isfile(self.path + 'data/learning_curve.p'):
-            learning_curve_dict = pickle.load(open(self.path + 'data/learning_curve.p', 'rb'))
+            with open(self.path + 'data/learning_curve.p', 'rb') as open_file:
+                learning_curve_dict = pickle.load(open_file)
             self.meanCost = learning_curve_dict['meanCost']
             self.totalCost = learning_curve_dict['totalCost']
             self.expCost = learning_curve_dict['expCost']
@@ -364,6 +379,12 @@ class MBRL(Algorithm):
         else:
             print('No learning curve data found!')
         #self.run_controller(self.environment.x0)
+        if os.path.isfile(self.path + 'data/training_time.p'):
+            with open(self.path + 'data/training_time.p', 'rb') as open_file:
+            	self.training_time = pickle.load(open_file)
+        if os.path.isfile(self.path + 'data/optim_time.p'):       
+            with open(self.path + 'data/optim_time.p', 'rb') as open_file:
+                self.optim_time = pickle.load(open_file)
         pass
 
     def plot(self):
@@ -416,7 +437,7 @@ class MBRL(Algorithm):
         pass
 
     def train_dynamics(self):
-        #self.pointcloud()
+        start_time = time.time()
         training_data_set = copy.deepcopy(self.D_rand)
         for _ in range(self.data_ratio):
             training_data_set.data += self.D_RL.data
@@ -424,6 +445,7 @@ class MBRL(Algorithm):
         # update models in NMPC controller
         if self.print_dyn_error:
             self.dynamics_error()
+        self.training_time.append((time.time() - start_time))
 
     def training(self, dataSet):
         # loss function (mean squared error)
@@ -443,7 +465,7 @@ class MBRL(Algorithm):
                 self.optim.step()  # gradient descent step
                 running_loss += loss.item()
                 # self.eval() # eval mode on (batch normalization)
-        print('NN dynamics training loss:', running_loss / max(1, iter))
+            print('NN dynamics training loss:', running_loss / max(1, iter))
         pass
 
 

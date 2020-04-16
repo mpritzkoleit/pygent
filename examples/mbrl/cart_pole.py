@@ -49,7 +49,6 @@ path = '../results/mbrl/'  # path, where results are saved'
 # instance of the model-based RL algorithm 
 rl_algorithm = MBRL(sys, t, dt,
                     path=path,
-                    horizon=2.,
                     fcost=c_N,
                     warm_up_episodes=args.warm_up_episodes,
                     use_mpc=args.use_mpc,
@@ -58,7 +57,9 @@ rl_algorithm = MBRL(sys, t, dt,
                     aggregation_interval=args.agg,
                     training_epochs=args.epochs,
                     weight_decay=args.weight_decay,
-                    prediction_error_bound=args.pred_err_bound)
+                    prediction_error_bound=args.pred_err_bound,
+                    test_t=5.0)
 
 rl_algorithm.run_learning(50)
+
 

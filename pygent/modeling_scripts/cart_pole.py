@@ -92,7 +92,7 @@ def modeling(linearized=True):
         ddq = sp.solve(Eq_lin, ddq_t)
     else:
         ddq = sp.solve(Eq, ddq_t)
-
+    #print(ddq)
     # state space model
 
     # functions of x, u
@@ -116,6 +116,7 @@ def modeling(linearized=True):
     # first order ODE (right hand side)
     dx_t = sp.Matrix([x3_t, x4_t, ddq[ddq0_t], ddq[ddq1_t]])
     dx_t = dx_t.subs(xu_subs)
+    print(dx_t)
     # linearized dynamics
     A = dx_t.jacobian(x_t)
     B = dx_t.diff(u_t)
@@ -183,4 +184,4 @@ def load_existing(linearized=True):
 
 if __name__ == "__main__":
     # execute only if run as a script
-    modeling(linearized=False)
+    modeling(linearized=True)
